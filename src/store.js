@@ -18,15 +18,15 @@ export const store = reactive({
   dataReady: false,
 })
 
-// ─── Try to load from /data.json (for production deployment) ───
+// ─── Try to load from ./data.json (relative path for static deployment) ───
 async function loadRemoteData() {
   try {
-    const res = await fetch('/data.json?t=' + Date.now())
+    const res = await fetch('./data.json?t=' + Date.now())
     if (res.ok) {
       const data = await res.json()
       if (data.navCategories) store.navCategories = data.navCategories
       if (data.timelineItems) store.timelineItems = data.timelineItems
-      console.log('✅ 已加载 /data.json')
+      console.log('✅ 已加载 ./data.json')
     }
   } catch { /* no data.json, use defaults */ }
   store.dataReady = true
