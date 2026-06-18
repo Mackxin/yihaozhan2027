@@ -23,7 +23,8 @@ const helpSections = [
   { id: 'h6', icon: '🔍', title: '全站搜索' },
   { id: 'h7', icon: '🏠', title: '首页头像设置' },
   { id: 'h8', icon: '🌍', title: '部署到服务器' },
-  { id: 'h9', icon: '⌨️', title: '快捷键' },
+  { id: 'h9', icon: '✏️', title: '随记管理' },
+  { id: 'h10', icon: '⌨️', title: '快捷键' },
 ]
 const scrollToHelp = (id) => {
   const el = helpContentRef.value?.querySelector('#' + id)
@@ -662,7 +663,7 @@ const handleBuild = () => {
                 <div class="help-table-row"><strong>🏠 首页</strong><span>网站门面，展示头像、简介和快速入口</span></div>
                 <div class="help-table-row"><strong>🧭 导航</strong><span>收录的网站链接，按分类整理</span></div>
                 <div class="help-table-row"><strong>📰 讯息</strong><span>时间线形式记录的资源、资讯和灵感</span></div>
-                <div class="help-table-row"><strong>✏️ 随记</strong><span>个人笔记（预留功能）</span></div>
+                <div class="help-table-row"><strong>✏️ 随记</strong><span>个人笔记，支持搜索、置顶、标签和排序</span></div>
                 <div class="help-table-row"><strong>⚙️ 管理</strong><span>后台管理面板，编辑所有数据</span></div>
               </div>
             </section>
@@ -753,13 +754,18 @@ const handleBuild = () => {
             <!-- 6. 全站搜索 -->
             <section :id="'h6'" class="help-section">
               <h2><span class="help-section-icon">🔍</span>全站搜索</h2>
-              <p>在任意页面左下角有一个圆形搜索按钮，点击即可打开搜索框。</p>
-              <ul>
-                <li><strong>快捷键</strong>：<code>⌘K</code>（Mac）或 <code>Ctrl+K</code>（Windows）快速打开</li>
-                <li><strong>搜索范围</strong>：导航链接名称/URL + 讯息标题/描述</li>
-                <li><strong>结果导航</strong>：点击搜索结果自动跳转到对应页面</li>
-                <li><strong>关闭搜索</strong>：按 <code>ESC</code> 或点击背景关闭</li>
-              </ul>
+              <p>每个页面都内置了统一风格的搜索框，直接搜索对应内容：</p>
+              <div class="help-table">
+                <div class="help-table-row help-table-head"><span>页面</span><span>搜索范围</span></div>
+                <div class="help-table-row"><strong>🏠 首页</strong><span>跨页面搜索导航链接 + 讯息，结果以列表展示，点击跳转</span></div>
+                <div class="help-table-row"><strong>🧭 导航</strong><span>搜索导航链接名称和 URL，实时过滤结果</span></div>
+                <div class="help-table-row"><strong>📰 讯息</strong><span>搜索讯息标题和描述，实时过滤结果</span></div>
+                <div class="help-table-row"><strong>✏️ 随记</strong><span>搜索随记内容和标签，实时过滤</span></div>
+                <div class="help-table-row"><strong>⚙️ 管理</strong><span>顶部搜索栏跨页面搜索，下拉显示导航和讯息结果</span></div>
+              </div>
+              <div class="help-tip">
+                <strong>💡 提示</strong>：搜索框统一采用粉色主题设计，聚焦时有高亮动效，支持一键清除输入。
+              </div>
             </section>
 
             <!-- 7. 首页设置 -->
@@ -788,20 +794,46 @@ const handleBuild = () => {
               </div>
             </section>
 
-            <!-- 9. 快捷键 -->
+            <!-- 9. 随记管理 -->
             <section :id="'h9'" class="help-section">
+              <h2><span class="help-section-icon">✏️</span>随记管理</h2>
+              <p>随记页用于记录灵感、笔记和想法，支持 Markdown 语法和标签分类。</p>
+              <h3>基本操作</h3>
+              <ul>
+                <li><strong>添加随记</strong>：在输入框中输入内容，点击「保存随记」或按 <code>⌘+Enter</code> 保存</li>
+                <li><strong>Markdown</strong>：支持 Markdown 语法，渲染后显示格式化内容</li>
+                <li><strong>标签</strong>：在内容中使用 <code>#标签名</code> 添加标签，如 <code>#学习 #灵感</code></li>
+                <li><strong>删除</strong>：点击卡片上的 🗑️ 图标删除，需确认</li>
+              </ul>
+              <h3>高级功能</h3>
+              <ul>
+                <li><strong>置顶</strong>：点击 📌 图标置顶/取消置顶，置顶笔记始终显示在最前面</li>
+                <li><strong>搜索</strong>：使用顶部搜索框搜索内容和标签</li>
+                <li><strong>排序</strong>：支持「最新优先」「最早优先」「标签最多」三种排序</li>
+                <li><strong>筛选</strong>：点击「只看置顶」按钮筛选置顶笔记</li>
+                <li><strong>标签云</strong>：点击标签可按标签筛选，再次点击取消</li>
+              </ul>
+              <div class="help-tip">
+                <strong>💡 提示</strong>：随记数据保存在浏览器本地（localStorage），清除浏览器数据会丢失。建议重要内容及时备份。
+              </div>
+            </section>
+
+            <!-- 10. 快捷键 -->
+            <section :id="'h10'" class="help-section">
               <h2><span class="help-section-icon">⌨️</span>快捷键</h2>
               <div class="help-table">
                 <div class="help-table-row help-table-head"><span>快捷键</span><span>功能</span></div>
-                <div class="help-table-row"><code>⌘K / Ctrl+K</code><span>打开全站搜索</span></div>
-                <div class="help-table-row"><code>ESC</code><span>关闭搜索/弹窗</span></div>
+                <div class="help-table-row"><code>ESC</code><span>关闭弹窗/模态框</span></div>
                 <div class="help-table-row"><code>Enter</code><span>确认表单提交</span></div>
+                <div class="help-table-row"><code>⌘+Enter / Ctrl+Enter</code><span>快速保存随记</span></div>
                 <div class="help-table-row"><span>左右滑动</span><span>切换页面（移动端）</span></div>
+                <div class="help-table-row"><span>双击导航分类</span><span>编辑分类名称（后台）</span></div>
+                <div class="help-table-row"><span>双击日期</span><span>编辑日期（后台）</span></div>
               </div>
             </section>
 
             <div class="help-footer">
-              <p>壹号栈 v1.0 · 如需更多功能或有使用问题，请联系开发者</p>
+              <p>壹号栈 v1.1 · 如需更多功能或有使用问题，请联系开发者</p>
             </div>
           </div>
         </div>
