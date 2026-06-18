@@ -499,7 +499,7 @@
 [data-theme="dark"] .notes-tag { background: #334155; color: #cbd5e1; }
 [data-theme="dark"] .notes-tag small { color: #94a3b8; }
 [data-theme="dark"] .notes-tag:hover { background: rgba(255,29,85,0.15); border-color: rgba(255,29,85,0.3); color: #ff1d55; }
-[data-theme="dark"] .notes-card { background: #1e293b; border-color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+[data-theme="dark"] .notes-card { background: #1e293b !important; border-color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
 [data-theme="dark"] .notes-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 [data-theme="dark"] .notes-card-pinned { border-color: rgba(255,29,85,0.3); box-shadow: 0 2px 8px rgba(255,29,85,0.12); }
 [data-theme="dark"] .notes-card-content { color: #cbd5e1; }

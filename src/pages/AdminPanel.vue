@@ -377,6 +377,7 @@ const handleImport = (e) => {
 }
 
 // ─── Build & Deploy ───
+const todayStr = () => new Date().toISOString().slice(0, 10)
 const building = ref(false)
 const handleBuild = () => {
   building.value = true
@@ -386,10 +387,10 @@ const handleBuild = () => {
     const blob = new Blob([data], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = 'data.json'
+    a.download = `data_${todayStr()}.json`
     a.click()
     building.value = false
-    log('✅ data.json 已下载 → 运行 ./build.sh → git push')
+    log(`✅ data_${todayStr()}.json 已下载 → 运行 ./build.sh → git push`)
   }, 300)
 }
 
@@ -847,188 +848,261 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
       <!-- ── HELP ── -->
       <template v-if="activeTab === 'help'">
         <div class="help-panel">
-          <div class="help-toc">
-            <h3 class="help-toc-title">目录</h3>
-            <a v-for="s in helpSections" :key="s.id" :href="'#' + s.id" class="help-toc-link" @click.prevent="scrollToHelp(s.id)">{{ s.icon }} {{ s.title }}</a>
-          </div>
-
           <div class="help-content" ref="helpContentRef">
+            <!-- Hero -->
             <div class="help-hero">
-              <h1>🚀 壹号栈 使用指南</h1>
-              <p>完整的功能说明与操作教程，帮助您快速管理网站内容</p>
+              <div class="help-hero-inner">
+                <div class="help-hero-badge">使用手册</div>
+                <h1>壹号栈 使用指南</h1>
+                <p>完整的功能说明与操作教程，帮助您快速管理网站内容</p>
+              </div>
+              <!-- Quick nav pills -->
+              <div class="help-quick-nav">
+                <a v-for="s in helpSections" :key="s.id" :href="'#' + s.id" class="help-quick-pill" @click.prevent="scrollToHelp(s.id)">{{ s.icon }} {{ s.title }}</a>
+              </div>
             </div>
 
             <!-- 1. 网站架构 -->
             <section :id="'h1'" class="help-section">
-              <h2><span class="help-section-icon">🌐</span>网站架构</h2>
-              <p>壹号栈是一个单页应用（SPA），包含 <strong>5 个页面</strong>，通过底部导航栏切换：</p>
-              <div class="help-table">
-                <div class="help-table-row help-table-head"><span>页面</span><span>功能说明</span></div>
-                <div class="help-table-row"><strong>🏠 首页</strong><span>网站门面，展示头像、简介和快速入口</span></div>
-                <div class="help-table-row"><strong>🧭 导航</strong><span>收录的网站链接，按分类整理</span></div>
-                <div class="help-table-row"><strong>📰 讯息</strong><span>时间线形式记录的资源、资讯和灵感</span></div>
-                <div class="help-table-row"><strong>✏️ 随记</strong><span>个人笔记，支持搜索、置顶、标签和排序</span></div>
-                <div class="help-table-row"><strong>⚙️ 管理</strong><span>后台管理面板，编辑所有数据</span></div>
+              <div class="help-section-head">
+                <div class="help-section-badge badge-blue">🌐</div>
+                <div>
+                  <h2>网站架构</h2>
+                  <p class="help-section-sub">壹号栈是一个单页应用（SPA），包含 4 个公开页面和 1 个隐藏管理后台</p>
+                </div>
               </div>
+              <div class="help-card-grid">
+                <div class="help-page-card"><div class="help-page-icon">🏠</div><strong>首页</strong><span>网站门面，展示头像、简介和快速入口</span></div>
+                <div class="help-page-card"><div class="help-page-icon">🧭</div><strong>导航</strong><span>收录的网站链接，按分类整理</span></div>
+                <div class="help-page-card"><div class="help-page-icon">📰</div><strong>讯息</strong><span>时间线形式记录的资源、资讯和灵感</span></div>
+                <div class="help-page-card"><div class="help-page-icon">✏️</div><strong>随记</strong><span>个人笔记，支持搜索、置顶、标签和排序</span></div>
+                <div class="help-page-card"><div class="help-page-icon">⚙️</div><strong>管理后台</strong><span>隐藏页面，通过首页「管理后台」卡片进入</span></div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 管理后台默认隐藏。进入方式：点击首页快速访问区的「管理后台」卡片，或在浏览器控制台执行 <code>localStorage.setItem('yihao_admin','true')</code> 后刷新页面。</div>
             </section>
 
             <!-- 2. 导航管理 -->
             <section :id="'h2'" class="help-section">
-              <h2><span class="help-section-icon">🧭</span>导航管理</h2>
-              <p>导航页用于收录各类网站链接，按分类组织。左侧显示分类列表（三列），右侧显示链接详情。</p>
-              <h3>分类操作</h3>
-              <ul>
-                <li><strong>新增分类</strong>：点击左上角 <code>+</code> 按钮，输入分类名称后确定</li>
-                <li><strong>编辑分类</strong>：悬停在分类项上，点击 ✏️ 编辑图标</li>
-                <li><strong>删除分类</strong>：点击 🗑️ 图标，会同时删除该分类下的所有链接</li>
-                <li><strong>搜索分类</strong>：在顶部搜索框输入关键词过滤</li>
-                <li><strong>拖拽排序</strong>：按住分类项左侧 ⠿ 手柄拖动可调整顺序</li>
-              </ul>
-              <h3>链接操作</h3>
-              <ul>
-                <li><strong>添加链接</strong>：选中分类后，点击 <code>+ 添加链接</code>，填写名称和 URL</li>
-                <li><strong>批量导入</strong>：点击 <code>📋 批量导入</code>，粘贴多行链接一键导入</li>
-                <li><strong>编辑链接</strong>：点击链接卡片上的 ✏️ 图标直接编辑</li>
-                <li><strong>删除链接</strong>：点击链接卡片上的 🗑️ 图标删除</li>
-                <li><strong>拖拽排序</strong>：按住链接卡片左侧 ⠿ 手柄拖动可调整顺序</li>
-              </ul>
-              <div class="help-tip">
-                <strong>💡 提示</strong>：删除分类会同时删除其下所有链接，请谨慎操作。建议先导出备份。
+              <div class="help-section-head">
+                <div class="help-section-badge badge-pink">🧭</div>
+                <div>
+                  <h2>导航管理</h2>
+                  <p class="help-section-sub">导航页用于收录各类网站链接，按分类组织。左侧分类列表，右侧链接详情。</p>
+                </div>
               </div>
+              <div class="help-two-col">
+                <div class="help-col">
+                  <h3>分类操作</h3>
+                  <ul>
+                    <li><strong>新增分类</strong>：点击左上角 <code>+</code> 按钮，输入分类名称后确定</li>
+                    <li><strong>编辑分类</strong>：悬停分类项，点击编辑图标</li>
+                    <li><strong>删除分类</strong>：点击删除图标（同时删除该分类下所有链接）</li>
+                    <li><strong>搜索分类</strong>：在顶部搜索框输入关键词过滤</li>
+                    <li><strong>拖拽排序</strong>：按住 ⠿ 手柄拖动调整顺序</li>
+                  </ul>
+                </div>
+                <div class="help-col">
+                  <h3>链接操作</h3>
+                  <ul>
+                    <li><strong>添加链接</strong>：选中分类，点击「+ 添加链接」</li>
+                    <li><strong>批量导入</strong>：点击「📋 批量导入」，粘贴多行一键导入</li>
+                    <li><strong>编辑链接</strong>：点击卡片编辑图标直接修改</li>
+                    <li><strong>删除链接</strong>：点击卡片删除图标</li>
+                    <li><strong>拖拽排序</strong>：按住 ⠿ 手柄拖动调整顺序</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 删除分类会同时删除其下所有链接，请谨慎操作。建议先导出备份。</div>
             </section>
 
             <!-- 3. 讯息管理 -->
             <section :id="'h3'" class="help-section">
-              <h2><span class="help-section-icon">📰</span>讯息管理</h2>
-              <p>讯息页以时间线形式展示内容，左侧按月份分组（三列），右侧显示当天的讯息列表。</p>
-              <h3>日期操作</h3>
-              <ul>
-                <li><strong>新增日期</strong>：点击左上角 <code>+</code>，选择日期后确定</li>
-                <li><strong>修改日期</strong>：点击日期旁的 ✏️ 图标修改</li>
-                <li><strong>删除日期</strong>：点击 🗑️ 图标，会同时删除该日期下所有讯息</li>
-                <li><strong>月份分组</strong>：左侧列表自动按「年-月」分组，降序排列</li>
-              </ul>
-              <h3>讯息操作</h3>
-              <ul>
-                <li><strong>添加讯息</strong>：选中日期后，点击 <code>+ 添加讯息</code></li>
-                <li><strong>标题</strong>：讯息的名称，必填</li>
-                <li><strong>链接</strong>：讯息的来源链接，必填</li>
-                <li><strong>描述</strong>：多行文本，每行一条描述信息，选填</li>
-              </ul>
+              <div class="help-section-head">
+                <div class="help-section-badge badge-purple">📰</div>
+                <div>
+                  <h2>讯息管理</h2>
+                  <p class="help-section-sub">讯息页以时间线形式展示内容，左侧按月份分组，右侧显示当天的讯息列表。</p>
+                </div>
+              </div>
+              <div class="help-two-col">
+                <div class="help-col">
+                  <h3>日期操作</h3>
+                  <ul>
+                    <li><strong>新增日期</strong>：点击左上角 <code>+</code>，选择日期后确定</li>
+                    <li><strong>修改日期</strong>：点击日期旁的编辑图标修改</li>
+                    <li><strong>删除日期</strong>：点击删除图标（同时删除该日期下所有讯息）</li>
+                    <li><strong>月份分组</strong>：列表自动按「年-月」分组，降序排列</li>
+                  </ul>
+                </div>
+                <div class="help-col">
+                  <h3>讯息操作</h3>
+                  <ul>
+                    <li><strong>添加讯息</strong>：选中日期，点击「+ 添加讯息」</li>
+                    <li><strong>标题</strong>：讯息的名称，必填</li>
+                    <li><strong>链接</strong>：讯息的来源链接，必填</li>
+                    <li><strong>描述</strong>：多行文本，每行一条描述信息，选填</li>
+                  </ul>
+                </div>
+              </div>
             </section>
 
-            <!-- 4. 数据备份与恢复 -->
+            <!-- 4. 随记管理 -->
+            <section :id="'h9'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-green">✏️</div>
+                <div>
+                  <h2>随记管理</h2>
+                  <p class="help-section-sub">随记页用于记录灵感、笔记和想法，支持 Markdown 语法和标签分类。</p>
+                </div>
+              </div>
+              <div class="help-two-col">
+                <div class="help-col">
+                  <h3>基本操作</h3>
+                  <ul>
+                    <li><strong>添加随记</strong>：在输入框中输入内容，点击「保存随记」或按 <code>⌘+Enter</code></li>
+                    <li><strong>Markdown</strong>：支持 Markdown 语法，渲染后显示格式化内容</li>
+                    <li><strong>标签</strong>：在内容中使用 <code>#标签名</code> 添加标签</li>
+                    <li><strong>删除</strong>：点击卡片上的删除图标，需确认</li>
+                  </ul>
+                </div>
+                <div class="help-col">
+                  <h3>高级功能</h3>
+                  <ul>
+                    <li><strong>置顶</strong>：点击置顶图标，置顶笔记始终显示在最前</li>
+                    <li><strong>排序</strong>：支持「最新优先」「最早优先」「标签最多」三种排序</li>
+                    <li><strong>筛选</strong>：点击「只看置顶」按钮筛选置顶笔记</li>
+                    <li><strong>标签云</strong>：点击标签可按标签筛选，再次点击取消</li>
+                    <li><strong>导出</strong>：在总览页点击「📄 导出随记」可导出为 Markdown 文件</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="help-tip help-tip-warn"><span class="help-tip-icon">⚠️</span> 随记数据保存在浏览器本地（localStorage），清除浏览器数据会丢失。建议定期导出备份。</div>
+            </section>
+
+            <!-- 5. 数据备份与恢复 -->
             <section :id="'h4'" class="help-section">
-              <h2><span class="help-section-icon">💾</span>数据备份与恢复</h2>
-              <p>数据操作按钮位于后台管理顶部右侧：</p>
-              <div class="help-table">
-                <div class="help-table-row help-table-head"><span>按钮</span><span>功能说明</span></div>
-                <div class="help-table-row"><strong>📦 更新网站</strong><span>下载 data.json 文件，用于更新线上数据（见下文）</span></div>
-                <div class="help-table-row"><strong>⬇️ 导出</strong><span>导出完整数据为 JSON 文件，用于备份或迁移</span></div>
-                <div class="help-table-row"><strong>⬆️ 导入</strong><span>从 JSON 文件导入数据，恢复之前的备份</span></div>
+              <div class="help-section-head">
+                <div class="help-section-badge badge-yellow">💾</div>
+                <div>
+                  <h2>数据备份与恢复</h2>
+                  <p class="help-section-sub">数据操作按钮位于后台管理顶部右侧</p>
+                </div>
+              </div>
+              <div class="help-feature-list">
+                <div class="help-feature-item"><div class="help-feature-dot dot-pink"></div><strong>📦 更新网站</strong><span>下载 data.json 文件，用于更新线上数据</span></div>
+                <div class="help-feature-item"><div class="help-feature-dot dot-blue"></div><strong>⬇️ 导出</strong><span>导出完整数据为 JSON 文件，用于备份或迁移</span></div>
+                <div class="help-feature-item"><div class="help-feature-dot dot-green"></div><strong>⬆️ 导入</strong><span>从 JSON 文件导入数据，恢复之前的备份</span></div>
               </div>
               <h3>撤销操作</h3>
-              <p>总览页面会显示「撤销历史」面板，每个删除、编辑操作都可一键撤销，最多保留 10 步。</p>
-              <div class="help-tip">
-                <strong>⚠️ 注意</strong>：导入会覆盖当前所有数据！建议定期导出备份。
-              </div>
+              <p>总览页面会显示「撤销历史」面板，每个删除、编辑操作都可一键撤销，最多保留 <strong>10 步</strong>。</p>
+              <div class="help-tip help-tip-warn"><span class="help-tip-icon">⚠️</span> 导入会覆盖当前所有数据！建议定期导出备份。</div>
             </section>
 
-            <!-- 5. 更新网站 -->
+            <!-- 6. 更新网站 -->
             <section :id="'h5'" class="help-section">
-              <h2><span class="help-section-icon">🚀</span>更新网站数据</h2>
-              <p>在后台编辑完数据后，只需 <strong>3 步</strong> 即可发布到 GitHub Pages：</p>
-              <h3>完整发布流程</h3>
-              <div class="help-steps">
-                <div class="help-step"><span class="help-step-num">1</span>点击后台顶部的 <strong>「生成网站」</strong> 按钮，下载 <code>data.json</code> 到项目根目录</div>
-                <div class="help-step"><span class="help-step-num">2</span>打开终端，运行 <code>./build.sh</code>，自动构建到 <code>docs/</code> 文件夹</div>
-                <div class="help-step"><span class="help-step-num">3</span>推送到 GitHub：<code>git add -A && git commit -m "更新数据" && git push</code></div>
+              <div class="help-section-head">
+                <div class="help-section-badge badge-pink">🚀</div>
+                <div>
+                  <h2>更新网站数据</h2>
+                  <p class="help-section-sub">在后台编辑完数据后，只需 3 步即可发布到 GitHub Pages</p>
+                </div>
               </div>
-              <div class="help-code">
+              <div class="help-steps">
+                <div class="help-step">
+                  <span class="help-step-num">1</span>
+                  <div class="help-step-body">
+                    <strong>生成数据文件</strong>
+                    <p>点击后台顶部的「生成网站」按钮，下载 <code>data_YYYY-MM-DD.json</code></p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">2</span>
+                  <div class="help-step-body">
+                    <strong>运行构建脚本</strong>
+                    <p>打开终端，运行 <code>./build.sh</code>，自动构建到 <code>docs/</code> 文件夹</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">3</span>
+                  <div class="help-step-body">
+                    <strong>推送到 GitHub</strong>
+                    <p><code>git add -A && git commit -m "更新数据" && git push</code></p>
+                  </div>
+                </div>
+              </div>
+              <div class="help-code-block">
+                <div class="help-code-header">终端命令</div>
                 <code>cd ~/Desktop/2027网站<br/>./build.sh<br/>git add -A && git commit -m "更新数据" && git push</code>
               </div>
-              <div class="help-tip">
-                <strong>💡 原理</strong>：GitHub Pages 配置为从 <code>docs/</code> 文件夹读取静态文件。构建脚本会自动将 <code>data.json</code> 复制到 <code>docs/</code>，推送后 GitHub 会自动部署。
-              </div>
-              <h3>只更新数据（不重新构建）</h3>
-              <p>如果只改了数据没改页面代码，可以直接上传 <code>data.json</code> 到 GitHub 仓库根目录，无需重新构建。</p>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> GitHub Pages 配置为从 <code>docs/</code> 文件夹读取静态文件。如果只改了数据没改代码，可以直接上传 <code>data.json</code> 到仓库根目录，无需重新构建。</div>
             </section>
 
-            <!-- 6. 全站搜索 -->
+            <!-- 7. 全站搜索 -->
             <section :id="'h6'" class="help-section">
-              <h2><span class="help-section-icon">🔍</span>全站搜索</h2>
-              <p>每个页面都内置了统一风格的搜索框，直接搜索对应内容：</p>
-              <div class="help-table">
-                <div class="help-table-row help-table-head"><span>页面</span><span>搜索范围</span></div>
-                <div class="help-table-row"><strong>🏠 首页</strong><span>跨页面搜索导航链接 + 讯息，结果以列表展示，点击跳转</span></div>
-                <div class="help-table-row"><strong>🧭 导航</strong><span>搜索导航链接名称和 URL，实时过滤结果</span></div>
-                <div class="help-table-row"><strong>📰 讯息</strong><span>搜索讯息标题和描述，实时过滤结果</span></div>
-                <div class="help-table-row"><strong>✏️ 随记</strong><span>搜索随记内容和标签，实时过滤</span></div>
-                <div class="help-table-row"><strong>⚙️ 管理</strong><span>顶部搜索栏跨页面搜索，下拉显示导航和讯息结果</span></div>
+              <div class="help-section-head">
+                <div class="help-section-badge badge-blue">🔍</div>
+                <div>
+                  <h2>全站搜索</h2>
+                  <p class="help-section-sub">每个页面都内置了统一风格的搜索框，直接搜索对应内容</p>
+                </div>
+              </div>
+              <div class="help-card-grid cols-4">
+                <div class="help-search-card"><div class="help-search-icon">🏠</div><strong>首页</strong><span>跨页面搜索导航链接 + 讯息</span></div>
+                <div class="help-search-card"><div class="help-search-icon">🧭</div><strong>导航</strong><span>搜索导航链接名称和 URL</span></div>
+                <div class="help-search-card"><div class="help-search-icon">📰</div><strong>讯息</strong><span>搜索讯息标题和描述</span></div>
+                <div class="help-search-card"><div class="help-search-icon">✏️</div><strong>随记</strong><span>搜索随记内容和标签</span></div>
               </div>
             </section>
 
-            <!-- 7. 首页设置 -->
+            <!-- 8. 首页头像设置 -->
             <section :id="'h7'" class="help-section">
-              <h2><span class="help-section-icon">🏠</span>首页头像设置</h2>
-              <p>首页会显示一个头像图片。设置方法：</p>
-              <ol>
-                <li>准备一张正方形图片（推荐 200×200 以上）</li>
-                <li>命名为 <code>avatar.png</code></li>
-                <li>放到项目的 <code>public/</code> 文件夹中</li>
-                <li>重新构建后上传，或直接放到服务器网站根目录</li>
-              </ol>
-            </section>
-
-            <!-- 8. 部署说明 -->
-            <section :id="'h8'" class="help-section">
-              <h2><span class="help-section-icon">🌍</span>部署到 GitHub Pages</h2>
-              <p>网站已配置为从 <code>docs/</code> 文件夹部署，与 GitHub Pages 完美配合：</p>
+              <div class="help-section-head">
+                <div class="help-section-badge badge-pink">🏠</div>
+                <div>
+                  <h2>首页头像设置</h2>
+                  <p class="help-section-sub">首页会显示一个头像图片，按以下步骤设置</p>
+                </div>
+              </div>
               <div class="help-steps">
-                <div class="help-step"><span class="help-step-num">1</span>在 GitHub 仓库 → Settings → Pages → Source 选择 <code>main</code> 分支的 <code>/docs</code> 文件夹</div>
-                <div class="help-step"><span class="help-step-num">2</span>每次更新后运行 <code>./build.sh</code>，然后 <code>git push</code></div>
-                <div class="help-step"><span class="help-step-num">3</span>GitHub 会自动从 <code>docs/</code> 部署，几分钟后即可访问</div>
-              </div>
-              <div class="help-tip">
-                <strong>💡 提示</strong>：<code>docs/</code> 文件夹已纳入 Git 版本控制，每次推送都会自动触发部署。无需手动操作服务器。
+                <div class="help-step"><span class="help-step-num">1</span><div class="help-step-body"><p>准备一张正方形图片（推荐 200×200 以上）</p></div></div>
+                <div class="help-step"><span class="help-step-num">2</span><div class="help-step-body"><p>命名为 <code>avatar.png</code></p></div></div>
+                <div class="help-step"><span class="help-step-num">3</span><div class="help-step-body"><p>放到项目的 <code>public/</code> 文件夹中</p></div></div>
+                <div class="help-step"><span class="help-step-num">4</span><div class="help-step-body"><p>重新构建后上传，或直接放到服务器网站根目录</p></div></div>
               </div>
             </section>
 
-            <!-- 9. 随记管理 -->
-            <section :id="'h9'" class="help-section">
-              <h2><span class="help-section-icon">✏️</span>随记管理</h2>
-              <p>随记页用于记录灵感、笔记和想法，支持 Markdown 语法和标签分类。</p>
-              <h3>基本操作</h3>
-              <ul>
-                <li><strong>添加随记</strong>：在输入框中输入内容，点击「保存随记」或按 <code>⌘+Enter</code> 保存</li>
-                <li><strong>Markdown</strong>：支持 Markdown 语法，渲染后显示格式化内容</li>
-                <li><strong>标签</strong>：在内容中使用 <code>#标签名</code> 添加标签，如 <code>#学习 #灵感</code></li>
-                <li><strong>删除</strong>：点击卡片上的 🗑️ 图标删除，需确认</li>
-              </ul>
-              <h3>高级功能</h3>
-              <ul>
-                <li><strong>置顶</strong>：点击 📌 图标置顶/取消置顶，置顶笔记始终显示在最前面</li>
-                <li><strong>搜索</strong>：使用顶部搜索框搜索内容和标签</li>
-                <li><strong>排序</strong>：支持「最新优先」「最早优先」「标签最多」三种排序</li>
-                <li><strong>筛选</strong>：点击「只看置顶」按钮筛选置顶笔记</li>
-                <li><strong>标签云</strong>：点击标签可按标签筛选，再次点击取消</li>
-                <li><strong>导出随记</strong>：在总览页点击「📄 导出随记」可导出为 Markdown 文件</li>
-              </ul>
-              <div class="help-tip">
-                <strong>💡 提示</strong>：随记数据保存在浏览器本地（localStorage），清除浏览器数据会丢失。建议定期导出备份。
+            <!-- 9. 部署说明 -->
+            <section :id="'h8'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-purple">🌍</div>
+                <div>
+                  <h2>部署到 GitHub Pages</h2>
+                  <p class="help-section-sub">网站已配置为从 docs/ 文件夹部署，与 GitHub Pages 完美配合</p>
+                </div>
               </div>
+              <div class="help-steps">
+                <div class="help-step"><span class="help-step-num">1</span><div class="help-step-body"><strong>配置 Pages</strong><p>GitHub 仓库 → Settings → Pages → Source 选择 <code>main</code> 分支的 <code>/docs</code> 文件夹</p></div></div>
+                <div class="help-step"><span class="help-step-num">2</span><div class="help-step-body"><strong>构建并推送</strong><p>运行 <code>./build.sh</code>，然后 <code>git push</code></p></div></div>
+                <div class="help-step"><span class="help-step-num">3</span><div class="help-step-body"><strong>等待部署</strong><p>GitHub 会自动从 <code>docs/</code> 部署，几分钟后即可访问</p></div></div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> <code>docs/</code> 文件夹已纳入 Git 版本控制，每次推送都会自动触发部署。</div>
             </section>
 
             <!-- 10. 快捷键 -->
             <section :id="'h10'" class="help-section">
-              <h2><span class="help-section-icon">⌨️</span>快捷键</h2>
-              <div class="help-table">
-                <div class="help-table-row help-table-head"><span>快捷键</span><span>功能</span></div>
-                <div class="help-table-row"><code>ESC</code><span>关闭弹窗/模态框</span></div>
-                <div class="help-table-row"><code>Enter</code><span>确认表单提交</span></div>
-                <div class="help-table-row"><code>⌘+Enter / Ctrl+Enter</code><span>快速保存随记</span></div>
-                <div class="help-table-row"><span>左右滑动</span><span>切换页面（移动端）</span></div>
-                <div class="help-table-row"><span>拖拽 ⠿ 手柄</span><span>调整分类/链接顺序</span></div>
+              <div class="help-section-head">
+                <div class="help-section-badge badge-yellow">⌨️</div>
+                <div>
+                  <h2>快捷键</h2>
+                  <p class="help-section-sub">常用快捷键一览</p>
+                </div>
+              </div>
+              <div class="help-kbd-grid">
+                <div class="help-kbd-item"><kbd>ESC</kbd><span>关闭弹窗/模态框</span></div>
+                <div class="help-kbd-item"><kbd>Enter</kbd><span>确认表单提交</span></div>
+                <div class="help-kbd-item"><kbd>⌘+Enter</kbd><span>快速保存随记</span></div>
+                <div class="help-kbd-item"><kbd>← →</kbd><span>切换页面（移动端滑动）</span></div>
+                <div class="help-kbd-item"><kbd>拖拽 ⠿</kbd><span>调整分类/链接顺序</span></div>
               </div>
             </section>
 

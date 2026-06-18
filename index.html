@@ -13,8 +13,7 @@
     <script>
       (function(){
         var p = localStorage.getItem('yihao_theme');
-        var d = p === 'dark' || (p === 'auto' && matchMedia('(prefers-color-scheme:dark)').matches);
-        if(d) document.documentElement.setAttribute('data-theme','dark');
+        if(p === 'dark') document.documentElement.setAttribute('data-theme','dark');
       })();
     </script>
     <div id="app"></div>

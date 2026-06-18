@@ -16,7 +16,18 @@ export const store = reactive({
   navCategories: savedNav ? JSON.parse(savedNav) : JSON.parse(JSON.stringify(defaultNav)),
   timelineItems: savedNews ? JSON.parse(savedNews) : JSON.parse(JSON.stringify(defaultTimeline)),
   dataReady: false,
+  // Admin mode: hidden by default in static build; enable via 5 clicks on homepage logo
+  isAdmin: localStorage.getItem('yihao_admin') === 'true',
 })
+
+export function toggleAdmin() {
+  store.isAdmin = !store.isAdmin
+  if (store.isAdmin) {
+    localStorage.setItem('yihao_admin', 'true')
+  } else {
+    localStorage.removeItem('yihao_admin')
+  }
+}
 
 // ─── Try to load from ./data.json (relative path for static deployment) ───
 async function loadRemoteData() {
@@ -118,9 +129,12 @@ export function deleteNewsItem(date, itemIndex) {
 
 // ─── Export / Import ───
 export function exportAllData() {
+  // Sort: navCategories by id ascending, timelineItems by date descending
+  const sortedNav = [...store.navCategories].sort((a, b) => (a.id || 0) - (b.id || 0))
+  const sortedNews = [...store.timelineItems].sort((a, b) => b.date.localeCompare(a.date))
   return JSON.stringify({
-    navCategories: store.navCategories,
-    timelineItems: store.timelineItems,
+    navCategories: sortedNav,
+    timelineItems: sortedNews,
   }, null, 2)
 }
 

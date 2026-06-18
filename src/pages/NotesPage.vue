@@ -1,12 +1,15 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { marked } from 'marked'
+import UniSearch from '../components/UniSearch.vue'
 
 const STORAGE_KEY = 'yihao_ideas'
+const todayStr = () => new Date().toISOString().slice(0, 10)
 
 const getRandomColor = () => {
   const hue = Math.floor(Math.random() * 360)
-  return `hsl(${hue}, 70%, 95%)`
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+  return isDark ? `hsl(${hue}, 30%, 18%)` : `hsl(${hue}, 70%, 95%)`
 }
 
 const parseTags = (text) => {
@@ -86,11 +89,17 @@ const togglePin = (idx) => {
 }
 
 const handleExport = () => {
-  const blob = new Blob([JSON.stringify(ideas.value, null, 2)], { type: 'application/json' })
+  // Sort: pinned first, then by timestamp descending (newest first)
+  const sorted = [...ideas.value].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1
+    if (!a.pinned && b.pinned) return 1
+    return (b.timestamp || b.createdAt || 0) - (a.timestamp || a.createdAt || 0)
+  })
+  const blob = new Blob([JSON.stringify(sorted, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `灵感记录_${new Date().toLocaleString('zh-CN').replace(/[/\s:]/g, '_')}.json`
+  a.download = `灵感记录_${todayStr()}.json`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -134,6 +143,8 @@ const handleUpdate = () => {
   editText.value = ''
   filterTag.value = null
 }
+
+const ideaRealIndex = (idea) => ideas.value.indexOf(idea)
 
 const allTags = computed(() => {
   return ideas.value.reduce((acc, idea) => {
@@ -250,24 +261,7 @@ const handleKeydown = (e) => {
 
       <!-- Search + Filter bar -->
       <div class="notes-toolbar">
-        <div class="uni-search uni-search-compact">
-          <div class="uni-search-wrapper">
-            <svg class="uni-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="搜索随记内容或标签..."
-              v-model="search"
-              class="uni-search-input"
-            />
-            <button v-if="search" class="uni-search-clear" @click="search = ''">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M18 6L6 18M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-        </div>
+        <UniSearch v-model="search" placeholder="搜索随记内容或标签..." compact :icon-size="14" />
         <div class="notes-toolbar-right">
           <button :class="['notes-filter-btn', { active: showPinnedOnly }]" @click="showPinnedOnly = !showPinnedOnly">
             📌 置顶
@@ -302,7 +296,7 @@ const handleKeydown = (e) => {
       <div v-if="displayed.length > 0" class="notes-grid">
         <div
           v-for="(idea, idx) in displayed"
-          :key="ideas.indexOf(idea)"
+          :key="idea.timestamp || idx"
           :class="['notes-card', { 'notes-card-pinned': idea.pinned }]"
           :style="{ backgroundColor: idea.color }"
         >
@@ -312,13 +306,13 @@ const handleKeydown = (e) => {
             <div class="notes-card-meta">
               <span class="notes-date">{{ idea.date }}</span>
               <div class="notes-card-actions">
-                <button :class="['notes-icon-btn', { active: idea.pinned }]" @click="togglePin(ideas.indexOf(idea))" :title="idea.pinned ? '取消置顶' : '置顶'">
+                <button :class="['notes-icon-btn', { active: idea.pinned }]" @click="togglePin(ideaRealIndex(idea))" :title="idea.pinned ? '取消置顶' : '置顶'">
                   📌
                 </button>
-                <button class="notes-icon-btn" @click="editIdx = ideas.indexOf(idea); editText = idea.text" title="编辑">
+                <button class="notes-icon-btn" @click="editIdx = ideaRealIndex(idea); editText = idea.text" title="编辑">
                   ✏️
                 </button>
-                <button class="notes-icon-btn" @click="handleDelete(ideas.indexOf(idea))" title="删除">
+                <button class="notes-icon-btn" @click="handleDelete(ideaRealIndex(idea))" title="删除">
                   🗑️
                 </button>
               </div>

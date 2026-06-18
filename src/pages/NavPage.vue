@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { store } from '../store'
+import UniSearch from '../components/UniSearch.vue'
 
 const props = defineProps({
   active: { type: Boolean, default: false }
@@ -96,24 +97,7 @@ onUnmounted(() => {
       <!-- Mobile menu panel -->
       <div v-if="menuOpen" class="mobile-menu">
         <div class="mobile-menu-search">
-          <div class="uni-search">
-            <div class="uni-search-wrapper">
-              <svg class="uni-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-              </svg>
-              <input
-                type="text"
-                placeholder="搜索分类或链接..."
-                v-model="search"
-                class="uni-search-input"
-              />
-              <button v-if="search" class="uni-search-clear" @click="search = ''">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-          </div>
+          <UniSearch v-model="search" placeholder="搜索分类或链接..." />
         </div>
         <div class="mobile-menu-grid">
           <a
@@ -135,27 +119,7 @@ onUnmounted(() => {
         <div class="nav-hero">
           <h1 class="nav-hero-title">壹号导航</h1>
           <p class="nav-hero-subtitle">精选优质工具与资源，助你高效探索数字世界</p>
-          <div class="uni-search">
-            <div class="uni-search-wrapper">
-              <svg class="uni-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-              </svg>
-              <input
-                type="text"
-                placeholder="输入关键词搜索导航链接..."
-                v-model="search"
-                class="uni-search-input"
-              />
-              <button v-if="search" class="uni-search-clear" @click="search = ''">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-            <div v-if="search" class="uni-search-stats">
-              找到 {{ filtered.length }}/{{ navCategories.length }} 个分类
-            </div>
-          </div>
+          <UniSearch v-model="search" placeholder="输入关键词搜索导航链接..." :stats="search ? `找到 ${filtered.length}/${navCategories.length} 个分类` : ''" />
         </div>
 
         <!-- Category sections -->

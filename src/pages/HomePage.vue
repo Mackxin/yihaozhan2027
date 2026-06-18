@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { store } from '../store'
+import { store, toggleAdmin } from '../store'
+import UniSearch from '../components/UniSearch.vue'
+import avatarUrl from '/avatar.png'
 
 const props = defineProps({
   onNavigate: { type: Function, default: () => {} }
@@ -13,6 +15,7 @@ const quickLinks = [
   { icon: '🧭', title: '壹号导航', sub: '1500+ 精选工具与资源', tab: 1 },
   { icon: '📰', title: '壹号讯息', sub: '每日发现，持续更新中', tab: 2 },
   { icon: '✏️', title: '灵感随记', sub: '捕捉想法，记录生活', tab: 3 },
+  { icon: '⚙️', title: '管理后台', sub: '编辑导航、讯息和设置', admin: true },
 ]
 
 // ─── Home Search ───
@@ -41,6 +44,7 @@ const searchResults = computed(() => {
 const totalResults = computed(() => searchResults.value.nav.length + searchResults.value.news.length)
 const goNav = () => { props.onNavigate?.(1); search.value = '' }
 const goNews = () => { props.onNavigate?.(2); search.value = '' }
+const enterAdmin = () => { if (!store.isAdmin) toggleAdmin(); props.onNavigate?.(4) }
 </script>
 
 <template>
@@ -63,24 +67,7 @@ const goNews = () => { props.onNavigate?.(2); search.value = '' }
 
           <!-- Unified search on home page -->
           <div class="hp-search-area">
-            <div class="uni-search">
-              <div class="uni-search-wrapper">
-                <svg class="uni-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-                </svg>
-                <input
-                  type="text"
-                  placeholder="搜索导航链接、讯息内容..."
-                  v-model="search"
-                  class="uni-search-input"
-                />
-                <button v-if="search" class="uni-search-clear" @click="search = ''">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M18 6L6 18M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
+            <UniSearch v-model="search" placeholder="搜索导航链接、讯息内容..." />
             <!-- Inline results -->
             <div v-if="search.trim()" class="hp-search-results">
               <div v-if="totalResults === 0" class="hp-search-empty">
@@ -107,7 +94,7 @@ const goNews = () => { props.onNavigate?.(2); search.value = '' }
         </div>
         <div class="hp-hero-right">
           <div class="hp-profile-card">
-            <img :src="'/avatar.png'" alt="" class="hp-profile-avatar" />
+            <img :src="avatarUrl" alt="" class="hp-profile-avatar" />
             <div class="hp-profile-name">壹号栈</div>
             <div class="hp-profile-bio">数字花园</div>
             <div class="hp-profile-tags">
@@ -128,7 +115,7 @@ const goNews = () => { props.onNavigate?.(2); search.value = '' }
             :key="link.title"
             class="hp-quick-item"
             :style="{ '--delay': i * 0.1 + 's' }"
-            @click="onNavigate?.(link.tab)"
+            @click="link.admin ? enterAdmin() : onNavigate?.(link.tab)"
           >
             <span class="hp-quick-icon">{{ link.icon }}</span>
             <div class="hp-quick-text">
