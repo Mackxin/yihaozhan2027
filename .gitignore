@@ -12,7 +12,6 @@ dist/
 
 # Data files (large or sensitive)
 public/data.json
-data.json
 
 # Logs
 *.log
