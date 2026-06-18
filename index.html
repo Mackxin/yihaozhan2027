@@ -10,6 +10,13 @@
     <title>壹号栈 - 探索 · 记录 · 创造</title>
   </head>
   <body>
+    <script>
+      (function(){
+        var p = localStorage.getItem('yihao_theme');
+        var d = p === 'dark' || (p === 'auto' && matchMedia('(prefers-color-scheme:dark)').matches);
+        if(d) document.documentElement.setAttribute('data-theme','dark');
+      })();
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -1,12 +1,15 @@
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import {
   store,
   addNavCategory, updateNavCategoryTitle, deleteNavCategory,
   addNavLink, updateNavLink, deleteNavLink,
   addNewsGroup, updateNewsGroupDate, deleteNewsGroup,
   addNewsItem, updateNewsItem, deleteNewsItem,
-  exportAllData, importAllData
+  exportAllData, importAllData,
+  reorderNavCategories, reorderNavLinks,
+  clearEmptyCategories, clearAllIdeas,
+  getNavSnapshot, getNewsSnapshot, restoreNavSnapshot, restoreNewsSnapshot
 } from '../store'
 
 const activeTab = ref('overview')
@@ -40,6 +43,40 @@ const showAddCat = ref(false)
 const newLink = reactive({ catId: null, name: '', url: '' })
 const editingLink = reactive({ catId: null, index: -1, name: '', url: '' })
 
+// ─── Batch Import ───
+const showBatchImport = ref(false)
+const batchImportText = ref('')
+const parsedBatchLinks = computed(() => {
+  return batchImportText.value.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+    // Support: "Name URL", "Name,URL", "Name | URL", "Name\tURL"
+    const parts = line.split(/[\t,|]\s*|\s{2,}|(?<=\S)\s+(?=\S*(?:https?:\/\/|www\.))/)
+    if (parts.length >= 2) {
+      const url = parts.find(p => p.includes('http') || p.includes('www.')) || parts[parts.length - 1]
+      const name = parts.filter(p => p !== url).join(' ') || url
+      return { name: name.trim(), url: url.trim(), valid: true }
+    }
+    // Single URL
+    if (line.includes('http') || line.includes('www.')) {
+      try {
+        const u = new URL(line.startsWith('http') ? line : 'https://' + line)
+        return { name: u.hostname.replace('www.', ''), url: line, valid: true }
+      } catch {
+        return { name: line, url: line, valid: false }
+      }
+    }
+    return { name: line, url: '', valid: false }
+  })
+})
+const batchValidCount = computed(() => parsedBatchLinks.value.filter(l => l.valid).length)
+const handleBatchImport = () => {
+  if (!selectedCatId.value) return
+  const valid = parsedBatchLinks.value.filter(l => l.valid)
+  valid.forEach(l => addNavLink(selectedCatId.value, l.name, l.url.startsWith('http') ? l.url : 'https://' + l.url))
+  log(`批量导入 ${valid.length} 个链接`)
+  showBatchImport.value = false
+  batchImportText.value = ''
+}
+
 // ─── News state ───
 const selectedDate = ref(null)
 const editingGroupDate = reactive({ old: '', new: '' })
@@ -48,12 +85,26 @@ const showAddGroup = ref(false)
 const newItem = reactive({ date: '', title: '', url: '', desc: '' })
 const editingItem = reactive({ date: '', index: -1, title: '', url: '', desc: '' })
 
+// ─── Undo System ───
+const undoStack = ref([])
+const pushUndo = (type, snapshot, desc) => {
+  undoStack.value.unshift({ type, snapshot, desc, time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) })
+  if (undoStack.value.length > 10) undoStack.value.pop()
+}
+const handleUndo = (item) => {
+  if (item.type === 'nav') restoreNavSnapshot(item.snapshot)
+  else if (item.type === 'news') restoreNewsSnapshot(item.snapshot)
+  undoStack.value = undoStack.value.filter(u => u !== item)
+  log(`↩️ 撤销: ${item.desc}`)
+}
+
 // ─── Action log ───
-const actionLog = ref([])
+const actionLog = ref(JSON.parse(localStorage.getItem('yihao_action_log') || '[]'))
 const log = (msg) => {
   const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-  actionLog.value.unshift({ time, msg })
-  if (actionLog.value.length > 20) actionLog.value.pop()
+  actionLog.value.unshift({ time, msg, date: new Date().toISOString().slice(0, 10) })
+  if (actionLog.value.length > 50) actionLog.value.pop()
+  localStorage.setItem('yihao_action_log', JSON.stringify(actionLog.value.slice(0, 20)))
 }
 
 // ─── Global Search (admin) ───
@@ -81,18 +132,8 @@ const globalSearchResults = computed(() => {
   return { nav: nav.slice(0, 5), news: news.slice(0, 5) }
 })
 const globalTotal = computed(() => globalSearchResults.value.nav.length + globalSearchResults.value.news.length)
-const goNavFromSearch = (result) => {
-  activeTab.value = 'nav'
-  selectedCatId.value = result.catId
-  globalSearch.value = ''
-  globalSearchOpen.value = false
-}
-const goNewsFromSearch = (result) => {
-  activeTab.value = 'news'
-  selectedDate.value = result.date
-  globalSearch.value = ''
-  globalSearchOpen.value = false
-}
+const goNavFromSearch = (result) => { activeTab.value = 'nav'; selectedCatId.value = result.catId; globalSearch.value = ''; globalSearchOpen.value = false }
+const goNewsFromSearch = (result) => { activeTab.value = 'news'; selectedDate.value = result.date; globalSearch.value = ''; globalSearchOpen.value = false }
 const closeGlobalSearch = () => { globalSearchOpen.value = false }
 
 // ─── Computed ───
@@ -105,40 +146,77 @@ const filteredCategories = computed(() => {
   )
 })
 
-const selectedCat = computed(() =>
-  store.navCategories.find(c => c.id === selectedCatId.value)
-)
-const selectedGroup = computed(() =>
-  store.timelineItems.find(g => g.date === selectedDate.value)
-)
+const selectedCat = computed(() => store.navCategories.find(c => c.id === selectedCatId.value))
+const selectedGroup = computed(() => store.timelineItems.find(g => g.date === selectedDate.value))
 
 const navTotalLinks = computed(() => store.navCategories.reduce((s, c) => s + c.links.length, 0))
 const newsTotalItems = computed(() => store.timelineItems.reduce((s, g) => s + g.items.length, 0))
+const emptyCatCount = computed(() => store.navCategories.filter(c => c.links.length === 0).length)
+
+// Enhanced stats
+const statsData = computed(() => {
+  const allDates = store.timelineItems.map(g => g.date).sort()
+  const latestNews = allDates.length ? allDates[allDates.length - 1] : '-'
+  const earliestNews = allDates.length ? allDates[0] : '-'
+  const avgLinksPerCat = store.navCategories.length ? (navTotalLinks.value / store.navCategories.length).toFixed(1) : 0
+  const avgItemsPerDay = store.timelineItems.length ? (newsTotalItems.value / store.timelineItems.length).toFixed(1) : 0
+  return { latestNews, earliestNews, avgLinksPerCat, avgItemsPerDay }
+})
 
 // Group news by month
 const groupedByMonth = computed(() => {
   const groups = {}
   store.timelineItems.forEach(g => {
-    const month = g.date.slice(0, 7) // "2026-01"
+    const month = g.date.slice(0, 7)
     if (!groups[month]) groups[month] = []
     groups[month].push(g)
   })
   return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]))
 })
 
-// Auto-select first item
 const selectCat = (id) => { selectedCatId.value = id }
 const selectDate = (date) => { selectedDate.value = date }
+
+// ─── Drag & Drop (Categories) ───
+const dragCatIndex = ref(null)
+const onCatDragStart = (e, idx) => { dragCatIndex.value = idx; e.dataTransfer.effectAllowed = 'move' }
+const onCatDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }
+const onCatDrop = (e, toIdx) => {
+  e.preventDefault()
+  if (dragCatIndex.value !== null && dragCatIndex.value !== toIdx) {
+    reorderNavCategories(dragCatIndex.value, toIdx)
+    log('拖拽调整分类顺序')
+  }
+  dragCatIndex.value = null
+}
+
+// ─── Drag & Drop (Links) ───
+const dragLinkIndex = ref(null)
+const onLinkDragStart = (e, idx) => { dragLinkIndex.value = idx; e.dataTransfer.effectAllowed = 'move' }
+const onLinkDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }
+const onLinkDrop = (e, toIdx) => {
+  e.preventDefault()
+  if (dragLinkIndex.value !== null && dragLinkIndex.value !== toIdx && selectedCatId.value) {
+    reorderNavLinks(selectedCatId.value, dragLinkIndex.value, toIdx)
+    log('拖拽调整链接顺序')
+  }
+  dragLinkIndex.value = null
+}
 
 // ─── Nav handlers ───
 const startEditCat = (cat) => { editingCat.id = cat.id; editingCat.title = cat.title }
 const saveEditCat = () => {
-  if (editingCat.title.trim()) { updateNavCategoryTitle(editingCat.id, editingCat.title.trim()); log(`修改分类「${editingCat.title.trim()}」`) }
+  if (editingCat.title.trim()) {
+    pushUndo('nav', getNavSnapshot(), '编辑分类')
+    updateNavCategoryTitle(editingCat.id, editingCat.title.trim())
+    log(`修改分类「${editingCat.title.trim()}」`)
+  }
   editingCat.id = null
 }
 const cancelEditCat = () => { editingCat.id = null }
 const handleAddCat = () => {
   if (newCatTitle.value.trim()) {
+    pushUndo('nav', getNavSnapshot(), '新增分类')
     addNavCategory(newCatTitle.value.trim())
     log(`新增分类「${newCatTitle.value.trim()}」`)
     const newId = store.navCategories[store.navCategories.length - 1]?.id
@@ -150,6 +228,7 @@ const handleAddCat = () => {
 const handleDeleteCat = (id) => {
   const cat = store.navCategories.find(c => c.id === id)
   if (cat && confirm(`确认删除分类「${cat.title}」及其全部 ${cat.links.length} 个链接？`)) {
+    pushUndo('nav', getNavSnapshot(), `删除分类「${cat.title}」`)
     log(`删除分类「${cat.title}」`)
     deleteNavCategory(id)
     if (selectedCatId.value === id) selectedCatId.value = store.navCategories[0]?.id || null
@@ -158,6 +237,7 @@ const handleDeleteCat = (id) => {
 const startAddLink = () => { newLink.catId = selectedCatId.value; newLink.name = ''; newLink.url = '' }
 const saveAddLink = () => {
   if (newLink.name.trim() && newLink.url.trim()) {
+    pushUndo('nav', getNavSnapshot(), '新增链接')
     addNavLink(newLink.catId, newLink.name.trim(), newLink.url.trim())
     log(`新增链接「${newLink.name.trim()}」`)
     newLink.catId = null; newLink.name = ''; newLink.url = ''
@@ -169,6 +249,7 @@ const startEditLink = (idx, link) => {
 }
 const saveEditLink = () => {
   if (editingLink.name.trim() && editingLink.url.trim()) {
+    pushUndo('nav', getNavSnapshot(), '编辑链接')
     updateNavLink(editingLink.catId, editingLink.index, editingLink.name.trim(), editingLink.url.trim())
     log(`修改链接「${editingLink.name.trim()}」`)
   }
@@ -179,6 +260,7 @@ const cancelEditLink = () => { editingLink.catId = null; editingLink.index = -1 
 // ─── News handlers ───
 const handleAddGroup = () => {
   if (newGroupDate.value) {
+    pushUndo('news', getNewsSnapshot(), '新增日期')
     addNewsGroup(newGroupDate.value)
     log(`新增日期「${newGroupDate.value}」`)
     selectedDate.value = newGroupDate.value
@@ -189,6 +271,7 @@ const handleAddGroup = () => {
 const startEditGroupDate = (date) => { editingGroupDate.old = date; editingGroupDate.new = date }
 const saveEditGroupDate = () => {
   if (editingGroupDate.new && editingGroupDate.new !== editingGroupDate.old) {
+    pushUndo('news', getNewsSnapshot(), '修改日期')
     updateNewsGroupDate(editingGroupDate.old, editingGroupDate.new)
     log(`修改日期 ${editingGroupDate.old} → ${editingGroupDate.new}`)
     if (selectedDate.value === editingGroupDate.old) selectedDate.value = editingGroupDate.new
@@ -198,6 +281,7 @@ const saveEditGroupDate = () => {
 const handleDeleteGroup = (date) => {
   const g = store.timelineItems.find(g => g.date === date)
   if (g && confirm(`确认删除日期「${date}」及其全部 ${g.items.length} 条讯息？`)) {
+    pushUndo('news', getNewsSnapshot(), `删除日期「${date}」`)
     log(`删除日期「${date}」`)
     deleteNewsGroup(date)
     if (selectedDate.value === date) selectedDate.value = store.timelineItems[0]?.date || null
@@ -206,6 +290,7 @@ const handleDeleteGroup = (date) => {
 const startAddItem = () => { newItem.date = selectedDate.value; newItem.title = ''; newItem.url = ''; newItem.desc = '' }
 const saveAddItem = () => {
   if (newItem.title.trim() && newItem.url.trim()) {
+    pushUndo('news', getNewsSnapshot(), '新增讯息')
     addNewsItem(newItem.date, { title: newItem.title.trim(), url: newItem.url.trim(), desc: newItem.desc.split('\n').filter(l => l.trim()) })
     log(`新增讯息「${newItem.title.trim()}」`)
     newItem.date = ''; newItem.title = ''; newItem.url = ''; newItem.desc = ''
@@ -217,12 +302,54 @@ const startEditItem = (idx, item) => {
 }
 const saveEditItem = () => {
   if (editingItem.title.trim() && editingItem.url.trim()) {
+    pushUndo('news', getNewsSnapshot(), '编辑讯息')
     updateNewsItem(editingItem.date, editingItem.index, { title: editingItem.title.trim(), url: editingItem.url.trim(), desc: editingItem.desc.split('\n').filter(l => l.trim()) })
     log(`修改讯息「${editingItem.title.trim()}」`)
   }
   editingItem.date = ''; editingItem.index = -1
 }
 const cancelEditItem = () => { editingItem.date = ''; editingItem.index = -1 }
+
+// ─── Data Cleanup ───
+const handleClearEmptyCats = () => {
+  const count = emptyCatCount.value
+  if (count === 0) return alert('没有空分类需要清理')
+  if (confirm(`确认清理 ${count} 个空分类？`)) {
+    pushUndo('nav', getNavSnapshot(), `清理 ${count} 个空分类`)
+    clearEmptyCategories()
+    log(`清理了 ${count} 个空分类`)
+  }
+}
+const handleClearAllIdeas = () => {
+  if (confirm('确认清除所有随记？此操作不可恢复！')) {
+    clearAllIdeas()
+    log('清除所有随记')
+    alert('所有随记已清除')
+  }
+}
+
+// ─── Notes Export ───
+const handleExportNotes = () => {
+  const raw = localStorage.getItem('yihao_ideas')
+  if (!raw) return alert('没有随记数据可导出')
+  const ideas = JSON.parse(raw)
+  let md = '# 壹号栈随记导出\n\n'
+  md += `> 导出时间：${new Date().toLocaleString('zh-CN')}\n> 共 ${ideas.length} 条记录\n\n---\n\n`
+  ideas.forEach((idea, i) => {
+    const pinned = idea.pinned ? ' 📌' : ''
+    const tags = (idea.tags || []).map(t => '`' + t + '`').join(' ')
+    md += `## ${i + 1}. ${new Date(idea.createdAt).toLocaleString('zh-CN')}${pinned}\n\n`
+    md += idea.text + '\n\n'
+    if (tags) md += tags + '\n\n'
+    md += '---\n\n'
+  })
+  const blob = new Blob([md], { type: 'text/markdown' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `yihao-notes-${new Date().toISOString().slice(0, 10)}.md`
+  a.click()
+  log('导出随记为 Markdown')
+}
 
 // ─── Data tools ───
 const fileInput = ref(null)
@@ -238,12 +365,18 @@ const handleImport = (e) => {
   const file = e.target.files[0]
   if (!file) return
   const reader = new FileReader()
-  reader.onload = (ev) => { try { importAllData(ev.target.result); alert('数据导入成功！'); log('导入数据包') } catch { alert('导入失败') } }
+  reader.onload = (ev) => {
+    try {
+      pushUndo('nav', getNavSnapshot(), '导入数据(导航)')
+      pushUndo('news', getNewsSnapshot(), '导入数据(讯息)')
+      importAllData(ev.target.result); alert('数据导入成功！'); log('导入数据包')
+    } catch { alert('导入失败') }
+  }
   reader.readAsText(file)
   e.target.value = ''
 }
 
-// ─── Update dist ───
+// ─── Build & Deploy ───
 const building = ref(false)
 const handleBuild = () => {
   building.value = true
@@ -256,9 +389,19 @@ const handleBuild = () => {
     a.download = 'data.json'
     a.click()
     building.value = false
-    log('✅ data.json 已下载，请放到 dist 文件夹后上传到服务器')
+    log('✅ data.json 已下载 → 运行 ./build.sh → git push')
   }, 300)
 }
+
+// ─── Auto-save: warn before leaving ───
+const handleBeforeUnload = (e) => {
+  if (newLink.name || newItem.title || batchImportText.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+onMounted(() => { window.addEventListener('beforeunload', handleBeforeUnload) })
+onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnload) })
 </script>
 
 <template>
@@ -296,21 +439,12 @@ const handleBuild = () => {
               <svg class="uni-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
               </svg>
-              <input
-                type="text"
-                placeholder="搜索全站..."
-                v-model="globalSearch"
-                class="uni-search-input"
-                @focus="globalSearchOpen = true"
-              />
+              <input type="text" placeholder="搜索全站..." v-model="globalSearch" class="uni-search-input" @focus="globalSearchOpen = true" />
               <button v-if="globalSearch" class="uni-search-clear" @click="globalSearch = ''; globalSearchOpen = false">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
           </div>
-          <!-- Dropdown -->
           <div v-if="globalSearchOpen && globalSearch.trim()" class="admin-search-dropdown">
             <div v-if="globalTotal === 0" class="admin-search-empty">未找到匹配结果</div>
             <template v-if="globalSearchResults.nav.length">
@@ -332,9 +466,9 @@ const handleBuild = () => {
           </div>
         </div>
 
-        <button class="admin-btn admin-btn-primary" @click="handleBuild" :disabled="building" title="导出 data.json，放入 dist 文件夹后上传到服务器">
+        <button class="admin-btn admin-btn-primary" @click="handleBuild" :disabled="building" title="下载 data.json → 运行 ./build.sh → git push">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-          {{ building ? '生成中...' : '更新网站' }}
+          {{ building ? '生成中...' : '生成网站' }}
         </button>
         <button class="admin-btn admin-btn-ghost" @click="handleExport" title="导出数据">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -367,6 +501,7 @@ const handleBuild = () => {
                 <div class="admin-stat-num">{{ store.navCategories.length }}</div>
                 <div class="admin-stat-label">导航分类</div>
               </div>
+              <div class="admin-stat-sub">平均 {{ statsData.avgLinksPerCat }} 链接/分类</div>
             </div>
             <div class="admin-stat-card">
               <div class="admin-stat-icon admin-stat-icon-link">🔗</div>
@@ -374,6 +509,7 @@ const handleBuild = () => {
                 <div class="admin-stat-num">{{ navTotalLinks }}</div>
                 <div class="admin-stat-label">导航链接</div>
               </div>
+              <div class="admin-stat-sub" v-if="emptyCatCount > 0">⚠️ {{ emptyCatCount }} 个空分类</div>
             </div>
             <div class="admin-stat-card">
               <div class="admin-stat-icon admin-stat-icon-news">📰</div>
@@ -381,6 +517,7 @@ const handleBuild = () => {
                 <div class="admin-stat-num">{{ store.timelineItems.length }}</div>
                 <div class="admin-stat-label">讯息天数</div>
               </div>
+              <div class="admin-stat-sub">{{ statsData.earliestNews }} ~ {{ statsData.latestNews }}</div>
             </div>
             <div class="admin-stat-card">
               <div class="admin-stat-icon admin-stat-icon-item">📝</div>
@@ -388,26 +525,53 @@ const handleBuild = () => {
                 <div class="admin-stat-num">{{ newsTotalItems }}</div>
                 <div class="admin-stat-label">讯息条数</div>
               </div>
+              <div class="admin-stat-sub">平均 {{ statsData.avgItemsPerDay }} 条/天</div>
             </div>
           </div>
 
-          <!-- Quick actions + Activity log -->
+          <!-- Quick actions + Activity log + Undo -->
           <div class="admin-overview-grid">
             <div class="admin-panel-card">
               <h3 class="admin-panel-title">快捷操作</h3>
               <div class="admin-quick-actions">
-                <button class="admin-quick-btn" @click="activeTab = 'nav'; handleAddCat(); showAddCat = true">
+                <button class="admin-quick-btn" @click="activeTab = 'nav'; showAddCat = true">
                   <span>+ 新分类</span>
                 </button>
                 <button class="admin-quick-btn" @click="activeTab = 'news'; showAddGroup = true">
                   <span>+ 新日期</span>
                 </button>
                 <button class="admin-quick-btn" @click="handleBuild">
-                  <span>📦 更新网站数据</span>
+                  <span>📦 生成网站</span>
                 </button>
                 <button class="admin-quick-btn" @click="handleExport">
                   <span>💾 导出备份</span>
                 </button>
+                <button class="admin-quick-btn" @click="handleExportNotes">
+                  <span>📄 导出随记</span>
+                </button>
+                <button class="admin-quick-btn" @click="handleClearEmptyCats" :disabled="emptyCatCount === 0">
+                  <span>🧹 清理空分类</span>
+                </button>
+                <button class="admin-quick-btn admin-quick-btn-danger" @click="handleClearAllIdeas">
+                  <span>🗑️ 清除所有随记</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Undo History -->
+            <div class="admin-panel-card" v-if="undoStack.length > 0">
+              <h3 class="admin-panel-title">撤销历史 <span class="admin-panel-badge">{{ undoStack.length }}</span></h3>
+              <div class="admin-log-list">
+                <div v-for="(item, i) in undoStack" :key="'u'+i" class="admin-log-item admin-log-item-undo">
+                  <div class="admin-log-undo-info">
+                    <span class="admin-log-msg">{{ item.desc }}</span>
+                    <span class="admin-log-time">{{ item.time }}</span>
+                  </div>
+                  <button class="admin-btn admin-btn-xs admin-btn-warn" @click="handleUndo(item)">↩️ 撤销</button>
+                </div>
+              </div>
+              <div class="help-tip" style="margin-top:8px;font-size:12px;">
+                <strong>⚠️</strong> 最多保留 10 步撤销记录
               </div>
             </div>
 
@@ -420,6 +584,7 @@ const handleBuild = () => {
                   <span class="admin-log-msg">{{ item.msg }}</span>
                 </div>
               </div>
+              <button v-if="actionLog.length > 0" class="admin-btn admin-btn-xs admin-btn-ghost" style="margin-top:8px;" @click="actionLog = []; localStorage.removeItem('yihao_action_log')">清除日志</button>
             </div>
           </div>
         </div>
@@ -441,10 +606,16 @@ const handleBuild = () => {
           </div>
           <div class="admin-sidebar-list">
             <div
-              v-for="cat in filteredCategories" :key="cat.id"
-              :class="['admin-sidebar-item', { active: selectedCatId === cat.id }]"
+              v-for="(cat, idx) in filteredCategories" :key="cat.id"
+              :class="['admin-sidebar-item', { active: selectedCatId === cat.id, 'drag-over': dragCatIndex !== null && dragCatIndex !== idx }]"
               @click="selectCat(cat.id)"
+              draggable="true"
+              @dragstart="onCatDragStart($event, idx)"
+              @dragover="onCatDragOver"
+              @drop="onCatDrop($event, idx)"
+              @dragend="dragCatIndex = null"
             >
+              <div class="admin-sidebar-item-drag">⠿</div>
               <div class="admin-sidebar-item-info">
                 <span class="admin-sidebar-item-title">{{ cat.title }}</span>
                 <span class="admin-sidebar-item-badge">{{ cat.links.length }}</span>
@@ -472,7 +643,30 @@ const handleBuild = () => {
             <div class="admin-detail-header">
               <h2 class="admin-detail-title">{{ selectedCat.title }}</h2>
               <span class="admin-detail-subtitle">{{ selectedCat.links.length }} 个链接</span>
-              <button class="admin-btn admin-btn-primary admin-btn-sm" @click="startAddLink">+ 添加链接</button>
+              <div class="admin-detail-actions">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="showBatchImport = !showBatchImport" title="批量导入链接">📋 批量导入</button>
+                <button class="admin-btn admin-btn-primary admin-btn-sm" @click="startAddLink">+ 添加链接</button>
+              </div>
+            </div>
+
+            <!-- Batch Import -->
+            <div v-if="showBatchImport" class="admin-add-form admin-batch-form">
+              <div class="admin-add-form-title">📋 批量导入链接</div>
+              <p class="admin-batch-hint">每行一个链接，支持格式：<code>名称 URL</code>、<code>名称,URL</code>、<code>名称|URL</code>，或直接粘贴 URL</p>
+              <textarea class="admin-textarea" v-model="batchImportText" placeholder="Google https://google.com&#10;GitHub,https://github.com&#10;https://twitter.com" rows="8" />
+              <div v-if="batchImportText" class="admin-batch-preview">
+                <div class="admin-batch-count">解析到 <strong>{{ batchValidCount }}</strong> 个有效链接（共 {{ parsedBatchLinks.length }} 行）</div>
+                <div class="admin-batch-links">
+                  <div v-for="(link, i) in parsedBatchLinks" :key="i" :class="['admin-batch-link', { invalid: !link.valid }]">
+                    <span class="admin-batch-link-name">{{ link.name }}</span>
+                    <span class="admin-batch-link-url">{{ link.url }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="admin-add-form-actions">
+                <button class="admin-btn admin-btn-primary" @click="handleBatchImport" :disabled="batchValidCount === 0">导入 {{ batchValidCount }} 个链接</button>
+                <button class="admin-btn admin-btn-ghost" @click="showBatchImport = false; batchImportText = ''">取消</button>
+              </div>
             </div>
 
             <div v-if="newLink.catId === selectedCatId" class="admin-add-form">
@@ -494,7 +688,16 @@ const handleBuild = () => {
             </div>
 
             <div class="admin-link-grid">
-              <div v-for="(link, i) in selectedCat.links" :key="i" class="admin-link-card">
+              <div
+                v-for="(link, i) in selectedCat.links" :key="i"
+                class="admin-link-card"
+                draggable="true"
+                @dragstart="onLinkDragStart($event, i)"
+                @dragover="onLinkDragOver"
+                @drop="onLinkDrop($event, i)"
+                @dragend="dragLinkIndex = null"
+              >
+                <div class="admin-link-card-drag">⠿</div>
                 <template v-if="editingLink.catId === selectedCatId && editingLink.index === i">
                   <input class="admin-input admin-input-sm" v-model="editingLink.name" placeholder="名称" />
                   <input class="admin-input admin-input-sm" v-model="editingLink.url" placeholder="URL" />
@@ -524,6 +727,7 @@ const handleBuild = () => {
           <div v-else class="admin-detail-empty">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
             <p>从左侧选择一个分类开始编辑</p>
+            <p class="admin-detail-empty-hint">💡 提示：拖拽分类可调整顺序</p>
           </div>
         </main>
       </template>
@@ -678,12 +882,15 @@ const handleBuild = () => {
                 <li><strong>编辑分类</strong>：悬停在分类项上，点击 ✏️ 编辑图标</li>
                 <li><strong>删除分类</strong>：点击 🗑️ 图标，会同时删除该分类下的所有链接</li>
                 <li><strong>搜索分类</strong>：在顶部搜索框输入关键词过滤</li>
+                <li><strong>拖拽排序</strong>：按住分类项左侧 ⠿ 手柄拖动可调整顺序</li>
               </ul>
               <h3>链接操作</h3>
               <ul>
                 <li><strong>添加链接</strong>：选中分类后，点击 <code>+ 添加链接</code>，填写名称和 URL</li>
+                <li><strong>批量导入</strong>：点击 <code>📋 批量导入</code>，粘贴多行链接一键导入</li>
                 <li><strong>编辑链接</strong>：点击链接卡片上的 ✏️ 图标直接编辑</li>
                 <li><strong>删除链接</strong>：点击链接卡片上的 🗑️ 图标删除</li>
+                <li><strong>拖拽排序</strong>：按住链接卡片左侧 ⠿ 手柄拖动可调整顺序</li>
               </ul>
               <div class="help-tip">
                 <strong>💡 提示</strong>：删除分类会同时删除其下所有链接，请谨慎操作。建议先导出备份。
@@ -720,6 +927,8 @@ const handleBuild = () => {
                 <div class="help-table-row"><strong>⬇️ 导出</strong><span>导出完整数据为 JSON 文件，用于备份或迁移</span></div>
                 <div class="help-table-row"><strong>⬆️ 导入</strong><span>从 JSON 文件导入数据，恢复之前的备份</span></div>
               </div>
+              <h3>撤销操作</h3>
+              <p>总览页面会显示「撤销历史」面板，每个删除、编辑操作都可一键撤销，最多保留 10 步。</p>
               <div class="help-tip">
                 <strong>⚠️ 注意</strong>：导入会覆盖当前所有数据！建议定期导出备份。
               </div>
@@ -728,27 +937,21 @@ const handleBuild = () => {
             <!-- 5. 更新网站 -->
             <section :id="'h5'" class="help-section">
               <h2><span class="help-section-icon">🚀</span>更新网站数据</h2>
-              <p>在后台编辑完数据后，有两种方式更新到线上服务器：</p>
-
-              <h3>方式一：只更新数据（推荐，最快）</h3>
+              <p>在后台编辑完数据后，只需 <strong>3 步</strong> 即可发布到 GitHub Pages：</p>
+              <h3>完整发布流程</h3>
               <div class="help-steps">
-                <div class="help-step"><span class="help-step-num">1</span>点击后台顶部的 <strong>「更新网站」</strong> 按钮，下载 <code>data.json</code></div>
-                <div class="help-step"><span class="help-step-num">2</span>将 <code>data.json</code> 直接上传到服务器的网站根目录（与 dist 同级）</div>
-                <div class="help-step"><span class="help-step-num">3</span>完成！刷新网页即可看到最新数据</div>
-              </div>
-              <div class="help-tip">
-                <strong>💡 原理</strong>：网站启动时会自动加载 <code>/data.json</code>，如果存在就用它覆盖默认数据。所以只需替换 data.json 即可，无需重新构建。
-              </div>
-
-              <h3>方式二：完整重新构建</h3>
-              <div class="help-steps">
-                <div class="help-step"><span class="help-step-num">1</span>下载 <code>data.json</code> 并放到项目根目录（<code>2027网站/</code>）</div>
-                <div class="help-step"><span class="help-step-num">2</span>在终端执行 <code>./build.sh</code></div>
-                <div class="help-step"><span class="help-step-num">3</span>将整个 <code>dist</code> 文件夹上传到服务器</div>
+                <div class="help-step"><span class="help-step-num">1</span>点击后台顶部的 <strong>「生成网站」</strong> 按钮，下载 <code>data.json</code> 到项目根目录</div>
+                <div class="help-step"><span class="help-step-num">2</span>打开终端，运行 <code>./build.sh</code>，自动构建到 <code>docs/</code> 文件夹</div>
+                <div class="help-step"><span class="help-step-num">3</span>推送到 GitHub：<code>git add -A && git commit -m "更新数据" && git push</code></div>
               </div>
               <div class="help-code">
-                <code>cd ~/Desktop/2027网站<br/>./build.sh</code>
+                <code>cd ~/Desktop/2027网站<br/>./build.sh<br/>git add -A && git commit -m "更新数据" && git push</code>
               </div>
+              <div class="help-tip">
+                <strong>💡 原理</strong>：GitHub Pages 配置为从 <code>docs/</code> 文件夹读取静态文件。构建脚本会自动将 <code>data.json</code> 复制到 <code>docs/</code>，推送后 GitHub 会自动部署。
+              </div>
+              <h3>只更新数据（不重新构建）</h3>
+              <p>如果只改了数据没改页面代码，可以直接上传 <code>data.json</code> 到 GitHub 仓库根目录，无需重新构建。</p>
             </section>
 
             <!-- 6. 全站搜索 -->
@@ -762,9 +965,6 @@ const handleBuild = () => {
                 <div class="help-table-row"><strong>📰 讯息</strong><span>搜索讯息标题和描述，实时过滤结果</span></div>
                 <div class="help-table-row"><strong>✏️ 随记</strong><span>搜索随记内容和标签，实时过滤</span></div>
                 <div class="help-table-row"><strong>⚙️ 管理</strong><span>顶部搜索栏跨页面搜索，下拉显示导航和讯息结果</span></div>
-              </div>
-              <div class="help-tip">
-                <strong>💡 提示</strong>：搜索框统一采用粉色主题设计，聚焦时有高亮动效，支持一键清除输入。
               </div>
             </section>
 
@@ -782,15 +982,15 @@ const handleBuild = () => {
 
             <!-- 8. 部署说明 -->
             <section :id="'h8'" class="help-section">
-              <h2><span class="help-section-icon">🌍</span>部署到服务器</h2>
-              <p>网站为纯静态站点，部署非常简单：</p>
+              <h2><span class="help-section-icon">🌍</span>部署到 GitHub Pages</h2>
+              <p>网站已配置为从 <code>docs/</code> 文件夹部署，与 GitHub Pages 完美配合：</p>
               <div class="help-steps">
-                <div class="help-step"><span class="help-step-num">1</span>首次部署：运行 <code>npm run build</code> 生成 <code>dist</code> 文件夹</div>
-                <div class="help-step"><span class="help-step-num">2</span>将 <code>dist</code> 文件夹内所有文件上传到虚拟主机</div>
-                <div class="help-step"><span class="help-step-num">3</span>后续更新数据：只需上传 <code>data.json</code> 到网站根目录</div>
+                <div class="help-step"><span class="help-step-num">1</span>在 GitHub 仓库 → Settings → Pages → Source 选择 <code>main</code> 分支的 <code>/docs</code> 文件夹</div>
+                <div class="help-step"><span class="help-step-num">2</span>每次更新后运行 <code>./build.sh</code>，然后 <code>git push</code></div>
+                <div class="help-step"><span class="help-step-num">3</span>GitHub 会自动从 <code>docs/</code> 部署，几分钟后即可访问</div>
               </div>
               <div class="help-tip">
-                <strong>💡 虚拟主机</strong>：只需支持静态文件托管即可，无需 PHP/数据库。确保主机配置了 URL 重写到 index.html（SPA 路由）。
+                <strong>💡 提示</strong>：<code>docs/</code> 文件夹已纳入 Git 版本控制，每次推送都会自动触发部署。无需手动操作服务器。
               </div>
             </section>
 
@@ -812,9 +1012,10 @@ const handleBuild = () => {
                 <li><strong>排序</strong>：支持「最新优先」「最早优先」「标签最多」三种排序</li>
                 <li><strong>筛选</strong>：点击「只看置顶」按钮筛选置顶笔记</li>
                 <li><strong>标签云</strong>：点击标签可按标签筛选，再次点击取消</li>
+                <li><strong>导出随记</strong>：在总览页点击「📄 导出随记」可导出为 Markdown 文件</li>
               </ul>
               <div class="help-tip">
-                <strong>💡 提示</strong>：随记数据保存在浏览器本地（localStorage），清除浏览器数据会丢失。建议重要内容及时备份。
+                <strong>💡 提示</strong>：随记数据保存在浏览器本地（localStorage），清除浏览器数据会丢失。建议定期导出备份。
               </div>
             </section>
 
@@ -827,13 +1028,12 @@ const handleBuild = () => {
                 <div class="help-table-row"><code>Enter</code><span>确认表单提交</span></div>
                 <div class="help-table-row"><code>⌘+Enter / Ctrl+Enter</code><span>快速保存随记</span></div>
                 <div class="help-table-row"><span>左右滑动</span><span>切换页面（移动端）</span></div>
-                <div class="help-table-row"><span>双击导航分类</span><span>编辑分类名称（后台）</span></div>
-                <div class="help-table-row"><span>双击日期</span><span>编辑日期（后台）</span></div>
+                <div class="help-table-row"><span>拖拽 ⠿ 手柄</span><span>调整分类/链接顺序</span></div>
               </div>
             </section>
 
             <div class="help-footer">
-              <p>壹号栈 v1.1 · 如需更多功能或有使用问题，请联系开发者</p>
+              <p>壹号栈 v1.2 · 如需更多功能或有使用问题，请联系开发者</p>
             </div>
           </div>
         </div>

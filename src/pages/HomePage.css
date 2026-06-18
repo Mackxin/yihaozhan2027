@@ -320,3 +320,34 @@
   .hp-title-main { font-size: 2rem; }
   .hp-accent-shape { width: 200px; height: 200px; top: -60px; right: -40px; }
 }
+
+/* ═══ Dark Mode ═══ */
+[data-theme="dark"] .hp-page { background: #0f172a; }
+[data-theme="dark"] .hp-accent-shape { background: radial-gradient(circle, rgba(255,29,85,0.12) 0%, transparent 70%); }
+[data-theme="dark"] .hp-greeting { color: #94a3b8; }
+[data-theme="dark"] .hp-title-main { color: #f1f5f9; }
+[data-theme="dark"] .hp-title-sub { color: #94a3b8; }
+[data-theme="dark"] .hp-desc { color: #cbd5e1; }
+[data-theme="dark"] .hp-search-results { background: #1e293b; border-color: #334155; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+[data-theme="dark"] .hp-search-empty { color: #94a3b8; }
+[data-theme="dark"] .hp-search-group-label { color: #94a3b8; }
+[data-theme="dark"] .hp-search-item:hover { background: #334155; }
+[data-theme="dark"] .hp-search-item strong { color: #f1f5f9; }
+[data-theme="dark"] .hp-search-item small { color: #94a3b8; }
+[data-theme="dark"] .hp-search-badge-nav { background: rgba(255,29,85,0.15); }
+[data-theme="dark"] .hp-search-badge-news { background: rgba(102,126,234,0.15); }
+[data-theme="dark"] .hp-profile-card { background: #1e293b; border-color: #334155; box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.3); }
+[data-theme="dark"] .hp-profile-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.4); }
+[data-theme="dark"] .hp-profile-avatar { border-color: #334155; }
+[data-theme="dark"] .hp-profile-name { color: #f1f5f9; }
+[data-theme="dark"] .hp-profile-bio { color: #94a3b8; }
+[data-theme="dark"] .hp-profile-tags span { background: #334155; color: #cbd5e1; }
+[data-theme="dark"] .hp-quick-label { color: #94a3b8; }
+[data-theme="dark"] .hp-quick-item { background: #1e293b; border-color: #334155; }
+[data-theme="dark"] .hp-quick-item:hover { background: #1e293b; border-color: rgba(255,29,85,0.3); box-shadow: 0 4px 20px rgba(255,29,85,0.15); }
+[data-theme="dark"] .hp-quick-icon { background: #334155; }
+[data-theme="dark"] .hp-quick-item:hover .hp-quick-icon { background: rgba(255,29,85,0.12); }
+[data-theme="dark"] .hp-quick-text strong { color: #f1f5f9; }
+[data-theme="dark"] .hp-quick-text small { color: #94a3b8; }
+[data-theme="dark"] .hp-quick-arrow { color: #64748b; }
+[data-theme="dark"] .hp-quick-item:hover .hp-quick-arrow { color: #ff1d55; }

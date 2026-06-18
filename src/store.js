@@ -136,3 +136,43 @@ export function resetToDefaults() {
   store.navCategories = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
   store.timelineItems = JSON.parse(JSON.stringify(defaultTimeline))
 }
+
+// ─── Reorder ───
+export function reorderNavCategories(fromIndex, toIndex) {
+  const [item] = store.navCategories.splice(fromIndex, 1)
+  store.navCategories.splice(toIndex, 0, item)
+}
+
+export function reorderNavLinks(catId, fromIndex, toIndex) {
+  const cat = store.navCategories.find(c => c.id === catId)
+  if (cat && cat.links) {
+    const [item] = cat.links.splice(fromIndex, 1)
+    cat.links.splice(toIndex, 0, item)
+  }
+}
+
+// ─── Cleanup ───
+export function clearEmptyCategories() {
+  store.navCategories = store.navCategories.filter(c => c.links.length > 0)
+}
+
+export function clearAllIdeas() {
+  localStorage.removeItem('yihao_ideas')
+}
+
+// ─── Snapshot (for undo) ───
+export function getNavSnapshot() {
+  return JSON.parse(JSON.stringify(store.navCategories))
+}
+
+export function getNewsSnapshot() {
+  return JSON.parse(JSON.stringify(store.timelineItems))
+}
+
+export function restoreNavSnapshot(snapshot) {
+  store.navCategories = snapshot
+}
+
+export function restoreNewsSnapshot(snapshot) {
+  store.timelineItems = snapshot
+}

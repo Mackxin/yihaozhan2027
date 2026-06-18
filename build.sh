@@ -1,10 +1,10 @@
 #!/bin/bash
 # ═══════════════════════════════════════════
-#  壹号栈 - 一键更新 dist 脚本
+#  壹号栈 - 一键更新 docs 脚本
 #  使用方法: 把 data.json 放到项目根目录，然后运行 ./build.sh
 # ═══════════════════════════════════════════
 
-echo "🚀 壹号栈 - 一键更新 dist"
+echo "🚀 壹号栈 - 一键更新 docs"
 echo "─────────────────────────────"
 
 # 检查 data.json 是否存在
@@ -23,14 +23,14 @@ echo "⏳ 正在构建..."
 npm run build
 
 # 确认构建成功
-if [ -d "dist" ]; then
-  # 确保 data.json 在 dist 中
-  cp data.json dist/data.json 2>/dev/null
+if [ -d "docs" ]; then
+  # 确保 data.json 在 docs 中
+  cp data.json docs/data.json 2>/dev/null
   echo ""
   echo "✅ 构建完成！"
-  echo "📁 dist 文件夹已更新，可以直接上传到服务器"
+  echo "📁 docs 文件夹已更新，可以直接提交到 GitHub"
   echo ""
-  echo "   dist/"
+  echo "   docs/"
   echo "   ├── index.html"
   echo "   ├── assets/"
   echo "   ├── data.json  ← 最新数据"
