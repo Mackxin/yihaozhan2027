@@ -468,10 +468,10 @@ const handleBuild = () => {
     const blob = new Blob([data], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `data_${todayStr()}.json`
+    a.download = 'data.json'
     a.click()
     building.value = false
-    log(`✅ data_${todayStr()}.json 已下载 → 运行 ./build.sh → git push`)
+    log('✅ data.json 已下载 → 放入 public/ 目录 → 运行 ./build.sh')
   }, 300)
 }
 
@@ -1165,21 +1165,21 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                   <span class="help-step-num">1</span>
                   <div class="help-step-body">
                     <strong>生成数据文件</strong>
-                    <p>点击后台顶部的「生成网站」按钮，下载 <code>data_YYYY-MM-DD.json</code></p>
+                    <p>点击后台顶部的「生成网站」按钮，下载 <code>data.json</code></p>
                   </div>
                 </div>
                 <div class="help-step">
                   <span class="help-step-num">2</span>
                   <div class="help-step-body">
-                    <strong>运行构建脚本</strong>
-                    <p>打开终端，运行 <code>./build.sh</code>，自动构建到 <code>docs/</code> 文件夹</p>
+                    <strong>替换数据文件</strong>
+                    <p>将下载的 <code>data.json</code> 覆盖到项目的 <code>public/data.json</code></p>
                   </div>
                 </div>
                 <div class="help-step">
                   <span class="help-step-num">3</span>
                   <div class="help-step-body">
-                    <strong>推送到 GitHub</strong>
-                    <p><code>git add -A && git commit -m "更新数据" && git push</code></p>
+                    <strong>构建并推送</strong>
+                    <p>运行 <code>./build.sh</code>，然后 <code>git push</code></p>
                   </div>
                 </div>
               </div>
@@ -1187,7 +1187,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <div class="help-code-header">终端命令</div>
                 <code>cd ~/Desktop/2027网站<br/>./build.sh<br/>git add -A && git commit -m "更新数据" && git push</code>
               </div>
-              <div class="help-tip"><span class="help-tip-icon">💡</span> GitHub Pages 配置为从 <code>docs/</code> 文件夹读取静态文件。如果只改了数据没改代码，可以直接上传 <code>data.json</code> 到仓库根目录，无需重新构建。</div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> <code>public/data.json</code> 既是开发时的默认数据，也是部署后的最新数据。更新它就能保证所有新访客看到的都是最新内容。</div>
             </section>
 
             <!-- 7. 全站搜索 -->

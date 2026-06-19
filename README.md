@@ -80,17 +80,19 @@ localStorage.setItem('yihao_admin', 'false')
 
 ## 更新网站数据
 
-在网站后台编辑完数据后，执行以下 3 步即可发布：
+在网站后台编辑完数据后，3 步发布：
 
 ```bash
-# 1. 在后台点击「生成网站」按钮，下载 data.json 到项目根目录
+# 1. 在后台点击「生成网站」按钮，下载 data.json
 
-# 2. 一键构建（自动复制 data.json、构建到 docs/）
+# 2. 将 data.json 覆盖到 public/data.json（这就是最新的默认数据）
+
+# 3. 构建并推送
 ./build.sh
-
-# 3. 推送到 GitHub
 git add -A && git commit -m "更新数据" && git push
 ```
+
+> `public/data.json` 既是开发时的默认数据，也是部署后的最新数据。更新它就能保证所有新访客看到的都是最新内容。
 
 ## 部署（GitHub Pages）
 
