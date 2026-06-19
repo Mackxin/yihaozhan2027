@@ -1038,14 +1038,14 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 </div>
               </div>
               <div class="help-card-grid">
-                <div class="help-page-card"><div class="help-page-icon">🏠</div><strong>首页</strong><span>网站门面，展示头像、简介、快速入口，含暗黑模式切换</span></div>
+                <div class="help-page-card"><div class="help-page-icon">🏠</div><strong>首页</strong><span>网站门面，展示头像、简介、快速入口，点击标题「壹号栈」切换暗黑模式</span></div>
                 <div class="help-page-card"><div class="help-page-icon">🧭</div><strong>导航</strong><span>收录的网站链接，按分类整理</span></div>
                 <div class="help-page-card"><div class="help-page-icon">📰</div><strong>讯息</strong><span>时间线形式记录的资源、资讯和灵感</span></div>
                 <div class="help-page-card"><div class="help-page-icon">✏️</div><strong>随记</strong><span>个人笔记，支持搜索、置顶、标签和排序</span></div>
                 <div class="help-page-card"><div class="help-page-icon">⚙️</div><strong>管理后台</strong><span>隐藏页面，通过控制台命令激活后在底部导航栏显示</span></div>
               </div>
               <div class="help-tip"><span class="help-tip-icon">💡</span> 管理后台默认隐藏。进入方式：在浏览器控制台执行 <code>localStorage.setItem('yihao_admin','true')</code> 后刷新页面，底部导航栏即显示「管理」入口。</div>
-              <div class="help-tip"><span class="help-tip-icon">🌙</span> 暗黑模式切换按钮位于首页「Hello 👋」右侧，点击可在浅色与深色之间来回切换，设置会自动保存到本地。</div>
+              <div class="help-tip"><span class="help-tip-icon">🌙</span> 暗黑模式切换：点击首页标题「壹号栈」即可在浅色与深色之间切换，设置会自动保存到本地。</div>
             </section>
 
             <!-- 2. 导航管理 -->
@@ -1141,6 +1141,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                     <li><strong>筛选</strong>：点击「只看置顶」按钮筛选置顶笔记</li>
                     <li><strong>标签云</strong>：点击标签可按标签筛选，再次点击取消</li>
                     <li><strong>导出</strong>：在总览页点击「📄 导出随记」可导出为 Markdown 文件</li>
+                    <li><strong>发布到讯息</strong>：点击卡片上的 📢 按钮，确认后可将笔记内容直接发布到讯息页当天的日期分组下，Markdown 符号会自动清除</li>
                   </ul>
                 </div>
               </div>

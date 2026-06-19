@@ -60,18 +60,9 @@ const goNews = () => { props.onNavigate?.(2); search.value = '' }
         <div class="hp-hero-left">
           <div class="hp-greeting-row">
             <div class="hp-greeting">Hello 👋</div>
-            <button class="hp-theme-toggle" @click="toggleDarkMode" :title="darkMode === 'light' ? '切换深色模式' : '切换浅色模式'">
-              <svg v-if="darkMode === 'light'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="4"/>
-                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-              </svg>
-              <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            </button>
           </div>
           <h1 class="hp-title">
-            <span class="hp-title-main">壹号栈</span>
+            <span class="hp-title-main" @click="toggleDarkMode" :title="darkMode === 'light' ? '切换深色模式' : '切换浅色模式'">壹号栈</span>
             <span class="hp-title-sub">探索 · 记录 · 创造</span>
           </h1>
           <p class="hp-desc">发现更大的世界，记录更真的自我。在这里探索精选资源，获取前沿资讯，捕捉灵感瞬间。</p>
@@ -106,12 +97,14 @@ const goNews = () => { props.onNavigate?.(2); search.value = '' }
         <div class="hp-hero-right">
           <div class="hp-profile-card">
             <img :src="avatarUrl" alt="" class="hp-profile-avatar" />
-            <div class="hp-profile-name">壹号栈</div>
-            <div class="hp-profile-bio">数字花园</div>
-            <div class="hp-profile-tags">
-              <span>探索者</span>
-              <span>记录者</span>
-              <span>创造者</span>
+            <div class="hp-profile-info">
+              <div class="hp-profile-name">壹号栈</div>
+              <div class="hp-profile-bio">数字花园</div>
+              <div class="hp-profile-tags">
+                <span>探索者</span>
+                <span>记录者</span>
+                <span>创造者</span>
+              </div>
             </div>
           </div>
         </div>
