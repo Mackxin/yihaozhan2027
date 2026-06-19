@@ -563,7 +563,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
           </div>
         </div>
 
-        <button class="admin-btn admin-btn-primary" @click="handleBuild" :disabled="building" title="下载 data.json → 运行 ./build.sh → git push">
+        <button class="admin-btn admin-btn-primary" @click="handleBuild" :disabled="building" title="点击生成数据 → 运行 ./deploy.sh 一键发布">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
           {{ building ? '生成中...' : '生成网站' }}
         </button>
@@ -1292,7 +1292,8 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                   <ul>
                     <li><code>npm run dev</code> — 启动开发服务器，支持热更新</li>
                     <li><code>npm run build</code> — 构建生产版本到 <code>docs/</code></li>
-                    <li><code>./build.sh</code> — 一键构建并复制 data.json</li>
+                    <li><code>./deploy.sh</code> — 一键构建 + 提交 + 推送到 GitHub</li>
+                    <li><code>./build.sh</code> — 仅构建，不提交</li>
                   </ul>
                 </div>
                 <div class="help-col">
@@ -1318,7 +1319,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
               </div>
               <div class="help-steps">
                 <div class="help-step"><span class="help-step-num">1</span><div class="help-step-body"><strong>配置 Pages</strong><p>GitHub 仓库 → Settings → Pages → Source 选择 <code>main</code> 分支的 <code>/docs</code> 文件夹</p></div></div>
-                <div class="help-step"><span class="help-step-num">2</span><div class="help-step-body"><strong>构建并推送</strong><p>运行 <code>./build.sh</code>，然后 <code>git push</code></p></div></div>
+                <div class="help-step"><span class="help-step-num">2</span><div class="help-step-body"><strong>构建并推送</strong><p>运行 <code>./deploy.sh</code>，自动构建 + 提交 + 推送到 GitHub</p></div></div>
                 <div class="help-step"><span class="help-step-num">3</span><div class="help-step-body"><strong>等待部署</strong><p>GitHub 会自动从 <code>docs/</code> 部署，几分钟后即可访问</p></div></div>
               </div>
               <div class="help-tip"><span class="help-tip-icon">💡</span> <code>docs/</code> 文件夹已纳入 Git 版本控制，每次推送都会自动触发部署。</div>
