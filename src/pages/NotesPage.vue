@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { marked } from 'marked'
 import UniSearch from '../components/UniSearch.vue'
+import { store, addNewsGroup, addNewsItem } from '../store'
 
 const STORAGE_KEY = 'yihao_ideas'
 const todayStr = () => new Date().toISOString().slice(0, 10)
@@ -197,6 +198,62 @@ const handleKeydown = (e) => {
     handleSave()
   }
 }
+
+// ─── Publish to News ───
+const publishIdx = ref(-1)
+const publishTitle = ref('')
+
+const startPublish = (idea) => {
+  publishIdx.value = ideaRealIndex(idea)
+  // Auto-extract title: first line or first 30 chars
+  const lines = idea.text.split('\n').filter(l => l.trim())
+  const firstLine = lines[0]?.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim() || ''
+  publishTitle.value = firstLine.length > 30 ? firstLine.slice(0, 30) + '...' : firstLine
+}
+
+const confirmPublish = () => {
+  if (publishIdx.value < 0) return
+  const idea = ideas.value[publishIdx.value]
+  if (!idea) return
+
+  const today = todayStr()
+  const title = publishTitle.value.trim() || '灵感随记'
+
+  // Clean Markdown symbols from text
+  const stripMd = (text) => text
+    .replace(/^#{1,6}\s+/gm, '')           // headers
+    .replace(/\*\*(.+?)\*\*/g, '$1')         // bold
+    .replace(/\*(.+?)\*/g, '$1')              // italic
+    .replace(/`([^`]+)`/g, '$1')             // inline code
+    .replace(/~~(.+?)~~/g, '$1')             // strikethrough
+    .replace(/^[-*+]\s+/gm, '• ')            // list items
+    .replace(/^\d+\.\s+/gm, '')              // numbered list
+    .replace(/^>\s*/gm, '')                  // blockquote
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1') // images → alt text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')   // links → text
+    .trim()
+
+  // Build desc array: skip first line (used as title), remove tags, clean md
+  const lines = idea.text.split('\n')
+  const contentLines = lines.length > 1 ? lines.slice(1) : lines
+  const desc = contentLines
+    .filter(l => !l.match(/^\s*#[\u4e00-\u9fa5_a-zA-Z0-9]+\s*$/))  // remove tag-only lines
+    .map(l => stripMd(l))
+    .filter(l => l.trim())
+
+  // Ensure today's date group exists
+  const existingGroup = store.timelineItems.find(g => g.date === today)
+  if (!existingGroup) {
+    addNewsGroup(today)
+  }
+
+  // Add news item
+  addNewsItem(today, { title, url: '', desc: desc.length > 0 ? desc : [stripMd(idea.text)] })
+
+  publishIdx.value = -1
+  publishTitle.value = ''
+  alert(`✅ 已发布到讯息「${today}」\n标题：${title}`)
+}
 </script>
 
 <template>
@@ -319,6 +376,9 @@ const handleKeydown = (e) => {
                     <button class="notes-icon-btn" @click="editIdx = ideaRealIndex(idea); editText = idea.text" title="编辑">
                       ✏️
                     </button>
+                    <button class="notes-icon-btn" @click="startPublish(idea)" title="发布到讯息">
+                      📢
+                    </button>
                     <button class="notes-icon-btn" @click="handleDelete(ideaRealIndex(idea))" title="删除">
                       🗑️
                     </button>
@@ -353,6 +413,29 @@ const handleKeydown = (e) => {
           </div>
           <textarea v-model="editText" class="notes-modal-textarea" />
           <button class="notes-update-btn" @click="handleUpdate">更新</button>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Publish to News Modal -->
+    <Teleport to="body">
+      <div v-if="publishIdx >= 0" class="notes-modal" @click="publishIdx = -1">
+        <div class="notes-modal-content" @click.stop>
+          <div class="notes-modal-header">
+            <h3>📢 发布到讯息</h3>
+            <button class="notes-modal-close" @click="publishIdx = -1">×</button>
+          </div>
+          <div class="notes-publish-preview">
+            <div class="notes-publish-label">标题</div>
+            <input v-model="publishTitle" class="notes-publish-input" placeholder="输入讯息标题" />
+            <div class="notes-publish-label">内容预览</div>
+            <div class="notes-publish-content" v-html="renderMd(ideas[publishIdx]?.text || '')" />
+            <div class="notes-publish-info">将发布到讯息页「{{ todayStr() }}」日期分组下</div>
+          </div>
+          <div class="notes-publish-actions">
+            <button class="notes-update-btn" @click="confirmPublish">确认发布</button>
+            <button class="notes-cancel-btn" @click="publishIdx = -1">取消</button>
+          </div>
         </div>
       </div>
     </Teleport>

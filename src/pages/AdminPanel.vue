@@ -371,7 +371,7 @@ const handleDeleteGroup = (date) => {
 }
 const startAddItem = () => { newItem.date = selectedDate.value; newItem.title = ''; newItem.url = ''; newItem.desc = '' }
 const saveAddItem = () => {
-  if (newItem.title.trim() && newItem.url.trim()) {
+  if (newItem.title.trim()) {
     pushUndo('news', getNewsSnapshot(), '新增讯息')
     addNewsItem(newItem.date, { title: newItem.title.trim(), url: newItem.url.trim(), desc: newItem.desc.split('\n').filter(l => l.trim()) })
     log(`新增讯息「${newItem.title.trim()}」`)
@@ -383,7 +383,7 @@ const startEditItem = (idx, item) => {
   editingItem.title = item.title; editingItem.url = item.url; editingItem.desc = item.desc.join('\n')
 }
 const saveEditItem = () => {
-  if (editingItem.title.trim() && editingItem.url.trim()) {
+  if (editingItem.title.trim()) {
     pushUndo('news', getNewsSnapshot(), '编辑讯息')
     updateNewsItem(editingItem.date, editingItem.index, { title: editingItem.title.trim(), url: editingItem.url.trim(), desc: editingItem.desc.split('\n').filter(l => l.trim()) })
     log(`修改讯息「${editingItem.title.trim()}」`)
