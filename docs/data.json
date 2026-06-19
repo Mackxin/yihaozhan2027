@@ -2621,7 +2621,7 @@
           "url": "https://www.wintool.cc/"
         },
         {
-          "name": "秒达工具箱",
+          "name": "秒达���具箱",
           "url": "https://mdgjx.com/"
         },
         {
@@ -9392,6 +9392,15 @@
             "一款免费开源的Mac系统维护工具，可以作为CleanMyMac免费替代方案来用",
             "Swift 6原生开发，集成了系统清理、应用卸载、磁盘分析、轻量恶意软件扫描和菜单栏状态监控，适合想减少订阅成本，又希望工具更透明的macOS用户"
           ]
+        },
+        {
+          "title": "SuperSplat",
+          "url": "https://superspl.at/editor",
+          "desc": [
+            "一个开源的3D高斯溅射编辑器",
+            "苹果用户可以下载个Polycam扫描一个空间/物体/人物，然后导出.ply格式文件",
+            "导出的文件可以直接导入到这个网站，可以进行检查、编辑、优化和发布等一系列操作，效果就是可以像游戏一样访问这个对象"
+          ]
         }
       ]
     },
@@ -14409,6 +14418,16 @@
           ]
         }
       ]
+    }
+  ],
+  "heroLinks": [
+    {
+      "name": "正规大流量卡",
+      "url": "https://h5.lot-ml.com/ProductEn/Index/45f704d8743b76f6"
+    },
+    {
+      "name": "靠谱大流量卡",
+      "url": "https://simhaoka.com/phone/index?id=8EA4003D1FD6DBE5E7121A88C0DA52C5"
     }
   ]
 }

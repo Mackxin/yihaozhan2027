@@ -47,7 +47,10 @@ async function loadRemoteData() {
       if (data.heroLinks) store.heroLinks = data.heroLinks
       console.log('✅ 已加载 ./data.json')
     }
-  } catch { /* no data.json, use defaults */ }
+  } catch {
+    // file:// protocol or no data.json — localStorage data already loaded, keep it
+    console.log('ℹ️ fetch 不可用，使用 localStorage 数据')
+  }
   store.dataReady = true
 }
 loadRemoteData()
