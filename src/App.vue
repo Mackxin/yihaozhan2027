@@ -51,7 +51,7 @@ onUnmounted(() => window.removeEventListener('resize', handleResize))
 const handleResize = () => { isMobile.value = window.innerWidth <= 768 }
 
 const handleTouchStart = (e) => {
-  touchRef.current = {
+  touchRef.value = {
     startX: e.touches[0].clientX,
     startY: e.touches[0].clientY,
     startTime: Date.now()
@@ -59,7 +59,7 @@ const handleTouchStart = (e) => {
 }
 
 const handleTouchEnd = (e) => {
-  const t = touchRef.current
+  const t = touchRef.value
   const dx = e.changedTouches[0].clientX - t.startX
   const dy = e.changedTouches[0].clientY - t.startY
   const dt = Date.now() - t.startTime
@@ -83,7 +83,7 @@ const handleTouchEnd = (e) => {
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><HomePage :onNavigate="(i) => activeTab = i" :darkMode="darkMode" :toggleDarkMode="toggleDarkMode" /></div>
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NavPage :active="activeTab === 1" /></div>
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NewsPage :active="activeTab === 2" /></div>
-        <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NotesPage /></div>
+        <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NotesPage :active="activeTab === 3" /></div>
         <div v-if="store.isAdmin" class="page-slide" :style="{ width: `${slideWidth}%` }"><AdminPanel /></div>
       </div>
     </div>

@@ -2,6 +2,15 @@ import { reactive, watch } from 'vue'
 import { navCategoriesPart1 } from './data/navData1'
 import { fullTimelineData } from './data/timelineData'
 
+// Simple debounce for watch persistence
+const debounce = (fn, ms) => {
+  let timer
+  return (...args) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), ms)
+  }
+}
+
 const NAV_STORAGE_KEY = 'yihao_nav_categories'
 const NEWS_STORAGE_KEY = 'yihao_news_timeline'
 const HERO_LINKS_KEY = 'yihao_hero_links'
@@ -55,18 +64,14 @@ async function loadRemoteData() {
 }
 loadRemoteData()
 
-// Auto-persist on changes
-watch(() => store.navCategories, (v) => {
-  localStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(v))
-}, { deep: true })
+// Auto-persist on changes (debounced 300ms)
+const persistNav = debounce((v) => localStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(v)), 300)
+const persistNews = debounce((v) => localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(v)), 300)
+const persistHero = debounce((v) => localStorage.setItem(HERO_LINKS_KEY, JSON.stringify(v)), 300)
 
-watch(() => store.timelineItems, (v) => {
-  localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(v))
-}, { deep: true })
-
-watch(() => store.heroLinks, (v) => {
-  localStorage.setItem(HERO_LINKS_KEY, JSON.stringify(v))
-}, { deep: true })
+watch(() => store.navCategories, (v) => persistNav(v), { deep: true })
+watch(() => store.timelineItems, (v) => persistNews(v), { deep: true })
+watch(() => store.heroLinks, (v) => persistHero(v), { deep: true })
 
 // ─── Nav CRUD ───
 export function getNextNavId() {
@@ -205,6 +210,7 @@ export function clearEmptyCategories() {
 
 export function clearAllIdeas() {
   localStorage.removeItem('yihao_ideas')
+  window.dispatchEvent(new Event('yihao:ideas-cleared'))
 }
 
 // ─── Snapshot (for undo) ───

@@ -160,10 +160,11 @@ const editingHeroLink = reactive({ index: -1, name: '', url: '' })
 
 const handleAddHeroLink = () => {
   if (!newHeroLink.name.trim() || !newHeroLink.url.trim()) return
-  addHeroLink(newHeroLink.name.trim(), newHeroLink.url.trim())
+  const name = newHeroLink.name.trim()
+  addHeroLink(name, newHeroLink.url.trim())
   newHeroLink.name = ''
   newHeroLink.url = ''
-  log('➕ 添加讯息链接: ' + newHeroLink.name)
+  log('➕ 添加讯息链接: ' + name)
 }
 const startEditHeroLink = (index) => {
   const link = store.heroLinks[index]
@@ -437,7 +438,7 @@ const handleExportNotes = () => {
   ideas.forEach((idea, i) => {
     const pinned = idea.pinned ? ' 📌' : ''
     const tags = (idea.tags || []).map(t => '`' + t + '`').join(' ')
-    md += `## ${i + 1}. ${new Date(idea.createdAt).toLocaleString('zh-CN')}${pinned}\n\n`
+    md += `## ${i + 1}. ${new Date(idea.timestamp || idea.createdAt || Date.now()).toLocaleString('zh-CN')}${pinned}\n\n`
     md += idea.text + '\n\n'
     if (tags) md += tags + '\n\n'
     md += '---\n\n'

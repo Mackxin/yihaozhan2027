@@ -4,6 +4,10 @@ import { marked } from 'marked'
 import UniSearch from '../components/UniSearch.vue'
 import { store, addNewsGroup, addNewsItem } from '../store'
 
+const props = defineProps({
+  active: { type: Boolean, default: false },
+})
+
 const STORAGE_KEY = 'yihao_ideas'
 const todayStr = () => new Date().toISOString().slice(0, 10)
 
@@ -31,6 +35,14 @@ const search = ref('')
 const sortBy = ref('newest') // newest, oldest, tags
 const showPinnedOnly = ref(false)
 
+const handleIdeasCleared = () => { ideas.value = [] }
+const handleEscape = (e) => {
+  if (e.key === 'Escape') {
+    if (editIdx.value >= 0) editIdx.value = -1
+    if (publishIdx.value >= 0) { publishIdx.value = -1; publishTitle.value = '' }
+  }
+}
+
 onMounted(() => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -39,10 +51,15 @@ onMounted(() => {
   // Scroll detection for back-to-top
   const slide = contentRef.value?.closest('.page-slide')
   slide?.addEventListener('scroll', onScroll, { passive: true })
+  // Listen for clear-all from admin
+  window.addEventListener('yihao:ideas-cleared', handleIdeasCleared)
+  window.addEventListener('keydown', handleEscape)
 })
 onUnmounted(() => {
   const slide = contentRef.value?.closest('.page-slide')
   slide?.removeEventListener('scroll', onScroll)
+  window.removeEventListener('yihao:ideas-cleared', handleIdeasCleared)
+  window.removeEventListener('keydown', handleEscape)
 })
 
 const showBackTop = ref(false)
@@ -442,7 +459,7 @@ const confirmPublish = () => {
 
     <!-- Back to top -->
     <Teleport to="body">
-    <button v-if="showBackTop" class="back-to-top" @click="scrollToTop">
+    <button v-if="active && showBackTop" class="back-to-top" @click="scrollToTop">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path d="M5 15l7-7 7 7"/>
       </svg>
