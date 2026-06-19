@@ -65,14 +65,8 @@ onUnmounted(() => {
           <p class="news-hero-subtitle">每天一小条讯息，记录正在发生的灵感、工具与小发现</p>
           <p class="news-hero-subtitle">像刷动态一样，回看这一年的数字足迹</p>
           <div class="news-hero-links">
-            <a class="news-hero-link news-hero-link-primary" href="https://yihaozhan.xyz/naver.html" target="_blank" rel="noopener noreferrer">
-              <span>壹号导航</span>
-            </a>
-            <a class="news-hero-link" href="https://h5.lot-ml.com/ProductEn/Index/45f704d8743b76f6" target="_blank" rel="noopener noreferrer">
-              <span>正规大流量卡</span>
-            </a>
-            <a class="news-hero-link" href="https://simhaoka.com/phone/index?id=8EA4003D1FD6DBE5E7121A88C0DA52C5" target="_blank" rel="noopener noreferrer">
-              <span>靠谱大流量卡</span>
+            <a v-for="(link, i) in store.heroLinks" :key="i" :class="['news-hero-link', { 'news-hero-link-primary': i === 0 }]" :href="link.url" target="_blank" rel="noopener noreferrer">
+              <span>{{ link.name }}</span>
             </a>
           </div>
           <UniSearch v-model="search" placeholder="输入关键词，筛选时间线内容..." />

@@ -9,7 +9,8 @@ import {
   exportAllData, importAllData,
   reorderNavCategories, reorderNavLinks,
   clearEmptyCategories, clearAllIdeas,
-  getNavSnapshot, getNewsSnapshot, restoreNavSnapshot, restoreNewsSnapshot
+  getNavSnapshot, getNewsSnapshot, restoreNavSnapshot, restoreNewsSnapshot,
+  addHeroLink, updateHeroLink, deleteHeroLink
 } from '../store'
 
 const activeTab = ref('overview')
@@ -25,6 +26,7 @@ const helpSections = [
   { id: 'h5', icon: '🚀', title: '更新网站数据' },
   { id: 'h6', icon: '🔍', title: '全站搜索' },
   { id: 'h7', icon: '🏠', title: '首页头像设置' },
+  { id: 'h11', icon: '💻', title: '开发环境' },
   { id: 'h8', icon: '🌍', title: '部署到服务器' },
   { id: 'h9', icon: '✏️', title: '随记管理' },
   { id: 'h10', icon: '⌨️', title: '快捷键' },
@@ -84,6 +86,86 @@ const newGroupDate = ref('')
 const showAddGroup = ref(false)
 const newItem = reactive({ date: '', title: '', url: '', desc: '' })
 const editingItem = reactive({ date: '', index: -1, title: '', url: '', desc: '' })
+
+// ─── Custom Date Picker ───
+const todayStr = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const offsetDate = (days) => {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const calYear = ref(new Date().getFullYear())
+const calMonth = ref(new Date().getMonth())
+const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+
+const calDays = computed(() => {
+  const firstDay = new Date(calYear.value, calMonth.value, 1).getDay()
+  const daysInMonth = new Date(calYear.value, calMonth.value + 1, 0).getDate()
+  const daysInPrev = new Date(calYear.value, calMonth.value, 0).getDate()
+  const days = []
+  for (let i = firstDay - 1; i >= 0; i--) {
+    days.push({ day: daysInPrev - i, current: false, date: '' })
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const mm = String(calMonth.value + 1).padStart(2, '0')
+    const dd = String(d).padStart(2, '0')
+    days.push({ day: d, current: true, date: `${calYear.value}-${mm}-${dd}` })
+  }
+  const remaining = 42 - days.length
+  for (let i = 1; i <= remaining; i++) {
+    days.push({ day: i, current: false, date: '' })
+  }
+  return days
+})
+
+const calHeader = computed(() => `${calYear.value}年${String(calMonth.value + 1).padStart(2, '0')}月`)
+
+const prevMonth = () => {
+  if (calMonth.value === 0) { calMonth.value = 11; calYear.value-- }
+  else calMonth.value--
+}
+const nextMonth = () => {
+  if (calMonth.value === 11) { calMonth.value = 0; calYear.value++ }
+  else calMonth.value++
+}
+const pickDate = (dateStr) => {
+  if (dateStr) { newGroupDate.value = dateStr; showAddGroup.value = false; handleAddGroup() }
+}
+const pickQuick = (dateStr) => { newGroupDate.value = dateStr; showAddGroup.value = false; handleAddGroup() }
+
+// ─── Hero Links state ───
+const showHeroLinks = ref(true)
+const newHeroLink = reactive({ name: '', url: '' })
+const editingHeroLink = reactive({ index: -1, name: '', url: '' })
+
+const handleAddHeroLink = () => {
+  if (!newHeroLink.name.trim() || !newHeroLink.url.trim()) return
+  addHeroLink(newHeroLink.name.trim(), newHeroLink.url.trim())
+  newHeroLink.name = ''
+  newHeroLink.url = ''
+  log('➕ 添加讯息链接: ' + newHeroLink.name)
+}
+const startEditHeroLink = (index) => {
+  const link = store.heroLinks[index]
+  editingHeroLink.index = index
+  editingHeroLink.name = link.name
+  editingHeroLink.url = link.url
+}
+const saveEditHeroLink = () => {
+  if (editingHeroLink.index < 0) return
+  updateHeroLink(editingHeroLink.index, editingHeroLink.name, editingHeroLink.url)
+  log('✏️ 更新讯息链接: ' + editingHeroLink.name)
+  editingHeroLink.index = -1
+}
+const handleDeleteHeroLink = (index) => {
+  if (!confirm('确定删除此链接？')) return
+  const name = store.heroLinks[index]?.name
+  deleteHeroLink(index)
+  log('🗑️ 删除讯息链接: ' + name)
+}
 
 // ─── Undo System ───
 const undoStack = ref([])
@@ -377,7 +459,6 @@ const handleImport = (e) => {
 }
 
 // ─── Build & Deploy ───
-const todayStr = () => new Date().toISOString().slice(0, 10)
 const building = ref(false)
 const handleBuild = () => {
   building.value = true
@@ -738,13 +819,50 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
         <aside class="admin-sidebar">
           <div class="admin-sidebar-search">
             <span class="admin-sidebar-label">日期列表</span>
-            <button class="admin-btn admin-btn-primary admin-btn-sm" @click="showAddGroup = !showAddGroup">+</button>
+            <button class="admin-btn admin-btn-primary admin-btn-sm" @click="showAddGroup = !showAddGroup" :title="showAddGroup ? '收起' : '新增日期'">+</button>
           </div>
-          <div v-if="showAddGroup" class="admin-sidebar-add">
-            <input class="admin-input admin-input-sm" type="date" v-model="newGroupDate" />
-            <div class="admin-sidebar-add-btns">
-              <button class="admin-btn admin-btn-xs admin-btn-primary" @click="handleAddGroup">确定</button>
-              <button class="admin-btn admin-btn-xs admin-btn-ghost" @click="showAddGroup = false">取消</button>
+
+          <!-- Modern Add Date Panel -->
+          <div v-if="showAddGroup" class="dp-panel">
+            <!-- Quick date buttons -->
+            <div class="dp-quick-row">
+              <button class="dp-quick-btn" @click="pickQuick(offsetDate(-1))">昨天</button>
+              <button class="dp-quick-btn dp-quick-btn-primary" @click="pickQuick(todayStr())">今天</button>
+              <button class="dp-quick-btn" @click="pickQuick(offsetDate(1))">明天</button>
+              <button class="dp-quick-btn" @click="pickQuick(offsetDate(2))">后天</button>
+            </div>
+
+            <!-- Calendar header -->
+            <div class="dp-header">
+              <button class="dp-nav-btn" @click="prevMonth">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <span class="dp-header-title">{{ calHeader }}</span>
+              <button class="dp-nav-btn" @click="nextMonth">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+
+            <!-- Weekday headers -->
+            <div class="dp-weekdays">
+              <span v-for="w in weekdays" :key="w" class="dp-weekday">{{ w }}</span>
+            </div>
+
+            <!-- Date grid -->
+            <div class="dp-grid">
+              <button
+                v-for="(cell, idx) in calDays"
+                :key="idx"
+                :class="['dp-cell', { 'dp-cell-other': !cell.current, 'dp-cell-today': cell.date === todayStr(), 'dp-cell-selected': cell.date === newGroupDate }]"
+                :disabled="!cell.current"
+                @click="cell.current && pickDate(cell.date)"
+              >{{ cell.day }}</button>
+            </div>
+
+            <!-- Footer -->
+            <div class="dp-footer">
+              <button class="dp-footer-link" @click="calYear = new Date().getFullYear(); calMonth = new Date().getMonth()">回到本月</button>
+              <button class="dp-footer-link dp-footer-link-cancel" @click="showAddGroup = false">取消</button>
             </div>
           </div>
           <div class="admin-sidebar-list">
@@ -773,6 +891,39 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
         </aside>
 
         <main class="admin-detail">
+          <!-- Hero Links Management -->
+          <div class="admin-hero-links-section">
+            <div class="admin-hero-links-header" @click="showHeroLinks = !showHeroLinks">
+              <h3>讯息页顶部链接 <span class="admin-hero-links-count">{{ store.heroLinks.length }}</span></h3>
+              <svg :style="{ transform: showHeroLinks ? 'rotate(180deg)' : '' }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div v-if="showHeroLinks" class="admin-hero-links-body">
+              <div v-for="(link, i) in store.heroLinks" :key="i" class="admin-hero-link-item">
+                <template v-if="editingHeroLink.index === i">
+                  <input class="admin-input admin-input-sm" v-model="editingHeroLink.name" placeholder="名称" style="flex:1" />
+                  <input class="admin-input admin-input-sm" v-model="editingHeroLink.url" placeholder="链接" style="flex:2" />
+                  <button class="admin-btn admin-btn-xs admin-btn-primary" @click="saveEditHeroLink">保存</button>
+                  <button class="admin-btn admin-btn-xs admin-btn-ghost" @click="editingHeroLink.index = -1">取消</button>
+                </template>
+                <template v-else>
+                  <span class="admin-hero-link-name">{{ link.name }}</span>
+                  <span class="admin-hero-link-url">{{ link.url }}</span>
+                  <button class="admin-icon-btn" @click="startEditHeroLink(i)" title="编辑">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="admin-icon-btn admin-icon-btn-danger" @click="handleDeleteHeroLink(i)" title="删除">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </template>
+              </div>
+              <div class="admin-hero-link-item admin-hero-link-add">
+                <input class="admin-input admin-input-sm" v-model="newHeroLink.name" placeholder="名称" style="flex:1" />
+                <input class="admin-input admin-input-sm" v-model="newHeroLink.url" placeholder="https://..." style="flex:2" />
+                <button class="admin-btn admin-btn-xs admin-btn-primary" @click="handleAddHeroLink">+ 添加</button>
+              </div>
+            </div>
+          </div>
+
           <div v-if="editingGroupDate.old" class="admin-detail-edit-bar">
             <input class="admin-input" type="date" v-model="editingGroupDate.new" />
             <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveEditGroupDate">保存</button>
@@ -872,13 +1023,14 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 </div>
               </div>
               <div class="help-card-grid">
-                <div class="help-page-card"><div class="help-page-icon">🏠</div><strong>首页</strong><span>网站门面，展示头像、简介和快速入口</span></div>
+                <div class="help-page-card"><div class="help-page-icon">🏠</div><strong>首页</strong><span>网站门面，展示头像、简介、快速入口，含暗黑模式切换</span></div>
                 <div class="help-page-card"><div class="help-page-icon">🧭</div><strong>导航</strong><span>收录的网站链接，按分类整理</span></div>
                 <div class="help-page-card"><div class="help-page-icon">📰</div><strong>讯息</strong><span>时间线形式记录的资源、资讯和灵感</span></div>
                 <div class="help-page-card"><div class="help-page-icon">✏️</div><strong>随记</strong><span>个人笔记，支持搜索、置顶、标签和排序</span></div>
-                <div class="help-page-card"><div class="help-page-icon">⚙️</div><strong>管理后台</strong><span>隐藏页面，通过首页「管理后台」卡片进入</span></div>
+                <div class="help-page-card"><div class="help-page-icon">⚙️</div><strong>管理后台</strong><span>隐藏页面，通过控制台命令激活后在底部导航栏显示</span></div>
               </div>
-              <div class="help-tip"><span class="help-tip-icon">💡</span> 管理后台默认隐藏。进入方式：点击首页快速访问区的「管理后台」卡片，或在浏览器控制台执行 <code>localStorage.setItem('yihao_admin','true')</code> 后刷新页面。</div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 管理后台默认隐藏。进入方式：在浏览器控制台执行 <code>localStorage.setItem('yihao_admin','true')</code> 后刷新页面，底部导航栏即显示「管理」入口。</div>
+              <div class="help-tip"><span class="help-tip-icon">🌙</span> 暗黑模式切换按钮位于首页「Hello 👋」右侧，点击可在浅色与深色之间来回切换，设置会自动保存到本地。</div>
             </section>
 
             <!-- 2. 导航管理 -->
@@ -944,6 +1096,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                   </ul>
                 </div>
               </div>
+              <div class="help-tip"><span class="help-tip-icon">🔗</span> 讯息页顶部的快捷链接（如「壹号导航」「大流量卡」等）可在右侧详情区顶部「讯息页顶部链接」面板中管理，支持新增、编辑、删除和自由扩展数量。</div>
             </section>
 
             <!-- 4. 随记管理 -->
@@ -1069,6 +1222,63 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <div class="help-step"><span class="help-step-num">3</span><div class="help-step-body"><p>放到项目的 <code>public/</code> 文件夹中</p></div></div>
                 <div class="help-step"><span class="help-step-num">4</span><div class="help-step-body"><p>重新构建后上传，或直接放到服务器网站根目录</p></div></div>
               </div>
+            </section>
+
+            <!-- 开发环境 -->
+            <section :id="'h11'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-green">💻</div>
+                <div>
+                  <h2>开发环境</h2>
+                  <p class="help-section-sub">本地开发和调试的完整流程</p>
+                </div>
+              </div>
+              <div class="help-steps">
+                <div class="help-step">
+                  <span class="help-step-num">1</span>
+                  <div class="help-step-body">
+                    <strong>安装依赖</strong>
+                    <p>首次使用，在项目根目录运行 <code>npm install</code></p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">2</span>
+                  <div class="help-step-body">
+                    <strong>启动开发服务器</strong>
+                    <p>运行 <code>npm run dev</code>，浏览器打开 <code>http://localhost:5173</code></p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">3</span>
+                  <div class="help-step-body">
+                    <strong>进入管理后台</strong>
+                    <p>在浏览器控制台执行 <code>localStorage.setItem('yihao_admin','true')</code>，刷新页面后底部导航栏显示「管理」入口</p>
+                  </div>
+                </div>
+              </div>
+              <div class="help-code-block">
+                <div class="help-code-header">终端命令</div>
+                <code>cd ~/Desktop/2027网站<br/>npm install<br/>npm run dev</code>
+              </div>
+              <div class="help-two-col">
+                <div class="help-col">
+                  <h3>常用命令</h3>
+                  <ul>
+                    <li><code>npm run dev</code> — 启动开发服务器，支持热更新</li>
+                    <li><code>npm run build</code> — 构建生产版本到 <code>docs/</code></li>
+                    <li><code>./build.sh</code> — 一键构建并复制 data.json</li>
+                  </ul>
+                </div>
+                <div class="help-col">
+                  <h3>技术栈</h3>
+                  <ul>
+                    <li><strong>Vue 3.5</strong> — Composition API + 响应式数据</li>
+                    <li><strong>Vite 8</strong> — 极速构建和热模块替换</li>
+                    <li><strong>marked 18</strong> — Markdown 渲染（随记页）</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 开发服务器的端口默认为 <code>5173</code>，如果被占用会自动切换到 <code>5174</code>。修改代码后页面会自动热更新，无需手动刷新。</div>
             </section>
 
             <!-- 9. 部署说明 -->

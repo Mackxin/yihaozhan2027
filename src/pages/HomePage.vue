@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { store, toggleAdmin } from '../store'
+import { store } from '../store'
 import UniSearch from '../components/UniSearch.vue'
 import avatarUrl from '/avatar.png'
 
 const props = defineProps({
-  onNavigate: { type: Function, default: () => {} }
+  onNavigate: { type: Function, default: () => {} },
+  darkMode: { type: String, default: 'light' },
+  toggleDarkMode: { type: Function, default: () => {} },
 })
 
 const ready = ref(false)
@@ -15,7 +17,6 @@ const quickLinks = [
   { icon: '🧭', title: '壹号导航', sub: '1500+ 精选工具与资源', tab: 1 },
   { icon: '📰', title: '壹号讯息', sub: '每日发现，持续更新中', tab: 2 },
   { icon: '✏️', title: '灵感随记', sub: '捕捉想法，记录生活', tab: 3 },
-  { icon: '⚙️', title: '管理后台', sub: '编辑导航、讯息和设置', admin: true },
 ]
 
 // ─── Home Search ───
@@ -44,7 +45,6 @@ const searchResults = computed(() => {
 const totalResults = computed(() => searchResults.value.nav.length + searchResults.value.news.length)
 const goNav = () => { props.onNavigate?.(1); search.value = '' }
 const goNews = () => { props.onNavigate?.(2); search.value = '' }
-const enterAdmin = () => { if (!store.isAdmin) toggleAdmin(); props.onNavigate?.(4) }
 </script>
 
 <template>
@@ -58,7 +58,18 @@ const enterAdmin = () => { if (!store.isAdmin) toggleAdmin(); props.onNavigate?.
       <!-- Hero section -->
       <section class="hp-hero">
         <div class="hp-hero-left">
-          <div class="hp-greeting">Hello 👋</div>
+          <div class="hp-greeting-row">
+            <div class="hp-greeting">Hello 👋</div>
+            <button class="hp-theme-toggle" @click="toggleDarkMode" :title="darkMode === 'light' ? '切换深色模式' : '切换浅色模式'">
+              <svg v-if="darkMode === 'light'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"/>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+              </svg>
+              <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            </button>
+          </div>
           <h1 class="hp-title">
             <span class="hp-title-main">壹号栈</span>
             <span class="hp-title-sub">探索 · 记录 · 创造</span>
@@ -115,7 +126,7 @@ const enterAdmin = () => { if (!store.isAdmin) toggleAdmin(); props.onNavigate?.
             :key="link.title"
             class="hp-quick-item"
             :style="{ '--delay': i * 0.1 + 's' }"
-            @click="link.admin ? enterAdmin() : onNavigate?.(link.tab)"
+            @click="onNavigate?.(link.tab)"
           >
             <span class="hp-quick-icon">{{ link.icon }}</span>
             <div class="hp-quick-text">

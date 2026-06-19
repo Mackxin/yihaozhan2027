@@ -4,19 +4,26 @@ import { fullTimelineData } from './data/timelineData'
 
 const NAV_STORAGE_KEY = 'yihao_nav_categories'
 const NEWS_STORAGE_KEY = 'yihao_news_timeline'
+const HERO_LINKS_KEY = 'yihao_hero_links'
 
 const defaultNav = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
 const defaultTimeline = fullTimelineData
+const defaultHeroLinks = [
+  { name: '壹号导航', url: 'https://yihaozhan.xyz/naver.html', primary: true },
+  { name: '正规大流量卡', url: 'https://h5.lot-ml.com/ProductEn/Index/45f704d8743b76f6' },
+  { name: '靠谱大流量卡', url: 'https://simhaoka.com/phone/index?id=8EA4003D1FD6DBE5E7121A88C0DA52C5' },
+]
 
 // ─── Initialize from localStorage or defaults ───
 const savedNav = localStorage.getItem(NAV_STORAGE_KEY)
 const savedNews = localStorage.getItem(NEWS_STORAGE_KEY)
+const savedHeroLinks = localStorage.getItem(HERO_LINKS_KEY)
 
 export const store = reactive({
   navCategories: savedNav ? JSON.parse(savedNav) : JSON.parse(JSON.stringify(defaultNav)),
   timelineItems: savedNews ? JSON.parse(savedNews) : JSON.parse(JSON.stringify(defaultTimeline)),
+  heroLinks: savedHeroLinks ? JSON.parse(savedHeroLinks) : JSON.parse(JSON.stringify(defaultHeroLinks)),
   dataReady: false,
-  // Admin mode: hidden by default in static build; enable via 5 clicks on homepage logo
   isAdmin: localStorage.getItem('yihao_admin') === 'true',
 })
 
@@ -37,6 +44,7 @@ async function loadRemoteData() {
       const data = await res.json()
       if (data.navCategories) store.navCategories = data.navCategories
       if (data.timelineItems) store.timelineItems = data.timelineItems
+      if (data.heroLinks) store.heroLinks = data.heroLinks
       console.log('✅ 已加载 ./data.json')
     }
   } catch { /* no data.json, use defaults */ }
@@ -51,6 +59,10 @@ watch(() => store.navCategories, (v) => {
 
 watch(() => store.timelineItems, (v) => {
   localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(v))
+}, { deep: true })
+
+watch(() => store.heroLinks, (v) => {
+  localStorage.setItem(HERO_LINKS_KEY, JSON.stringify(v))
 }, { deep: true })
 
 // ─── Nav CRUD ───
@@ -129,12 +141,12 @@ export function deleteNewsItem(date, itemIndex) {
 
 // ─── Export / Import ───
 export function exportAllData() {
-  // Sort: navCategories by id ascending, timelineItems by date descending
   const sortedNav = [...store.navCategories].sort((a, b) => (a.id || 0) - (b.id || 0))
   const sortedNews = [...store.timelineItems].sort((a, b) => b.date.localeCompare(a.date))
   return JSON.stringify({
     navCategories: sortedNav,
     timelineItems: sortedNews,
+    heroLinks: store.heroLinks,
   }, null, 2)
 }
 
@@ -142,13 +154,31 @@ export function importAllData(jsonStr) {
   const data = JSON.parse(jsonStr)
   if (data.navCategories) store.navCategories = data.navCategories
   if (data.timelineItems) store.timelineItems = data.timelineItems
+  if (data.heroLinks) store.heroLinks = data.heroLinks
 }
 
 export function resetToDefaults() {
   localStorage.removeItem(NAV_STORAGE_KEY)
   localStorage.removeItem(NEWS_STORAGE_KEY)
+  localStorage.removeItem(HERO_LINKS_KEY)
   store.navCategories = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
   store.timelineItems = JSON.parse(JSON.stringify(defaultTimeline))
+  store.heroLinks = JSON.parse(JSON.stringify(defaultHeroLinks))
+}
+
+// ─── Hero Links CRUD ───
+export function addHeroLink(name, url) {
+  store.heroLinks.push({ name, url })
+}
+
+export function updateHeroLink(index, name, url) {
+  if (store.heroLinks[index]) {
+    store.heroLinks[index] = { ...store.heroLinks[index], name, url }
+  }
+}
+
+export function deleteHeroLink(index) {
+  store.heroLinks.splice(index, 1)
 }
 
 // ─── Reorder ───

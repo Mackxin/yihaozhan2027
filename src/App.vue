@@ -76,7 +76,7 @@ const handleTouchEnd = (e) => {
       @touchend="isMobile ? handleTouchEnd($event) : undefined"
     >
       <div class="page-slider" :style="{ transform: `translateX(-${activeTab * slideWidth}%)`, width: `${tabs.length * 100}%` }">
-        <div class="page-slide" :style="{ width: `${slideWidth}%` }"><HomePage :onNavigate="(i) => activeTab = i" /></div>
+        <div class="page-slide" :style="{ width: `${slideWidth}%` }"><HomePage :onNavigate="(i) => activeTab = i" :darkMode="darkMode" :toggleDarkMode="toggleDarkMode" /></div>
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NavPage :active="activeTab === 1" /></div>
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NewsPage :active="activeTab === 2" /></div>
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NotesPage /></div>
@@ -142,20 +142,6 @@ const handleTouchEnd = (e) => {
           <line x1="16" y1="16" x2="16" y2="16.01" stroke-width="2"/>
         </svg>
         <span class="tab-label">{{ tab.label }}</span>
-      </div>
-
-      <!-- Tab bar action buttons (right side) -->
-      <div class="tab-bar-actions">
-        <!-- Theme Toggle -->
-        <button class="tab-bar-btn" @click="toggleDarkMode" :title="darkMode === 'light' ? '切换深色' : '切换浅色'">
-          <svg v-if="darkMode === 'light'" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="4"/>
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-          </svg>
-          <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
-        </button>
       </div>
     </div>
   </div>

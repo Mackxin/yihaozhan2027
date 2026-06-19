@@ -52,10 +52,31 @@ npm install
 
 # 启动开发服务器
 npm run dev
+# → 浏览器打开 http://localhost:5173
 
 # 构建生产版本
 npm run build
 ```
+
+## 进入管理后台
+
+管理后台默认隐藏，需要在浏览器控制台 (F12) 执行以下命令激活：
+
+```javascript
+localStorage.setItem('yihao_admin', 'true')
+```
+
+刷新页面后，底部导航栏会显示「管理」标签，点击即可进入后台。
+
+如需退出管理，执行：
+
+```javascript
+localStorage.setItem('yihao_admin', 'false')
+```
+
+## 暗黑模式
+
+首页「Hello 👋」旁有明暗切换按钮，支持三态：浅色 → 深色 → 跟随系统。
 
 ## 更新网站数据
 
