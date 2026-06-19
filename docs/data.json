@@ -2621,7 +2621,7 @@
           "url": "https://www.wintool.cc/"
         },
         {
-          "name": "秒达���具箱",
+          "name": "秒达工具箱",
           "url": "https://mdgjx.com/"
         },
         {
@@ -9891,7 +9891,7 @@
           "desc": [
             "将手机变成电脑麦克风",
             "高质量、低延迟、跨平台的音频传输解决方案，采用Material 3设计语言，支持深色与浅色主题，界面简洁美观",
-            "Android客户端+桌面端服务��，支持Windows、Linux和macOS全平台，支持调整采样率、声道数和音频格式，满足不同专业需求"
+            "Android客户端+桌面端服务端，支持Windows、Linux和macOS全平台，支持调整采样率、声道数和音频格式，满足不同专业需求"
           ]
         }
       ]
@@ -11421,7 +11421,7 @@
           "title": "Ai资源帮",
           "url": "https://ai-zyb.com/",
           "desc": [
-            "一个基于人工智能技术的资源搜索平台，可以通过该平台一键搜索影视、软件、音乐、电子书、教程、游戏等多种优质���源",
+            "一个基于人工智能技术的资源搜索平台，可以通过该平台一键搜索影视、软件、音乐、电子书、教程、游戏等多种优质资源",
             "只需输入关键词即可快速找到所需的资源，涵盖了广泛的领域"
           ]
         },
@@ -14409,21 +14409,6 @@
           ]
         }
       ]
-    }
-  ],
-  "heroLinks": [
-    {
-      "name": "壹号导航",
-      "url": "https://yihaozhan.xyz/naver.html",
-      "primary": true
-    },
-    {
-      "name": "正规大流量卡",
-      "url": "https://h5.lot-ml.com/ProductEn/Index/45f704d8743b76f6"
-    },
-    {
-      "name": "靠谱大流量卡",
-      "url": "https://simhaoka.com/phone/index?id=8EA4003D1FD6DBE5E7121A88C0DA52C5"
     }
   ]
 }
