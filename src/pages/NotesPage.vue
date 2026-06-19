@@ -242,93 +242,103 @@ const handleKeydown = (e) => {
         </div>
       </div>
 
-      <!-- Input area -->
-      <div class="notes-input-section">
-        <textarea
-          v-model="input"
-          @keydown="handleKeydown"
-          placeholder="在这里记录你的灵感...&#10;支持 Markdown 语法，使用 #标签 添加标签&#10;按 Ctrl+Enter 快速保存"
-          class="notes-textarea"
-        />
-        <div class="notes-input-footer">
-          <button class="notes-save-btn" @click="handleSave" :disabled="!input.trim()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            保存灵感
-          </button>
-          <span class="notes-char-count" v-if="input.trim()">{{ input.length }} 字</span>
-        </div>
-      </div>
+      <!-- Body: Sidebar input + Main content -->
+      <div class="notes-body">
 
-      <!-- Search + Filter bar -->
-      <div class="notes-toolbar">
-        <UniSearch v-model="search" placeholder="搜索随记内容或标签..." compact :icon-size="14" />
-        <div class="notes-toolbar-right">
-          <button :class="['notes-filter-btn', { active: showPinnedOnly }]" @click="showPinnedOnly = !showPinnedOnly">
-            📌 置顶
-          </button>
-          <select v-model="sortBy" class="notes-sort-select">
-            <option value="newest">最新优先</option>
-            <option value="oldest">最早优先</option>
-            <option value="tags">标签最多</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Tag cloud -->
-      <div v-if="Object.keys(allTags).length > 0" class="notes-tag-cloud">
-        <div class="notes-tag-header">
-          <span>标签筛选</span>
-          <button v-if="filterTag" class="notes-tag-clear" @click="filterTag = null">× 清除</button>
-        </div>
-        <div class="notes-tags">
-          <span
-            v-for="(count, tag) in allTags"
-            :key="tag"
-            :class="['notes-tag', { active: filterTag === tag }]"
-            @click="filterTag = filterTag === tag ? null : tag"
-          >
-            #{{ tag }} <small>({{ count }})</small>
-          </span>
-        </div>
-      </div>
-
-      <!-- Cards -->
-      <div v-if="displayed.length > 0" class="notes-grid">
-        <div
-          v-for="(idea, idx) in displayed"
-          :key="idea.timestamp || idx"
-          :class="['notes-card', { 'notes-card-pinned': idea.pinned }]"
-          :style="{ backgroundColor: idea.color }"
-        >
-          <div v-if="idea.pinned" class="notes-pin-badge">📌 已置顶</div>
-          <div class="notes-card-content" v-html="renderMd(idea.text)" />
-          <div class="notes-card-footer">
-            <div class="notes-card-meta">
-              <span class="notes-date">{{ idea.date }}</span>
-              <div class="notes-card-actions">
-                <button :class="['notes-icon-btn', { active: idea.pinned }]" @click="togglePin(ideaRealIndex(idea))" :title="idea.pinned ? '取消置顶' : '置顶'">
-                  📌
-                </button>
-                <button class="notes-icon-btn" @click="editIdx = ideaRealIndex(idea); editText = idea.text" title="编辑">
-                  ✏️
-                </button>
-                <button class="notes-icon-btn" @click="handleDelete(ideaRealIndex(idea))" title="删除">
-                  🗑️
-                </button>
-              </div>
-            </div>
-            <div v-if="idea.tags?.length > 0" class="notes-card-tags">
-              <span v-for="t in idea.tags" :key="t" class="notes-card-tag" @click="filterTag = t">#{{ t }}</span>
+        <!-- Left: Input (sticky on large screens) -->
+        <div class="notes-sidebar">
+          <div class="notes-input-section">
+            <textarea
+              v-model="input"
+              @keydown="handleKeydown"
+              placeholder="在这里记录你的灵感...&#10;支持 Markdown 语法，使用 #标签 添加标签&#10;按 Ctrl+Enter 快速保存"
+              class="notes-textarea"
+            />
+            <div class="notes-input-footer">
+              <button class="notes-save-btn" @click="handleSave" :disabled="!input.trim()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                保存灵感
+              </button>
+              <span class="notes-char-count" v-if="input.trim()">{{ input.length }} 字</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Empty state -->
-      <div v-else class="notes-empty">
-        <div class="notes-empty-icon">📝</div>
-        <h3>{{ ideas.length === 0 ? '还没有灵感记录' : '没有找到匹配的内容' }}</h3>
-        <p>{{ ideas.length === 0 ? '在上方输入框开始记录你的第一条灵感吧！' : '试试调整搜索条件或清除筛选' }}</p>
+        <!-- Right: Toolbar + Tags + Cards -->
+        <div class="notes-main">
+          <!-- Search + Filter bar -->
+          <div class="notes-toolbar">
+            <UniSearch v-model="search" placeholder="搜索随记内容或标签..." compact :icon-size="14" />
+            <div class="notes-toolbar-right">
+              <button :class="['notes-filter-btn', { active: showPinnedOnly }]" @click="showPinnedOnly = !showPinnedOnly">
+                📌 置顶
+              </button>
+              <select v-model="sortBy" class="notes-sort-select">
+                <option value="newest">最新优先</option>
+                <option value="oldest">最早优先</option>
+                <option value="tags">标签最多</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Tag cloud -->
+          <div v-if="Object.keys(allTags).length > 0" class="notes-tag-cloud">
+            <div class="notes-tag-header">
+              <span>标签筛选</span>
+              <button v-if="filterTag" class="notes-tag-clear" @click="filterTag = null">× 清除</button>
+            </div>
+            <div class="notes-tags">
+              <span
+                v-for="(count, tag) in allTags"
+                :key="tag"
+                :class="['notes-tag', { active: filterTag === tag }]"
+                @click="filterTag = filterTag === tag ? null : tag"
+              >
+                #{{ tag }} <small>({{ count }})</small>
+              </span>
+            </div>
+          </div>
+
+          <!-- Cards -->
+          <div v-if="displayed.length > 0" class="notes-grid">
+            <div
+              v-for="(idea, idx) in displayed"
+              :key="idea.timestamp || idx"
+              :class="['notes-card', { 'notes-card-pinned': idea.pinned }]"
+              :style="{ backgroundColor: idea.color }"
+            >
+              <div v-if="idea.pinned" class="notes-pin-badge">📌 已置顶</div>
+              <div class="notes-card-content" v-html="renderMd(idea.text)" />
+              <div class="notes-card-footer">
+                <div class="notes-card-meta">
+                  <span class="notes-date">{{ idea.date }}</span>
+                  <div class="notes-card-actions">
+                    <button :class="['notes-icon-btn', { active: idea.pinned }]" @click="togglePin(ideaRealIndex(idea))" :title="idea.pinned ? '取消置顶' : '置顶'">
+                      📌
+                    </button>
+                    <button class="notes-icon-btn" @click="editIdx = ideaRealIndex(idea); editText = idea.text" title="编辑">
+                      ✏️
+                    </button>
+                    <button class="notes-icon-btn" @click="handleDelete(ideaRealIndex(idea))" title="删除">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+                <div v-if="idea.tags?.length > 0" class="notes-card-tags">
+                  <span v-for="t in idea.tags" :key="t" class="notes-card-tag" @click="filterTag = t">#{{ t }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div v-else class="notes-empty">
+            <div class="notes-empty-icon">📝</div>
+            <h3>{{ ideas.length === 0 ? '还没有灵感记录' : '没有找到匹配的内容' }}</h3>
+            <p>{{ ideas.length === 0 ? '在左侧输入框开始记录你的第一条灵感吧！' : '试试调整搜索条件或清除筛选' }}</p>
+          </div>
+        </div>
+
       </div>
 
     </div>
