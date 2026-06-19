@@ -460,19 +460,34 @@ const handleImport = (e) => {
 
 // ─── Build & Deploy ───
 const building = ref(false)
-const handleBuild = () => {
+const handleBuild = async () => {
   building.value = true
-  log('生成 data.json...')
-  setTimeout(() => {
-    const data = exportAllData()
-    const blob = new Blob([data], { type: 'application/json' })
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'data.json'
-    a.click()
-    building.value = false
-    log('✅ data.json 已下载 → 放入 public/ 目录 → 运行 ./build.sh')
-  }, 300)
+  const data = exportAllData()
+
+  // Try to POST to dev server (direct write to public/data.json)
+  try {
+    const res = await fetch('/api/save-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: data
+    })
+    if (res.ok) {
+      building.value = false
+      log('✅ public/data.json 已自动更新！运行 ./deploy.sh 即可发布')
+      return
+    }
+  } catch {
+    // Not in dev mode, fall back to download
+  }
+
+  // Fallback: download file
+  const blob = new Blob([data], { type: 'application/json' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'data.json'
+  a.click()
+  building.value = false
+  log('⬇️ data.json 已下载 → 放入 public/ 目录 → 运行 ./deploy.sh')
 }
 
 // ─── Auto-save: warn before leaving ───
@@ -1157,37 +1172,48 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <div class="help-section-badge badge-pink">🚀</div>
                 <div>
                   <h2>更新网站数据</h2>
-                  <p class="help-section-sub">在后台编辑完数据后，只需 3 步即可发布到 GitHub Pages</p>
+                  <p class="help-section-sub">开发模式下点击按钮自动写入，一键部署脚本搞定发布</p>
                 </div>
               </div>
               <div class="help-steps">
                 <div class="help-step">
                   <span class="help-step-num">1</span>
                   <div class="help-step-body">
-                    <strong>生成数据文件</strong>
-                    <p>点击后台顶部的「生成网站」按钮，下载 <code>data.json</code></p>
+                    <strong>点击「生成网站」按钮</strong>
+                    <p>开发模式下 <code>npm run dev</code>，点击按钮会<strong>自动写入</strong> <code>public/data.json</code>；生产模式下会下载文件，手动放到 <code>public/</code> 目录</p>
                   </div>
                 </div>
                 <div class="help-step">
                   <span class="help-step-num">2</span>
                   <div class="help-step-body">
-                    <strong>替换数据文件</strong>
-                    <p>将下载的 <code>data.json</code> 覆盖到项目的 <code>public/data.json</code></p>
-                  </div>
-                </div>
-                <div class="help-step">
-                  <span class="help-step-num">3</span>
-                  <div class="help-step-body">
-                    <strong>构建并推送</strong>
-                    <p>运行 <code>./build.sh</code>，然后 <code>git push</code></p>
+                    <strong>运行一键部署脚本</strong>
+                    <p>打开终端，运行 <code>./deploy.sh</code>，自动构建 + 提交 + 推送到 GitHub</p>
                   </div>
                 </div>
               </div>
               <div class="help-code-block">
-                <div class="help-code-header">终端命令</div>
-                <code>cd ~/Desktop/2027网站<br/>./build.sh<br/>git add -A && git commit -m "更新数据" && git push</code>
+                <div class="help-code-header">一键部署（可自定义提交信息）</div>
+                <code>cd ~/Desktop/2027网站<br/>./deploy.sh<br/># 或自定义提交信息：./deploy.sh "添加了新链接"</code>
               </div>
-              <div class="help-tip"><span class="help-tip-icon">💡</span> <code>public/data.json</code> 既是开发时的默认数据，也是部署后的最新数据。更新它就能保证所有新访客看到的都是最新内容。</div>
+              <div class="help-two-col">
+                <div class="help-col">
+                  <h3>开发模式（推荐）</h3>
+                  <ul>
+                    <li><code>npm run dev</code> 启动开发服务器</li>
+                    <li>点击「生成网站」→ 数据自动写入 <code>public/data.json</code></li>
+                    <li>运行 <code>./deploy.sh</code> 一键发布</li>
+                  </ul>
+                </div>
+                <div class="help-col">
+                  <h3>生产模式</h3>
+                  <ul>
+                    <li>点击「生成网站」→ 下载 <code>data.json</code></li>
+                    <li>手动覆盖到 <code>public/data.json</code></li>
+                    <li>运行 <code>./deploy.sh</code> 一键发布</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> <code>deploy.sh</code> 会自动执行构建、<code>git add</code>、<code>git commit</code>、<code>git push</code>，一条命令搞定发布。也可以单独运行 <code>./build.sh</code> 只构建不提交。</div>
             </section>
 
             <!-- 7. 全站搜索 -->
