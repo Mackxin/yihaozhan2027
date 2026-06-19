@@ -1599,6 +1599,13 @@
 [data-theme="dark"] .dp-footer-link-cancel { color: #64748b; }
 [data-theme="dark"] .dp-footer-link-cancel:hover { background: #334155; color: #94a3b8; }
 
+/* ─── Nav Icon Settings Dark ─── */
+[data-theme="dark"] .admin-panel-sub { color: #64748b; }
+[data-theme="dark"] .nav-icon-card { background: #0f172a; border-color: #334155; }
+[data-theme="dark"] .nav-icon-card-label { color: #cbd5e1; }
+[data-theme="dark"] .nav-icon-opt { background: #1e293b; border-color: #334155; }
+[data-theme="dark"] .nav-icon-opt:hover { border-color: #ff1d55; background: rgba(255,29,85,0.08); }
+
 /* ─── Drag Handle ─── */
 .admin-sidebar-item-drag,
 .admin-link-card-drag {
@@ -1710,4 +1717,80 @@
   font-size: 12px;
   color: #94a3b8;
   margin-top: 4px;
+}
+
+/* ─── Nav Icon Settings ─── */
+.admin-panel-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.admin-panel-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+.nav-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.nav-icon-card {
+  background: #f8f9fb;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.nav-icon-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.nav-icon-current {
+  font-size: 18px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+}
+.nav-icon-current.nav-icon-custom {
+  color: inherit;
+}
+.nav-icon-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+.nav-icon-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.nav-icon-opt {
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+}
+.nav-icon-opt:hover {
+  border-color: #ff1d55;
+  background: rgba(255,29,85,0.04);
+  transform: scale(1.12);
+}
+.nav-icon-opt.active {
+  border-color: #ff1d55;
+  background: rgba(255,29,85,0.1);
+  box-shadow: 0 0 0 2px rgba(255,29,85,0.15);
 }

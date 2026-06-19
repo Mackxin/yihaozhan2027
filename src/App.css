@@ -92,6 +92,13 @@
   font-weight: 600;
 }
 
+.tab-emoji {
+  font-size: 20px;
+  line-height: 1;
+  display: block;
+  transition: filter 0.2s;
+}
+
 /* ========== Desktop Styles ========== */
 @media (min-width: 768px) {
   .app-container {

@@ -21,6 +21,10 @@ const activeTab = ref(0)
 const isMobile = ref(window.innerWidth <= 768)
 const touchRef = ref({ startX: 0, startY: 0, startTime: 0 })
 
+// ─── Custom Nav Icons ───
+const navIcons = ref(JSON.parse(localStorage.getItem('yihao_nav_icons') || '{}'))
+const getTabIcon = (key) => navIcons.value[key] || ''
+
 // ─── Dark Mode (2 states: light / dark) ───
 const darkMode = ref(localStorage.getItem('yihao_theme') === 'dark' ? 'dark' : 'light')
 
@@ -92,8 +96,10 @@ const handleTouchEnd = (e) => {
         :class="['tab-item', { active: activeTab === i }]"
         @click="activeTab = i"
       >
-        <!-- Home Icon -->
-        <svg v-if="tab.key === 'home'" viewBox="0 0 24 24" width="22" height="22" fill="none"
+        <!-- Custom emoji icon (if set) -->
+        <span v-if="getTabIcon(tab.key)" class="tab-emoji" :style="{ filter: activeTab === i ? 'none' : 'grayscale(1) opacity(0.6)' }">{{ getTabIcon(tab.key) }}</span>
+        <!-- Home Icon (SVG fallback) -->
+        <svg v-else-if="tab.key === 'home'" viewBox="0 0 24 24" width="22" height="22" fill="none"
           :stroke="activeTab === i ? 'var(--primary)' : 'var(--text-light)'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 10.5L12 3l9 7.5"/>
           <path d="M5 9.5V19a1 1 0 0 0 1 1h3.5v-5a1.5 1.5 0 0 1 1.5-1.5h2a1.5 1.5 0 0 1 1.5 1.5v5H18a1 1 0 0 0 1-1V9.5"/>

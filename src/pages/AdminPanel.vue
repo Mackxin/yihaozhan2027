@@ -26,6 +26,7 @@ const helpSections = [
   { id: 'h5', icon: '🚀', title: '更新网站数据' },
   { id: 'h6', icon: '🔍', title: '全站搜索' },
   { id: 'h7', icon: '🏠', title: '首页头像设置' },
+  { id: 'h12', icon: '🎨', title: '导航栏图标' },
   { id: 'h11', icon: '💻', title: '开发环境' },
   { id: 'h8', icon: '🌍', title: '部署到服务器' },
   { id: 'h9', icon: '✏️', title: '随记管理' },
@@ -490,6 +491,34 @@ const handleBuild = async () => {
   log('⬇️ data.json 已下载 → 放入 public/ 目录 → 运行 ./deploy.sh')
 }
 
+// ─── Nav Icon Customization ───
+const navIconTabs = [
+  { key: 'home', label: '首页', options: ['🏠', '🏡', '🏘️', '🏰', '🏕️', '🌆', '🌇', '🌃', '🛖', '🏢'] },
+  { key: 'nav', label: '导航', options: ['🧭', '🗺️', '🌐', '🔗', '📡', '🧩', '📌', '🎯', '🔮', '⚓'] },
+  { key: 'news', label: '讯息', options: ['📰', '📋', '📜', '📝', '📡', '💬', '🔔', '📣', '🗞️', '🏷️'] },
+  { key: 'notes', label: '随记', options: ['✏️', '📝', '📒', '📔', '🖊️', '✍️', '💡', '📌', '🗒️', '🧠'] },
+]
+const navIcons = ref(JSON.parse(localStorage.getItem('yihao_nav_icons') || '{}'))
+
+const setNavIcon = (key, emoji) => {
+  if (navIcons.value[key] === emoji) {
+    delete navIcons.value[key]
+  } else {
+    navIcons.value[key] = emoji
+  }
+  localStorage.setItem('yihao_nav_icons', JSON.stringify(navIcons.value))
+  log(`导航栏「${navIconTabs.find(t => t.key === key)?.label}」图标已更换为 ${navIcons.value[key] || '(默认)'}`)
+}
+
+const resetNavIcons = () => {
+  if (!confirm('确认恢复所有导航栏图标为默认？')) return
+  navIcons.value = {}
+  localStorage.removeItem('yihao_nav_icons')
+  log('导航栏图标已恢复默认')
+}
+
+const hasCustomIcons = computed(() => Object.keys(navIcons.value).length > 0)
+
 // ─── Auto-save: warn before leaving ───
 const handleBeforeUnload = (e) => {
   if (newLink.name || newItem.title || batchImportText.value) {
@@ -652,6 +681,31 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <button class="admin-quick-btn admin-quick-btn-danger" @click="handleClearAllIdeas">
                   <span>🗑️ 清除所有随记</span>
                 </button>
+              </div>
+            </div>
+
+            <!-- Nav Icon Settings -->
+            <div class="admin-panel-card">
+              <div class="admin-panel-card-head">
+                <h3 class="admin-panel-title">🎨 导航栏图标</h3>
+                <button v-if="hasCustomIcons" class="admin-btn admin-btn-xs admin-btn-ghost" @click="resetNavIcons" title="恢复默认图标">↺ 重置</button>
+              </div>
+              <p class="admin-panel-sub">点击图标更换底部导航栏的显示样式，再次点击取消选择</p>
+              <div class="nav-icon-grid">
+                <div v-for="tab in navIconTabs" :key="tab.key" class="nav-icon-card">
+                  <div class="nav-icon-card-head">
+                    <span class="nav-icon-current" :class="{ 'nav-icon-custom': navIcons[tab.key] }">{{ navIcons[tab.key] || '●' }}</span>
+                    <span class="nav-icon-card-label">{{ tab.label }}</span>
+                  </div>
+                  <div class="nav-icon-options">
+                    <button
+                      v-for="emoji in tab.options"
+                      :key="emoji"
+                      :class="['nav-icon-opt', { active: navIcons[tab.key] === emoji }]"
+                      @click="setNavIcon(tab.key, emoji)"
+                    >{{ emoji }}</button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1249,6 +1303,37 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <div class="help-step"><span class="help-step-num">3</span><div class="help-step-body"><p>放到项目的 <code>public/</code> 文件夹中</p></div></div>
                 <div class="help-step"><span class="help-step-num">4</span><div class="help-step-body"><p>重新构建后上传，或直接放到服务器网站根目录</p></div></div>
               </div>
+            </section>
+
+            <!-- 导航栏图标 -->
+            <section :id="'h12'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-yellow">🎨</div>
+                <div>
+                  <h2>导航栏图标</h2>
+                  <p class="help-section-sub">自定义底部导航栏的 Emoji 图标，让界面更有个性</p>
+                </div>
+              </div>
+              <div class="help-two-col">
+                <div class="help-col">
+                  <h3>设置方法</h3>
+                  <ul>
+                    <li>在总览页找到「🎨 导航栏图标」卡片</li>
+                    <li>每个 Tab 提供 10 个 Emoji 可选</li>
+                    <li>点击即切换，再次点击取消选择</li>
+                    <li>设置立即生效，无需重新构建</li>
+                  </ul>
+                </div>
+                <div class="help-col">
+                  <h3>其他说明</h3>
+                  <ul>
+                    <li><strong>恢复默认</strong>：点击卡片右上角「↺ 重置」按钮</li>
+                    <li><strong>本地存储</strong>：图标设置保存在浏览器 localStorage，每个设备独立</li>
+                    <li><strong>支持范围</strong>：首页、导航、讯息、随记 4 个 Tab，管理 Tab 保持默认</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 图标设置保存在本地，不同设备或浏览器需分别设置。</div>
             </section>
 
             <!-- 开发环境 -->
