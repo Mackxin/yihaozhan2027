@@ -28,6 +28,8 @@ const helpSections = [
   { id: 'h6', icon: '🔍', title: '全站搜索' },
   { id: 'h7', icon: '🏠', title: '首页头像设置' },
   { id: 'h12', icon: '🎨', title: '导航栏图标' },
+  { id: 'h13', icon: '👁️', title: 'Markdown 预览' },
+  { id: 'h14', icon: '🔔', title: '备份提醒' },
   { id: 'h11', icon: '💻', title: '开发环境' },
   { id: 'h8', icon: '🌍', title: '部署到服务器' },
   { id: 'h9', icon: '✏️', title: '随记管理' },
@@ -224,7 +226,7 @@ const globalSearchResults = computed(() => {
   const news = []
   store.timelineItems.forEach(group => {
     group.items.forEach(item => {
-      if (item.title.toLowerCase().includes(kw) || item.desc.some(d => d.toLowerCase().includes(kw))) {
+      if (item.title.toLowerCase().includes(kw) || (item.desc || []).some(d => d.toLowerCase().includes(kw))) {
         news.push({ date: group.date, title: item.title })
       }
     })
@@ -432,7 +434,9 @@ const handleClearAllIdeas = () => {
 const handleExportNotes = () => {
   const raw = localStorage.getItem('yihao_ideas')
   if (!raw) return alert('没有随记数据可导出')
-  const ideas = JSON.parse(raw)
+  let ideas
+  try { ideas = JSON.parse(raw) } catch { return alert('随记数据损坏，无法导出') }
+  if (!Array.isArray(ideas) || ideas.length === 0) return alert('没有随记数据可导出')
   let md = '# 壹号栈随记导出\n\n'
   md += `> 导出时间：${new Date().toLocaleString('zh-CN')}\n> 共 ${ideas.length} 条记录\n\n---\n\n`
   ideas.forEach((idea, i) => {
@@ -459,8 +463,34 @@ const handleExport = () => {
   a.href = URL.createObjectURL(blob)
   a.download = `yihao-data-${new Date().toISOString().slice(0, 10)}.json`
   a.click()
+  localStorage.setItem('yihao_last_export', Date.now().toString())
   log('导出数据包')
 }
+
+// ─── Backup Reminder ───
+const backupReminder = computed(() => {
+  const lastExport = parseInt(localStorage.getItem('yihao_last_export') || '0')
+  if (!lastExport) {
+    // Never exported
+    const totalData = store.navCategories.length + store.timelineItems.length
+    if (totalData > 5) return { level: 'warn', msg: '您还没有导出过数据备份，建议定期导出以防数据丢失。', days: null }
+    return null
+  }
+  const daysSince = Math.floor((Date.now() - lastExport) / (1000 * 60 * 60 * 24))
+  if (daysSince >= 30) return { level: 'danger', msg: `距上次导出已 ${daysSince} 天，强烈建议立即备份数据！`, days: daysSince }
+  if (daysSince >= 14) return { level: 'warn', msg: `距上次导出已 ${daysSince} 天，建议导出数据备份。`, days: daysSince }
+  if (daysSince >= 7) return { level: 'info', msg: `距上次导出已 ${daysSince} 天，可以考虑备份。`, days: daysSince }
+  return null
+})
+
+const dismissBackup = () => {
+  sessionStorage.setItem('yihao_backup_dismissed', '1')
+}
+
+const showBackupReminder = computed(() => {
+  if (sessionStorage.getItem('yihao_backup_dismissed')) return false
+  return backupReminder.value !== null
+})
 const handleImport = (e) => {
   const file = e.target.files[0]
   if (!file) return
@@ -634,6 +664,16 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
           <div class="admin-overview-header">
             <h2>站点总览</h2>
             <span class="admin-overview-date">{{ new Date().toLocaleDateString('zh-CN') }}</span>
+          </div>
+
+          <!-- Backup Reminder -->
+          <div v-if="showBackupReminder" :class="['backup-banner', 'backup-banner-' + backupReminder.level]">
+            <div class="backup-banner-icon">{{ backupReminder.level === 'danger' ? '🚨' : backupReminder.level === 'warn' ? '⚠️' : '💾' }}</div>
+            <div class="backup-banner-text">{{ backupReminder.msg }}</div>
+            <div class="backup-banner-actions">
+              <button class="backup-banner-btn" @click="handleExport">立即导出</button>
+              <button class="backup-banner-dismiss" @click="dismissBackup">稍后提醒</button>
+            </div>
           </div>
 
           <!-- Stats grid -->
@@ -1362,6 +1402,76 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 </div>
               </div>
               <div class="help-tip"><span class="help-tip-icon">💡</span> 图标设置保存在本地，不同设备或浏览器需分别设置。</div>
+            </section>
+
+            <!-- Markdown 预览 -->
+            <section :id="'h13'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-purple">👁️</div>
+                <div>
+                  <h2>Markdown 预览</h2>
+                  <p class="help-section-sub">随记输入时实时预览 Markdown 渲染效果</p>
+                </div>
+              </div>
+              <div class="help-steps">
+                <div class="help-step">
+                  <span class="help-step-num">1</span>
+                  <div class="help-step-body">
+                    <strong>切换到预览模式</strong>
+                    <p>在随记输入框顶部，点击「预览」按钮即可查看渲染后的效果</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">2</span>
+                  <div class="help-step-body">
+                    <strong>支持的语法</strong>
+                    <p>标题 (#)、加粗 (**text**)、列表 (- item)、代码块、引用 (>)、链接、图片等</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">3</span>
+                  <div class="help-step-body">
+                    <strong>切换回编辑</strong>
+                    <p>点击「编辑」按钮即可返回编辑模式，继续修改内容</p>
+                  </div>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 输入为空时「预览」按钮不可用，确保有内容后再预览。</div>
+            </section>
+
+            <!-- 备份提醒 -->
+            <section :id="'h14'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-yellow">🔔</div>
+                <div>
+                  <h2>备份提醒</h2>
+                  <p class="help-section-sub">自动提醒你导出数据备份，防止数据丢失</p>
+                </div>
+              </div>
+              <div class="help-steps">
+                <div class="help-step">
+                  <span class="help-step-num">1</span>
+                  <div class="help-step-body">
+                    <strong>自动检测</strong>
+                    <p>系统会在后台总览页自动检查上次导出时间，超过 7 天显示提醒</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">2</span>
+                  <div class="help-step-body">
+                    <strong>提醒级别</strong>
+                    <p>7 天提示（蓝色）、14 天警告（黄色）、30 天危险（红色），超过 30 天强烈建议备份</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">3</span>
+                  <div class="help-step-body">
+                    <strong>一键导出</strong>
+                    <p>点击提醒横幅中的「立即导出」按钮，或点击「稍后提醒」关闭横幅</p>
+                  </div>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 每次导出数据时会自动记录时间，重置备份提醒计时。</div>
             </section>
 
             <!-- 开发环境 -->

@@ -4,14 +4,20 @@
 #  使用方法: ./deploy.sh [提交信息]
 # ═══════════════════════════════════════════
 
+set -e
 MSG="${1:-更新数据}"
 
 echo "🚀 壹号栈 - 一键部署"
 echo "─────────────────────────────"
 
-# 检查 public/data.json
-if [ ! -f "public/data.json" ]; then
-  echo "⚠️  未找到 public/data.json"
+# 如果根目录有 data.json，复制到 public/
+if [ -f "data.json" ]; then
+  cp data.json public/data.json
+  echo "✅ 已复制 data.json → public/"
+elif [ -f "public/data.json" ]; then
+  echo "✅ 检测到 public/data.json"
+else
+  echo "⚠️  未找到 data.json"
   echo "   请先在后台点击「生成网站」更新数据"
   exit 1
 fi
@@ -19,10 +25,9 @@ fi
 # 构建
 echo "⏳ 正在构建..."
 npm run build
-if [ $? -ne 0 ]; then
-  echo "❌ 构建失败"
-  exit 1
-fi
+
+# 确保 data.json 在 docs 中
+[ -f "public/data.json" ] && cp public/data.json docs/data.json 2>/dev/null
 
 echo "✅ 构建完成"
 

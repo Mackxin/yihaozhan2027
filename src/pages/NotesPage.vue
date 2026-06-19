@@ -24,6 +24,7 @@ const parseTags = (text) => {
 
 const ideas = ref([])
 const input = ref('')
+const showPreview = ref(false)
 const filterTag = ref(null)
 const editIdx = ref(-1)
 const editText = ref('')
@@ -322,12 +323,29 @@ const confirmPublish = () => {
         <!-- Left: Input (sticky on large screens) -->
         <div class="notes-sidebar">
           <div class="notes-input-section">
+            <!-- Preview toggle bar -->
+            <div class="notes-preview-toggle">
+              <button :class="['notes-pv-btn', { active: !showPreview }]" @click="showPreview = false">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                编辑
+              </button>
+              <button :class="['notes-pv-btn', { active: showPreview }]" @click="showPreview = true" :disabled="!input.trim()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                预览
+              </button>
+            </div>
+            <!-- Edit mode -->
             <textarea
+              v-show="!showPreview"
               v-model="input"
               @keydown="handleKeydown"
               placeholder="在这里记录你的灵感...&#10;支持 Markdown 语法，使用 #标签 添加标签&#10;按 Ctrl+Enter 快速保存"
               class="notes-textarea"
             />
+            <!-- Preview mode -->
+            <div v-show="showPreview" class="notes-preview-panel">
+              <div class="notes-preview-content" v-html="renderMd(input)" />
+            </div>
             <div class="notes-input-footer">
               <button class="notes-save-btn" @click="handleSave" :disabled="!input.trim()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>

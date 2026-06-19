@@ -19,7 +19,7 @@ const filtered = computed(() => {
     .map(group => {
       const items = group.items.filter(item =>
         item.title.toLowerCase().includes(kw) ||
-        item.desc.some(d => d.toLowerCase().includes(kw))
+        (item.desc || []).some(d => d.toLowerCase().includes(kw))
       )
       return items.length > 0 ? { ...group, items } : null
     })
