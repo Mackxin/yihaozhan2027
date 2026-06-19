@@ -16,6 +16,7 @@ import {
 const activeTab = ref('overview')
 const contentRef = ref(null)
 const helpContentRef = ref(null)
+const activeHelpSection = ref('h1')
 
 // ─── Help sections ───
 const helpSections = [
@@ -32,9 +33,24 @@ const helpSections = [
   { id: 'h9', icon: '✏️', title: '随记管理' },
   { id: 'h10', icon: '⌨️', title: '快捷键' },
 ]
+
 const scrollToHelp = (id) => {
   const el = helpContentRef.value?.querySelector('#' + id)
   el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  activeHelpSection.value = id
+}
+
+const onHelpScroll = () => {
+  const container = helpContentRef.value
+  if (!container) return
+  const sections = helpSections.map(s => container.querySelector('#' + s.id)).filter(Boolean)
+  const offset = container.scrollTop + 120
+  for (let i = sections.length - 1; i >= 0; i--) {
+    if (sections[i].offsetTop <= offset) {
+      activeHelpSection.value = helpSections[i].id
+      return
+    }
+  }
 }
 
 // ─── Nav state ───
@@ -1068,17 +1084,28 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
       <!-- ── HELP ── -->
       <template v-if="activeTab === 'help'">
         <div class="help-panel">
-          <div class="help-content" ref="helpContentRef">
+          <!-- Left Sidebar TOC -->
+          <aside class="help-sidebar">
+            <div class="help-sidebar-brand">
+              <span class="help-sidebar-badge">使用手册</span>
+              <h2>使用指南</h2>
+            </div>
+            <nav class="help-sidebar-nav">
+              <a
+                v-for="s in helpSections" :key="s.id"
+                :class="['help-sidebar-link', { active: activeHelpSection === s.id }]"
+                :href="'#' + s.id"
+                @click.prevent="scrollToHelp(s.id)"
+              >{{ s.icon }} {{ s.title }}</a>
+            </nav>
+          </aside>
+          <!-- Right Content -->
+          <div class="help-content" ref="helpContentRef" @scroll="onHelpScroll">
             <!-- Hero -->
             <div class="help-hero">
               <div class="help-hero-inner">
-                <div class="help-hero-badge">使用手册</div>
                 <h1>壹号栈 使用指南</h1>
                 <p>完整的功能说明与操作教程，帮助您快速管理网站内容</p>
-              </div>
-              <!-- Quick nav pills -->
-              <div class="help-quick-nav">
-                <a v-for="s in helpSections" :key="s.id" :href="'#' + s.id" class="help-quick-pill" @click.prevent="scrollToHelp(s.id)">{{ s.icon }} {{ s.title }}</a>
               </div>
             </div>
 
