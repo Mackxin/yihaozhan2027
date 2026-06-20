@@ -1,11 +1,12 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { store } from './store'
+import { store, toggleAdmin } from './store'
 import HomePage from './pages/HomePage.vue'
 import NavPage from './pages/NavPage.vue'
 import NewsPage from './pages/NewsPage.vue'
 import NotesPage from './pages/NotesPage.vue'
 import AdminPanel from './pages/AdminPanel.vue'
+import MacPage from './pages/MacPage.vue'
 
 const allTabs = [
   { key: 'home', label: '首页' },
@@ -20,6 +21,16 @@ const slideWidth = computed(() => 100 / tabs.value.length)
 const activeTab = ref(0)
 const isMobile = ref(window.innerWidth <= 768)
 const touchRef = ref({ startX: 0, startY: 0, startTime: 0 })
+
+// ─── Long-press home tab (3s) to toggle admin ───
+let tabLongPressTimer = null
+const startTabLongPress = (tabKey) => {
+  if (tabKey !== 'home') return
+  tabLongPressTimer = setTimeout(() => { toggleAdmin() }, 3000)
+}
+const cancelTabLongPress = () => {
+  if (tabLongPressTimer) { clearTimeout(tabLongPressTimer); tabLongPressTimer = null }
+}
 
 // ─── Custom Nav Icons ───
 const navIcons = ref(JSON.parse(localStorage.getItem('yihao_nav_icons') || '{}'))
@@ -42,11 +53,36 @@ const toggleDarkMode = () => {
   applyTheme(darkMode.value)
 }
 
+// ─── Mac Page (overlay) ───
+const showMacPage = ref(false)
+const openMacPage = () => { showMacPage.value = true }
+const closeMacPage = () => { showMacPage.value = false }
+
+// Expose for NavPage link interception
+window.__yihaoOpenMac = openMacPage
+
+// ─── Admin shortcut: Ctrl+Shift+A / Cmd+Shift+A ───
+const handleAdminShortcut = (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+    e.preventDefault()
+    toggleAdmin()
+  }
+}
+
 onMounted(() => {
   applyTheme(darkMode.value)
   window.addEventListener('resize', handleResize)
+  window.addEventListener('keydown', handleAdminShortcut)
+
+  // URL parameter: ?admin=1 to enable, ?admin=0 to disable
+  const params = new URLSearchParams(window.location.search)
+  if (params.get('admin') === '1' && !store.isAdmin) toggleAdmin()
+  if (params.get('admin') === '0' && store.isAdmin) toggleAdmin()
 })
-onUnmounted(() => window.removeEventListener('resize', handleResize))
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('keydown', handleAdminShortcut)
+})
 
 const handleResize = () => { isMobile.value = window.innerWidth <= 768 }
 
@@ -88,6 +124,13 @@ const handleTouchEnd = (e) => {
       </div>
     </div>
 
+    <!-- Mac Page Overlay -->
+    <Transition name="mac-slide">
+      <div v-if="showMacPage" class="mac-overlay">
+        <MacPage :active="showMacPage" @back="closeMacPage" />
+      </div>
+    </Transition>
+
     <!-- Bottom Tab Bar -->
     <div class="tab-bar">
       <div
@@ -95,6 +138,9 @@ const handleTouchEnd = (e) => {
         :key="tab.key"
         :class="['tab-item', { active: activeTab === i }]"
         @click="activeTab = i"
+        @pointerdown="startTabLongPress(tab.key)"
+        @pointerup="cancelTabLongPress"
+        @pointerleave="cancelTabLongPress"
       >
         <!-- Custom emoji icon (if set) -->
         <span v-if="getTabIcon(tab.key)" class="tab-emoji" :style="{ filter: activeTab === i ? 'none' : 'grayscale(1) opacity(0.6)' }">{{ getTabIcon(tab.key) }}</span>

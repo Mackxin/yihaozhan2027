@@ -13,6 +13,9 @@ const contentRef = ref(null)
 
 const navCategories = computed(() => store.navCategories)
 
+const isInternalMacLink = (url) => url === 'http://yihaozhan.xyz/mac.html' || url === 'https://yihaozhan.xyz/mac.html'
+const openMacPage = () => { window.__yihaoOpenMac?.() }
+
 const midIndex = computed(() => Math.ceil(navCategories.value.length / 2))
 const topNavCats = computed(() => navCategories.value.slice(0, midIndex.value))
 const bottomNavCats = computed(() => navCategories.value.slice(midIndex.value))
@@ -137,10 +140,11 @@ onUnmounted(() => {
               <a
                 v-for="(link, i) in cat.links"
                 :key="i"
-                :href="link.url"
-                target="_blank"
-                rel="noopener noreferrer"
+                :href="isInternalMacLink(link.url) ? undefined : link.url"
+                :target="isInternalMacLink(link.url) ? undefined : '_blank'"
+                :rel="isInternalMacLink(link.url) ? undefined : 'noopener noreferrer'"
                 class="nav-link-item"
+                @click="isInternalMacLink(link.url) ? ($event.preventDefault(), openMacPage()) : null"
               >
                 {{ link.name }}
               </a>

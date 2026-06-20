@@ -1,6 +1,7 @@
 import { reactive, watch } from 'vue'
 import { navCategoriesPart1 } from './data/navData1'
 import { fullTimelineData } from './data/timelineData'
+import { defaultMacSections } from './data/macData'
 
 // Simple debounce for watch persistence
 const debounce = (fn, ms) => {
@@ -14,6 +15,7 @@ const debounce = (fn, ms) => {
 const NAV_STORAGE_KEY = 'yihao_nav_categories'
 const NEWS_STORAGE_KEY = 'yihao_news_timeline'
 const HERO_LINKS_KEY = 'yihao_hero_links'
+const MAC_DATA_KEY = 'yihao_mac_data'
 
 const defaultNav = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
 const defaultTimeline = fullTimelineData
@@ -22,16 +24,19 @@ const defaultHeroLinks = [
   { name: '正规大流量卡', url: 'https://h5.lot-ml.com/ProductEn/Index/45f704d8743b76f6' },
   { name: '靠谱大流量卡', url: 'https://simhaoka.com/phone/index?id=8EA4003D1FD6DBE5E7121A88C0DA52C5' },
 ]
+const defaultMac = JSON.parse(JSON.stringify(defaultMacSections))
 
 // ─── Initialize from localStorage or defaults ───
 const savedNav = localStorage.getItem(NAV_STORAGE_KEY)
 const savedNews = localStorage.getItem(NEWS_STORAGE_KEY)
 const savedHeroLinks = localStorage.getItem(HERO_LINKS_KEY)
+const savedMac = localStorage.getItem(MAC_DATA_KEY)
 
 export const store = reactive({
   navCategories: savedNav ? JSON.parse(savedNav) : JSON.parse(JSON.stringify(defaultNav)),
   timelineItems: savedNews ? JSON.parse(savedNews) : JSON.parse(JSON.stringify(defaultTimeline)),
   heroLinks: savedHeroLinks ? JSON.parse(savedHeroLinks) : JSON.parse(JSON.stringify(defaultHeroLinks)),
+  macSections: savedMac ? JSON.parse(savedMac) : defaultMac,
   dataReady: false,
   isAdmin: localStorage.getItem('yihao_admin') === 'true',
 })
@@ -54,6 +59,7 @@ async function loadRemoteData() {
       if (data.navCategories) store.navCategories = data.navCategories
       if (data.timelineItems) store.timelineItems = data.timelineItems
       if (data.heroLinks) store.heroLinks = data.heroLinks
+      if (data.macSections) store.macSections = data.macSections
       console.log('✅ 已加载 ./data.json')
     }
   } catch {
@@ -68,10 +74,12 @@ loadRemoteData()
 const persistNav = debounce((v) => localStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(v)), 300)
 const persistNews = debounce((v) => localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(v)), 300)
 const persistHero = debounce((v) => localStorage.setItem(HERO_LINKS_KEY, JSON.stringify(v)), 300)
+const persistMac = debounce((v) => localStorage.setItem(MAC_DATA_KEY, JSON.stringify(v)), 300)
 
 watch(() => store.navCategories, (v) => persistNav(v), { deep: true })
 watch(() => store.timelineItems, (v) => persistNews(v), { deep: true })
 watch(() => store.heroLinks, (v) => persistHero(v), { deep: true })
+watch(() => store.macSections, (v) => persistMac(v), { deep: true })
 
 // ─── Nav CRUD ───
 export function getNextNavId() {
@@ -155,6 +163,7 @@ export function exportAllData() {
     navCategories: sortedNav,
     timelineItems: sortedNews,
     heroLinks: store.heroLinks,
+    macSections: store.macSections,
   }, null, 2)
 }
 
@@ -163,15 +172,18 @@ export function importAllData(jsonStr) {
   if (data.navCategories) store.navCategories = data.navCategories
   if (data.timelineItems) store.timelineItems = data.timelineItems
   if (data.heroLinks) store.heroLinks = data.heroLinks
+  if (data.macSections) store.macSections = data.macSections
 }
 
 export function resetToDefaults() {
   localStorage.removeItem(NAV_STORAGE_KEY)
   localStorage.removeItem(NEWS_STORAGE_KEY)
   localStorage.removeItem(HERO_LINKS_KEY)
+  localStorage.removeItem(MAC_DATA_KEY)
   store.navCategories = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
   store.timelineItems = JSON.parse(JSON.stringify(defaultTimeline))
   store.heroLinks = JSON.parse(JSON.stringify(defaultHeroLinks))
+  store.macSections = JSON.parse(JSON.stringify(defaultMacSections))
 }
 
 // ─── Hero Links CRUD ───
@@ -228,4 +240,30 @@ export function restoreNavSnapshot(snapshot) {
 
 export function restoreNewsSnapshot(snapshot) {
   store.timelineItems = snapshot
+}
+
+// ─── Mac CRUD ───
+export function addMacItem(sectionId, item) {
+  const section = store.macSections.find(s => s.id === sectionId)
+  if (section) section.items.push(item)
+}
+
+export function updateMacItem(sectionId, index, item) {
+  const section = store.macSections.find(s => s.id === sectionId)
+  if (section && section.items[index]) {
+    section.items[index] = item
+  }
+}
+
+export function deleteMacItem(sectionId, index) {
+  const section = store.macSections.find(s => s.id === sectionId)
+  if (section) section.items.splice(index, 1)
+}
+
+export function getMacSnapshot() {
+  return JSON.parse(JSON.stringify(store.macSections))
+}
+
+export function restoreMacSnapshot(snapshot) {
+  store.macSections = snapshot
 }

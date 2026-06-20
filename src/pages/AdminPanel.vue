@@ -10,7 +10,8 @@ import {
   reorderNavCategories, reorderNavLinks,
   clearEmptyCategories, clearAllIdeas,
   getNavSnapshot, getNewsSnapshot, restoreNavSnapshot, restoreNewsSnapshot,
-  addHeroLink, updateHeroLink, deleteHeroLink
+  addHeroLink, updateHeroLink, deleteHeroLink,
+  addMacItem, updateMacItem, deleteMacItem, getMacSnapshot, restoreMacSnapshot
 } from '../store'
 
 const activeTab = ref('overview')
@@ -30,6 +31,7 @@ const helpSections = [
   { id: 'h12', icon: '🎨', title: '导航栏图标' },
   { id: 'h13', icon: '👁️', title: 'Markdown 预览' },
   { id: 'h14', icon: '🔔', title: '备份提醒' },
+  { id: 'h15', icon: '🍎', title: 'Mac 软件页' },
   { id: 'h11', icon: '💻', title: '开发环境' },
   { id: 'h8', icon: '🌍', title: '部署到服务器' },
   { id: 'h9', icon: '✏️', title: '随记管理' },
@@ -187,6 +189,62 @@ const handleDeleteHeroLink = (index) => {
   log('🗑️ 删除讯息链接: ' + name)
 }
 
+// ─── Mac Software state ───
+const activeMacSection = ref(store.macSections[0]?.id || '')
+const newMacItem = reactive({ sectionId: '', name: '', desc: '', url: '', emoji: '📦', tags: '' })
+const editingMacItem = reactive({ sectionId: '', index: -1, name: '', desc: '', url: '', emoji: '', tags: '' })
+
+const currentMacSection = computed(() => store.macSections.find(s => s.id === activeMacSection.value))
+const macTotalItems = computed(() => store.macSections.reduce((s, sec) => s + sec.items.length, 0))
+
+const startAddMacItem = (sectionId) => {
+  newMacItem.sectionId = sectionId
+  newMacItem.name = ''; newMacItem.desc = ''; newMacItem.url = ''; newMacItem.emoji = '📦'; newMacItem.tags = ''
+}
+const saveAddMacItem = () => {
+  if (!newMacItem.name.trim()) return
+  pushUndo('mac', getMacSnapshot(), '新增Mac软件')
+  addMacItem(newMacItem.sectionId, {
+    name: newMacItem.name.trim(),
+    desc: newMacItem.desc.trim(),
+    url: newMacItem.url.trim(),
+    emoji: newMacItem.emoji || '📦',
+    tags: newMacItem.tags.split(',').map(t => t.trim()).filter(Boolean)
+  })
+  log(`新增Mac软件「${newMacItem.name.trim()}」`)
+  newMacItem.name = ''; newMacItem.desc = ''; newMacItem.url = ''; newMacItem.tags = ''
+}
+const startEditMacItem = (sectionId, idx, item) => {
+  editingMacItem.sectionId = sectionId
+  editingMacItem.index = idx
+  editingMacItem.name = item.name
+  editingMacItem.desc = item.desc
+  editingMacItem.url = item.url
+  editingMacItem.emoji = item.emoji
+  editingMacItem.tags = (item.tags || []).join(', ')
+}
+const saveEditMacItem = () => {
+  if (editingMacItem.index < 0 || !editingMacItem.name.trim()) return
+  pushUndo('mac', getMacSnapshot(), '编辑Mac软件')
+  updateMacItem(editingMacItem.sectionId, editingMacItem.index, {
+    name: editingMacItem.name.trim(),
+    desc: editingMacItem.desc.trim(),
+    url: editingMacItem.url.trim(),
+    emoji: editingMacItem.emoji || '📦',
+    tags: editingMacItem.tags.split(',').map(t => t.trim()).filter(Boolean)
+  })
+  log(`修改Mac软件「${editingMacItem.name.trim()}」`)
+  editingMacItem.index = -1
+}
+const handleDeleteMacItem = (sectionId, idx) => {
+  const sec = store.macSections.find(s => s.id === sectionId)
+  const name = sec?.items[idx]?.name
+  if (!confirm(`确定删除「${name}」？`)) return
+  pushUndo('mac', getMacSnapshot(), `删除Mac软件「${name}」`)
+  deleteMacItem(sectionId, idx)
+  log(`删除Mac软件「${name}」`)
+}
+
 // ─── Undo System ───
 const undoStack = ref([])
 const pushUndo = (type, snapshot, desc) => {
@@ -196,6 +254,7 @@ const pushUndo = (type, snapshot, desc) => {
 const handleUndo = (item) => {
   if (item.type === 'nav') restoreNavSnapshot(item.snapshot)
   else if (item.type === 'news') restoreNewsSnapshot(item.snapshot)
+  else if (item.type === 'mac') restoreMacSnapshot(item.snapshot)
   undoStack.value = undoStack.value.filter(u => u !== item)
   log(`↩️ 撤销: ${item.desc}`)
 }
@@ -598,6 +657,11 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2z"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/></svg>
           讯息
           <span class="admin-tab-count">{{ newsTotalItems }}</span>
+        </button>
+        <button :class="['admin-tab', { active: activeTab === 'mac' }]" @click="activeTab = 'mac'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 7.5V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v1.5"/><rect x="4" y="7.5" width="16" height="12.5" rx="2"/><line x1="12" y1="12" x2="12" y2="12.01"/></svg>
+          Mac
+          <span class="admin-tab-count">{{ macTotalItems }}</span>
         </button>
         <button :class="['admin-tab', { active: activeTab === 'help' }]" @click="activeTab = 'help'">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -1122,6 +1186,92 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
         </main>
       </template>
 
+      <!-- ── MAC ── -->
+      <template v-if="activeTab === 'mac'">
+        <div class="admin-mac">
+          <div class="admin-mac-header">
+            <h2>🍎 Mac 软件管理</h2>
+            <p>管理 Mac 软件推荐页面的内容，共 {{ store.macSections.length }} 个分类，{{ macTotalItems }} 个工具</p>
+          </div>
+
+          <!-- Section tabs -->
+          <div class="admin-mac-tabs">
+            <button
+              v-for="sec in store.macSections"
+              :key="sec.id"
+              :class="['admin-mac-tab', { active: activeMacSection === sec.id }]"
+              @click="activeMacSection = sec.id"
+            >
+              {{ sec.icon }} {{ sec.title }}
+              <span class="admin-mac-tab-count">{{ sec.items.length }}</span>
+            </button>
+          </div>
+
+          <!-- Current section items -->
+          <div v-if="currentMacSection" class="admin-mac-content">
+            <!-- Add new item form -->
+            <div class="admin-mac-add">
+              <div class="admin-mac-add-row">
+                <input v-model="newMacItem.emoji" placeholder="📦" class="admin-mac-input-emoji" title="Emoji" />
+                <input v-model="newMacItem.name" placeholder="软件名称" class="admin-mac-input" />
+                <input v-model="newMacItem.url" placeholder="链接 URL（可选）" class="admin-mac-input" />
+              </div>
+              <input v-model="newMacItem.desc" placeholder="描述" class="admin-mac-input admin-mac-input-full" />
+              <div class="admin-mac-add-row">
+                <input v-model="newMacItem.tags" placeholder="标签（逗号分隔）" class="admin-mac-input" />
+                <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveAddMacItem" :disabled="!newMacItem.name.trim()">添加</button>
+              </div>
+            </div>
+
+            <!-- Items list -->
+            <div class="admin-mac-list">
+              <div
+                v-for="(item, idx) in currentMacSection.items"
+                :key="idx"
+                class="admin-mac-item"
+              >
+                <!-- Edit mode -->
+                <template v-if="editingMacItem.sectionId === activeMacSection && editingMacItem.index === idx">
+                  <div class="admin-mac-edit">
+                    <div class="admin-mac-add-row">
+                      <input v-model="editingMacItem.emoji" class="admin-mac-input-emoji" />
+                      <input v-model="editingMacItem.name" class="admin-mac-input" />
+                      <input v-model="editingMacItem.url" class="admin-mac-input" />
+                    </div>
+                    <input v-model="editingMacItem.desc" class="admin-mac-input admin-mac-input-full" />
+                    <div class="admin-mac-add-row">
+                      <input v-model="editingMacItem.tags" class="admin-mac-input" placeholder="标签" />
+                      <div class="admin-mac-edit-actions">
+                        <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveEditMacItem">保存</button>
+                        <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="editingMacItem.index = -1">取消</button>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <!-- Display mode -->
+                <template v-else>
+                  <div class="admin-mac-item-icon">{{ item.emoji }}</div>
+                  <div class="admin-mac-item-body">
+                    <strong>{{ item.name }}</strong>
+                    <small>{{ item.desc.slice(0, 60) }}{{ item.desc.length > 60 ? '...' : '' }}</small>
+                    <div v-if="item.tags?.length" class="admin-mac-item-tags">
+                      <span v-for="t in item.tags" :key="t">{{ t }}</span>
+                    </div>
+                  </div>
+                  <div class="admin-mac-item-actions">
+                    <button class="admin-icon-btn" @click="startEditMacItem(activeMacSection, idx, item)" title="编辑">✏️</button>
+                    <button class="admin-icon-btn" @click="handleDeleteMacItem(activeMacSection, idx)" title="删除">🗑️</button>
+                  </div>
+                </template>
+              </div>
+              <div v-if="currentMacSection.items.length === 0" class="admin-mac-empty">
+                <p>该分类下暂无软件，请在上方添加</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
       <!-- ── HELP ── -->
       <template v-if="activeTab === 'help'">
         <div class="help-panel">
@@ -1164,9 +1314,9 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <div class="help-page-card"><div class="help-page-icon">🧭</div><strong>导航</strong><span>收录的网站链接，按分类整理</span></div>
                 <div class="help-page-card"><div class="help-page-icon">📰</div><strong>讯息</strong><span>时间线形式记录的资源、资讯和灵感</span></div>
                 <div class="help-page-card"><div class="help-page-icon">✏️</div><strong>随记</strong><span>个人笔记，支持搜索、置顶、标签和排序</span></div>
-                <div class="help-page-card"><div class="help-page-icon">⚙️</div><strong>管理后台</strong><span>隐藏页面，通过控制台命令激活后在底部导航栏显示</span></div>
+                <div class="help-page-card"><div class="help-page-icon">⚙️</div><strong>管理后台</strong><span>隐藏页面，快捷键/URL参数/长按首页tab激活</span></div>
               </div>
-              <div class="help-tip"><span class="help-tip-icon">💡</span> 管理后台默认隐藏。进入方式：在浏览器控制台执行 <code>localStorage.setItem('yihao_admin','true')</code> 后刷新页面，底部导航栏即显示「管理」入口。</div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 管理后台默认隐藏。进入方式（任选其一）：① 快捷键 <kbd>Ctrl+Shift+A</kbd>（Mac: <kbd>⌘+Shift+A</kbd>）；② URL 加参数 <code>?admin=1</code>；③ 长按底部「首页」tab 3 秒；④ 控制台执行 <code>localStorage.setItem('yihao_admin','true')</code> 后刷新。</div>
               <div class="help-tip"><span class="help-tip-icon">🌙</span> 暗黑模式切换：点击首页标题「壹号栈」即可在浅色与深色之间切换，设置会自动保存到本地。</div>
             </section>
 
@@ -1474,6 +1624,41 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
               <div class="help-tip"><span class="help-tip-icon">💡</span> 每次导出数据时会自动记录时间，重置备份提醒计时。</div>
             </section>
 
+            <!-- Mac 软件页 -->
+            <section :id="'h15'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-green">🍎</div>
+                <div>
+                  <h2>Mac 软件页</h2>
+                  <p class="help-section-sub">管理 Mac 软件推荐页面，支持分类增删改查</p>
+                </div>
+              </div>
+              <div class="help-steps">
+                <div class="help-step">
+                  <span class="help-step-num">1</span>
+                  <div class="help-step-body">
+                    <strong>进入页面</strong>
+                    <p>在导航页「万物归一」分类下点击「mac」链接，即可进入 Mac 软件推荐页</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">2</span>
+                  <div class="help-step-body">
+                    <strong>后台管理</strong>
+                    <p>在后台点击「Mac」标签，切换分类后可添加、编辑、删除软件条目</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">3</span>
+                  <div class="help-step-body">
+                    <strong>数据结构</strong>
+                    <p>每个软件包含名称、描述、链接、Emoji 图标和标签，支持按分类浏览和搜索</p>
+                  </div>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> Mac 页面数据支持导出/导入，备份时会自动包含。</div>
+            </section>
+
             <!-- 开发环境 -->
             <section :id="'h11'" class="help-section">
               <div class="help-section-head">
@@ -1502,7 +1687,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                   <span class="help-step-num">3</span>
                   <div class="help-step-body">
                     <strong>进入管理后台</strong>
-                    <p>在浏览器控制台执行 <code>localStorage.setItem('yihao_admin','true')</code>，刷新页面后底部导航栏显示「管理」入口</p>
+                    <p>任选其一：① 快捷键 <kbd>Ctrl+Shift+A</kbd>；② URL 加 <code>?admin=1</code>；③ 长按底部「首页」tab 3 秒；④ 控制台执行 <code>localStorage.setItem('yihao_admin','true')</code> 后刷新</p>
                   </div>
                 </div>
               </div>

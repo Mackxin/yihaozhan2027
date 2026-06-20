@@ -285,3 +285,29 @@
 [data-theme="dark"] .uni-search-clear { background: var(--bg-hover); color: var(--text-muted); }
 [data-theme="dark"] .uni-search-clear:hover { background: var(--border); color: var(--text-primary); }
 [data-theme="dark"] .uni-search-stats { color: var(--text-muted); }
+
+/* ─── Mac Page Overlay ─── */
+.mac-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: var(--bg);
+  overflow: hidden;
+}
+.mac-slide-enter-active,
+.mac-slide-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+}
+.mac-slide-enter-from,
+.mac-slide-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}
+.mac-slide-enter-to,
+.mac-slide-leave-from {
+  transform: translateX(0);
+  opacity: 1;
+}
