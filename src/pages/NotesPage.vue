@@ -217,6 +217,58 @@ const handleKeydown = (e) => {
   }
 }
 
+// ─── Voice Input (Web Speech API) ───
+const isListening = ref(false)
+const recognitionSupported = ref(true) // assume supported, check on click
+let recognition = null
+let _finalTranscript = ''
+
+const initRecognition = () => {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+  if (!SR) { recognitionSupported.value = false; alert('当前浏览器不支持语音输入，请使用 Chrome 或 Edge'); return null }
+  recognitionSupported.value = true
+  const rec = new SR()
+  rec.lang = 'zh-CN'
+  rec.interimResults = true
+  rec.continuous = true
+  rec.onresult = (e) => {
+    let interim = ''
+    let final = ''
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        final += e.results[i][0].transcript
+      } else {
+        interim += e.results[i][0].transcript
+      }
+    }
+    _finalTranscript += final
+    input.value = input.value.replace(/\u200B.*/s, '') // remove previous interim
+    input.value += '\u200B' + _finalTranscript + interim
+  }
+  rec.onend = () => {
+    isListening.value = false
+    input.value = input.value.replace(/\u200B/g, '')
+  }
+  rec.onerror = () => { isListening.value = false }
+  return rec
+}
+
+const toggleVoice = () => {
+  if (!recognition) {
+    recognition = initRecognition()
+    if (!recognition) return
+  }
+  if (isListening.value) {
+    recognition.stop()
+    isListening.value = false
+  } else {
+    _finalTranscript = ''
+    if (input.value && !input.value.endsWith(' ')) input.value += ' '
+    recognition.start()
+    isListening.value = true
+  }
+}
+
 // ─── Publish to News ───
 const publishIdx = ref(-1)
 const publishTitle = ref('')
@@ -347,10 +399,16 @@ const confirmPublish = () => {
               <div class="notes-preview-content" v-html="renderMd(input)" />
             </div>
             <div class="notes-input-footer">
-              <button class="notes-save-btn" @click="handleSave" :disabled="!input.trim()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                保存灵感
-              </button>
+              <div class="notes-input-left">
+                <button v-if="recognitionSupported" class="notes-voice-btn" :class="{ active: isListening }" @click="toggleVoice" :title="isListening ? '停止录音' : '语音输入'">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                  {{ isListening ? '停止' : '语音' }}
+                </button>
+                <button class="notes-save-btn" @click="handleSave" :disabled="!input.trim()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  保存灵感
+                </button>
+              </div>
               <span class="notes-char-count" v-if="input.trim()">{{ input.length }} 字</span>
             </div>
           </div>
@@ -386,7 +444,7 @@ const confirmPublish = () => {
                 :class="['notes-tag', { active: filterTag === tag }]"
                 @click="filterTag = filterTag === tag ? null : tag"
               >
-                #{{ tag }} <small>({{ count }})</small>
+                {{ tag }} <small>({{ count }})</small>
               </span>
             </div>
           </div>
@@ -420,7 +478,7 @@ const confirmPublish = () => {
                   </div>
                 </div>
                 <div v-if="idea.tags?.length > 0" class="notes-card-tags">
-                  <span v-for="t in idea.tags" :key="t" class="notes-card-tag" @click="filterTag = t">#{{ t }}</span>
+                  <span v-for="t in idea.tags" :key="t" class="notes-card-tag" @click="filterTag = t">{{ t }}</span>
                 </div>
               </div>
             </div>

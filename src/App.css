@@ -292,7 +292,7 @@
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--tab-height, 56px);
   z-index: 50;
   background: var(--bg);
   overflow: hidden;

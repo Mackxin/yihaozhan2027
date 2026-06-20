@@ -191,24 +191,21 @@ const handleDeleteHeroLink = (index) => {
 
 // ─── Mac Software state ───
 const activeMacSection = ref(store.macSections[0]?.id || '')
-const newMacItem = reactive({ sectionId: '', name: '', desc: '', url: '', emoji: '📦', tags: '' })
-const editingMacItem = reactive({ sectionId: '', index: -1, name: '', desc: '', url: '', emoji: '', tags: '' })
+const newMacItem = reactive({ name: '', desc: '', url: '', tags: '' })
+const editingMacItem = reactive({ sectionId: '', index: -1, name: '', desc: '', url: '', tags: '' })
 
 const currentMacSection = computed(() => store.macSections.find(s => s.id === activeMacSection.value))
 const macTotalItems = computed(() => store.macSections.reduce((s, sec) => s + sec.items.length, 0))
-
-const startAddMacItem = (sectionId) => {
-  newMacItem.sectionId = sectionId
-  newMacItem.name = ''; newMacItem.desc = ''; newMacItem.url = ''; newMacItem.emoji = '📦'; newMacItem.tags = ''
-}
 const saveAddMacItem = () => {
   if (!newMacItem.name.trim()) return
+  const sectionId = activeMacSection.value
+  if (!sectionId) return
   pushUndo('mac', getMacSnapshot(), '新增Mac软件')
-  addMacItem(newMacItem.sectionId, {
+  addMacItem(sectionId, {
     name: newMacItem.name.trim(),
     desc: newMacItem.desc.trim(),
     url: newMacItem.url.trim(),
-    emoji: newMacItem.emoji || '📦',
+    emoji: '📦',
     tags: newMacItem.tags.split(',').map(t => t.trim()).filter(Boolean)
   })
   log(`新增Mac软件「${newMacItem.name.trim()}」`)
@@ -220,7 +217,6 @@ const startEditMacItem = (sectionId, idx, item) => {
   editingMacItem.name = item.name
   editingMacItem.desc = item.desc
   editingMacItem.url = item.url
-  editingMacItem.emoji = item.emoji
   editingMacItem.tags = (item.tags || []).join(', ')
 }
 const saveEditMacItem = () => {
@@ -230,7 +226,7 @@ const saveEditMacItem = () => {
     name: editingMacItem.name.trim(),
     desc: editingMacItem.desc.trim(),
     url: editingMacItem.url.trim(),
-    emoji: editingMacItem.emoji || '📦',
+    emoji: '📦',
     tags: editingMacItem.tags.split(',').map(t => t.trim()).filter(Boolean)
   })
   log(`修改Mac软件「${editingMacItem.name.trim()}」`)
@@ -1189,86 +1185,92 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
       <!-- ── MAC ── -->
       <template v-if="activeTab === 'mac'">
         <div class="admin-mac">
-          <div class="admin-mac-header">
-            <h2>🍎 Mac 软件管理</h2>
-            <p>管理 Mac 软件推荐页面的内容，共 {{ store.macSections.length }} 个分类，{{ macTotalItems }} 个工具</p>
-          </div>
-
-          <!-- Section tabs -->
-          <div class="admin-mac-tabs">
-            <button
-              v-for="sec in store.macSections"
-              :key="sec.id"
-              :class="['admin-mac-tab', { active: activeMacSection === sec.id }]"
-              @click="activeMacSection = sec.id"
-            >
-              {{ sec.icon }} {{ sec.title }}
-              <span class="admin-mac-tab-count">{{ sec.items.length }}</span>
-            </button>
-          </div>
-
-          <!-- Current section items -->
-          <div v-if="currentMacSection" class="admin-mac-content">
-            <!-- Add new item form -->
-            <div class="admin-mac-add">
-              <div class="admin-mac-add-row">
-                <input v-model="newMacItem.emoji" placeholder="📦" class="admin-mac-input-emoji" title="Emoji" />
-                <input v-model="newMacItem.name" placeholder="软件名称" class="admin-mac-input" />
-                <input v-model="newMacItem.url" placeholder="链接 URL（可选）" class="admin-mac-input" />
-              </div>
-              <input v-model="newMacItem.desc" placeholder="描述" class="admin-mac-input admin-mac-input-full" />
-              <div class="admin-mac-add-row">
-                <input v-model="newMacItem.tags" placeholder="标签（逗号分隔）" class="admin-mac-input" />
-                <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveAddMacItem" :disabled="!newMacItem.name.trim()">添加</button>
-              </div>
+          <!-- Left: Section Sidebar -->
+          <aside class="admin-mac-sidebar">
+            <div class="admin-mac-header">
+              <h2>🍎 Mac 管理</h2>
+              <p>{{ store.macSections.length }} 个分类 · {{ macTotalItems }} 个工具</p>
             </div>
-
-            <!-- Items list -->
-            <div class="admin-mac-list">
-              <div
-                v-for="(item, idx) in currentMacSection.items"
-                :key="idx"
-                class="admin-mac-item"
+            <div class="admin-mac-tabs">
+              <button
+                v-for="sec in store.macSections"
+                :key="sec.id"
+                :class="['admin-mac-tab', { active: activeMacSection === sec.id }]"
+                @click="activeMacSection = sec.id"
               >
-                <!-- Edit mode -->
-                <template v-if="editingMacItem.sectionId === activeMacSection && editingMacItem.index === idx">
-                  <div class="admin-mac-edit">
-                    <div class="admin-mac-add-row">
-                      <input v-model="editingMacItem.emoji" class="admin-mac-input-emoji" />
-                      <input v-model="editingMacItem.name" class="admin-mac-input" />
-                      <input v-model="editingMacItem.url" class="admin-mac-input" />
-                    </div>
-                    <input v-model="editingMacItem.desc" class="admin-mac-input admin-mac-input-full" />
-                    <div class="admin-mac-add-row">
-                      <input v-model="editingMacItem.tags" class="admin-mac-input" placeholder="标签" />
-                      <div class="admin-mac-edit-actions">
-                        <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveEditMacItem">保存</button>
-                        <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="editingMacItem.index = -1">取消</button>
+                {{ sec.icon }} {{ sec.title }}
+                <span class="admin-mac-tab-count">{{ sec.items.length }}</span>
+              </button>
+            </div>
+          </aside>
+
+          <!-- Right: Content -->
+          <main class="admin-mac-main">
+            <div v-if="currentMacSection" class="admin-mac-content">
+              <!-- Section title -->
+              <div class="admin-mac-section-title">
+                <span>{{ currentMacSection.icon }} {{ currentMacSection.title }}</span>
+                <small>{{ currentMacSection.subtitle }}</small>
+              </div>
+
+              <!-- Add new item form -->
+              <div class="admin-mac-add">
+                <div class="admin-mac-add-row">
+                  <input v-model="newMacItem.name" placeholder="软件名称" class="admin-mac-input" />
+                  <input v-model="newMacItem.url" placeholder="链接 URL（可选）" class="admin-mac-input" />
+                </div>
+                <input v-model="newMacItem.desc" placeholder="描述" class="admin-mac-input admin-mac-input-full" />
+                <div class="admin-mac-add-row">
+                  <input v-model="newMacItem.tags" placeholder="标签（逗号分隔）" class="admin-mac-input" />
+                  <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveAddMacItem" :disabled="!newMacItem.name.trim()">添加</button>
+                </div>
+              </div>
+
+              <!-- Items grid -->
+              <div v-if="currentMacSection.items.length > 0" class="admin-mac-list">
+                <div
+                  v-for="(item, idx) in currentMacSection.items"
+                  :key="idx"
+                  class="admin-mac-item"
+                >
+                  <!-- Edit mode -->
+                  <template v-if="editingMacItem.sectionId === activeMacSection && editingMacItem.index === idx">
+                    <div class="admin-mac-edit">
+                      <div class="admin-mac-add-row">
+                        <input v-model="editingMacItem.name" class="admin-mac-input" placeholder="名称" />
+                        <input v-model="editingMacItem.url" class="admin-mac-input" placeholder="链接" />
+                      </div>
+                      <input v-model="editingMacItem.desc" class="admin-mac-input admin-mac-input-full" placeholder="描述" />
+                      <div class="admin-mac-add-row">
+                        <input v-model="editingMacItem.tags" class="admin-mac-input" placeholder="标签" />
+                        <div class="admin-mac-edit-actions">
+                          <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveEditMacItem">保存</button>
+                          <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="editingMacItem.index = -1">取消</button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </template>
-                <!-- Display mode -->
-                <template v-else>
-                  <div class="admin-mac-item-icon">{{ item.emoji }}</div>
-                  <div class="admin-mac-item-body">
-                    <strong>{{ item.name }}</strong>
-                    <small>{{ item.desc.slice(0, 60) }}{{ item.desc.length > 60 ? '...' : '' }}</small>
-                    <div v-if="item.tags?.length" class="admin-mac-item-tags">
-                      <span v-for="t in item.tags" :key="t">{{ t }}</span>
+                  </template>
+                  <!-- Display mode -->
+                  <template v-else>
+                    <div class="admin-mac-item-body">
+                      <strong>{{ item.name }}</strong>
+                      <small>{{ item.desc.slice(0, 80) }}{{ item.desc.length > 80 ? '...' : '' }}</small>
+                      <div v-if="item.tags?.length" class="admin-mac-item-tags">
+                        <span v-for="t in item.tags" :key="t">{{ t }}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div class="admin-mac-item-actions">
-                    <button class="admin-icon-btn" @click="startEditMacItem(activeMacSection, idx, item)" title="编辑">✏️</button>
-                    <button class="admin-icon-btn" @click="handleDeleteMacItem(activeMacSection, idx)" title="删除">🗑️</button>
-                  </div>
-                </template>
+                    <div class="admin-mac-item-actions">
+                      <button class="admin-icon-btn" @click="startEditMacItem(activeMacSection, idx, item)" title="编辑">✏️</button>
+                      <button class="admin-icon-btn" @click="handleDeleteMacItem(activeMacSection, idx)" title="删除">🗑️</button>
+                    </div>
+                  </template>
+                </div>
               </div>
-              <div v-if="currentMacSection.items.length === 0" class="admin-mac-empty">
+              <div v-else class="admin-mac-empty">
                 <p>该分类下暂无软件，请在上方添加</p>
               </div>
             </div>
-          </div>
+          </main>
         </div>
       </template>
 

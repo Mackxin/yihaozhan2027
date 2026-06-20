@@ -137,7 +137,7 @@ const handleTouchEnd = (e) => {
         v-for="(tab, i) in tabs"
         :key="tab.key"
         :class="['tab-item', { active: activeTab === i }]"
-        @click="activeTab = i"
+        @click="activeTab = i; showMacPage = false"
         @pointerdown="startTabLongPress(tab.key)"
         @pointerup="cancelTabLongPress"
         @pointerleave="cancelTabLongPress"

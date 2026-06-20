@@ -4,7 +4,8 @@
   overflow-y: auto;
 }
 .mac-page-container {
-  max-width: 1100px;
+  width: 80%;
+  max-width: none;
   margin: 0 auto;
   padding: 2rem 1.5rem 4rem;
 }
@@ -90,17 +91,6 @@
   padding-bottom: 0.75rem;
   border-bottom: 1.5px solid #f1f5f9;
 }
-.mac-section-badge {
-  font-size: 1.5rem;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255,29,85,0.06);
-  border-radius: 12px;
-  flex-shrink: 0;
-}
 .mac-section-title {
   font-size: 1.2rem;
   font-weight: 700;
@@ -144,17 +134,6 @@
   border-color: #e2e8f0;
   box-shadow: none;
   transform: none;
-}
-.mac-card-emoji {
-  font-size: 1.6rem;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f8f9fb;
-  border-radius: 10px;
-  flex-shrink: 0;
 }
 .mac-card-body { flex: 1; min-width: 0; }
 .mac-card-name {
@@ -245,7 +224,7 @@
 
 /* ═══ Responsive ═══ */
 @media (max-width: 768px) {
-  .mac-page-container { padding: 1.25rem 1rem 5rem; }
+  .mac-page-container { width: 100%; padding: 1.25rem 1rem 5rem; }
   .mac-hero-title { font-size: 1.6rem; }
   .mac-hero-desc { font-size: 0.82rem; }
   .mac-grid { grid-template-columns: 1fr; }
@@ -261,12 +240,10 @@
 [data-theme="dark"] .mac-stat-divider { background: #334155; }
 [data-theme="dark"] .mac-section-header { border-bottom-color: #1e293b; }
 [data-theme="dark"] .mac-section-title { color: #f1f5f9; }
-[data-theme="dark"] .mac-section-badge { background: rgba(255,29,85,0.1); }
 [data-theme="dark"] .mac-card { background: #1e293b; border-color: #334155; }
 [data-theme="dark"] .mac-card:hover { border-color: #ff1d55; box-shadow: 0 4px 16px rgba(255,29,85,0.12); }
 [data-theme="dark"] .mac-card-name { color: #f1f5f9; }
 [data-theme="dark"] .mac-card-desc { color: #94a3b8; }
-[data-theme="dark"] .mac-card-emoji { background: #334155; }
 [data-theme="dark"] .mac-card-tag { background: rgba(255,29,85,0.12); }
 [data-theme="dark"] .mac-footer { border-top-color: #1e293b; }
 [data-theme="dark"] .mac-empty h3 { color: #cbd5e1; }

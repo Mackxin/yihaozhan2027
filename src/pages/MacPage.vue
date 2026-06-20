@@ -83,7 +83,6 @@ onUnmounted(() => {
         <main class="mac-main">
           <section v-for="section in filtered" :key="section.id" class="mac-section">
             <div class="mac-section-header">
-              <div class="mac-section-badge">{{ section.icon }}</div>
               <div>
                 <h2 class="mac-section-title">{{ section.title }}</h2>
                 <p class="mac-section-subtitle">{{ section.subtitle }}</p>
@@ -98,7 +97,6 @@ onUnmounted(() => {
                 :rel="item.url ? 'noopener noreferrer' : undefined"
                 :class="['mac-card', { 'mac-card-no-link': !item.url }]"
               >
-                <div class="mac-card-emoji">{{ item.emoji }}</div>
                 <div class="mac-card-body">
                   <h3 class="mac-card-name">{{ item.name }}</h3>
                   <p class="mac-card-desc">{{ item.desc }}</p>
