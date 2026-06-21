@@ -219,53 +219,92 @@ const handleKeydown = (e) => {
 
 // ─── Voice Input (Web Speech API) ───
 const isListening = ref(false)
-const recognitionSupported = ref(true) // assume supported, check on click
+const recognitionSupported = ref(true)
 let recognition = null
-let _finalTranscript = ''
+let _voiceBuffer = '' // accumulated final text from voice
+let _voiceInsertPos = 0 // position in input where voice text starts
 
 const initRecognition = () => {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-  if (!SR) { recognitionSupported.value = false; alert('当前浏览器不支持语音输入，请使用 Chrome 或 Edge'); return null }
+  if (!SR) {
+    recognitionSupported.value = false
+    return null
+  }
   recognitionSupported.value = true
   const rec = new SR()
   rec.lang = 'zh-CN'
   rec.interimResults = true
-  rec.continuous = true
+  // On mobile, continuous mode is unreliable; use single-shot + auto-restart
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+  rec.continuous = !isMobile
+
+  let shouldRestart = false
+
   rec.onresult = (e) => {
     let interim = ''
     let final = ''
-    for (let i = e.resultIndex; i < e.results.length; i++) {
+    for (let i = 0; i < e.results.length; i++) {
       if (e.results[i].isFinal) {
         final += e.results[i][0].transcript
       } else {
         interim += e.results[i][0].transcript
       }
     }
-    _finalTranscript += final
-    input.value = input.value.replace(/\u200B.*/s, '') // remove previous interim
-    input.value += '\u200B' + _finalTranscript + interim
+    if (final) _voiceBuffer += final
+    // Update textarea: keep text before voice insert point, add voice buffer + interim
+    const before = input.value.slice(0, _voiceInsertPos)
+    input.value = before + _voiceBuffer + interim
   }
   rec.onend = () => {
+    if (shouldRestart && isListening.value) {
+      // Auto-restart for mobile single-shot mode
+      try { rec.start() } catch { isListening.value = false }
+      return
+    }
     isListening.value = false
-    input.value = input.value.replace(/\u200B/g, '')
   }
-  rec.onerror = () => { isListening.value = false }
+  rec.onerror = (e) => {
+    if (e.error === 'no-speech' && shouldRestart && isListening.value) {
+      try { rec.start() } catch { isListening.value = false }
+      return
+    }
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      recognitionSupported.value = false
+    }
+    isListening.value = false
+    shouldRestart = false
+  }
+  rec._shouldRestart = () => shouldRestart
+  rec._setRestart = (v) => { shouldRestart = v }
   return rec
 }
 
 const toggleVoice = () => {
   if (!recognition) {
     recognition = initRecognition()
-    if (!recognition) return
+    if (!recognition) {
+      alert('当前浏览器不支持语音输入，请使用 Chrome 或 Edge')
+      return
+    }
   }
   if (isListening.value) {
+    recognition._setRestart(false)
     recognition.stop()
     isListening.value = false
   } else {
-    _finalTranscript = ''
-    if (input.value && !input.value.endsWith(' ')) input.value += ' '
-    recognition.start()
-    isListening.value = true
+    _voiceBuffer = ''
+    _voiceInsertPos = input.value.length
+    if (input.value && !input.value.endsWith(' ') && !input.value.endsWith('\n')) {
+      input.value += ' '
+      _voiceInsertPos = input.value.length
+    }
+    recognition._setRestart(true)
+    try {
+      recognition.start()
+      isListening.value = true
+    } catch {
+      isListening.value = false
+    }
   }
 }
 

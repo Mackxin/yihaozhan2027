@@ -1,5 +1,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { marked } from 'marked'
 import {
   store,
   addNavCategory, updateNavCategoryTitle, deleteNavCategory,
@@ -11,7 +12,9 @@ import {
   clearEmptyCategories, clearAllIdeas,
   getNavSnapshot, getNewsSnapshot, restoreNavSnapshot, restoreNewsSnapshot,
   addHeroLink, updateHeroLink, deleteHeroLink,
-  addMacItem, updateMacItem, deleteMacItem, getMacSnapshot, restoreMacSnapshot
+  addMacItem, updateMacItem, deleteMacItem, getMacSnapshot, restoreMacSnapshot,
+  addArticle, updateArticle, deleteArticle, getArticleById,
+  getArticlesSnapshot, restoreArticlesSnapshot
 } from '../store'
 
 const activeTab = ref('overview')
@@ -32,6 +35,8 @@ const helpSections = [
   { id: 'h13', icon: '👁️', title: 'Markdown 预览' },
   { id: 'h14', icon: '🔔', title: '备份提醒' },
   { id: 'h15', icon: '🍎', title: 'Mac 软件页' },
+  { id: 'h16', icon: '📝', title: '文章管理' },
+  { id: 'h17', icon: '🔑', title: '后台登录' },
   { id: 'h11', icon: '💻', title: '开发环境' },
   { id: 'h8', icon: '🌍', title: '部署到服务器' },
   { id: 'h9', icon: '✏️', title: '随记管理' },
@@ -241,6 +246,115 @@ const handleDeleteMacItem = (sectionId, idx) => {
   log(`删除Mac软件「${name}」`)
 }
 
+// ─── Password Change ───
+const newPwd = reactive({ username: '', password: '' })
+const pwdMsg = ref('')
+
+const handleChangePwd = async () => {
+  if (!newPwd.username.trim() || !newPwd.password) return
+  try {
+    const msgBuffer = new TextEncoder().encode(newPwd.username.trim() + ':' + newPwd.password)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+    const hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
+    localStorage.setItem('yihao_admin_hash', hash)
+    pwdMsg.value = '密码已更新'
+    newPwd.username = ''
+    newPwd.password = ''
+    log('🔑 修改了管理员密码')
+    setTimeout(() => { pwdMsg.value = '' }, 3000)
+  } catch {
+    pwdMsg.value = '保存失败'
+  }
+}
+
+// ─── Articles state ───
+const articleView = ref('list') // 'list' | 'edit'
+const editingArticle = reactive({ id: '', title: '', content: '', published: false })
+const articlePreview = ref(false)
+
+const articlesTotal = computed(() => store.articles.length)
+const articlesPublished = computed(() => store.articles.filter(a => a.published).length)
+
+const handleNewArticle = () => {
+  addArticle('未命名文章', '')
+  const article = store.articles[store.articles.length - 1]
+  editingArticle.id = article.id
+  editingArticle.title = article.title
+  editingArticle.content = article.content
+  editingArticle.published = article.published
+  articleView.value = 'edit'
+  log('➕ 新建文章')
+}
+
+const handleEditArticle = (article) => {
+  editingArticle.id = article.id
+  editingArticle.title = article.title
+  editingArticle.content = article.content
+  editingArticle.published = article.published
+  articleView.value = 'edit'
+}
+
+const handleSaveArticle = () => {
+  if (!editingArticle.id) return
+  pushUndo('articles', getArticlesSnapshot(), '保存文章')
+  updateArticle(editingArticle.id, {
+    title: editingArticle.title,
+    content: editingArticle.content,
+    published: editingArticle.published
+  })
+  log(`✏️ 保存文章「${editingArticle.title}」`)
+  articleView.value = 'list'
+}
+
+const handleDeleteArticle = (id) => {
+  const article = getArticleById(id)
+  if (!confirm(`确定删除文章「${article?.title}」？`)) return
+  pushUndo('articles', getArticlesSnapshot(), `删除文章「${article?.title}」`)
+  deleteArticle(id)
+  log(`🗑️ 删除文章「${article?.title}」`)
+  if (editingArticle.id === id) articleView.value = 'list'
+}
+
+const handleTogglePublish = (article) => {
+  pushUndo('articles', getArticlesSnapshot(), article.published ? '取消发布' : '发布文章')
+  updateArticle(article.id, { published: !article.published })
+  log(article.published ? `📤 发布文章「${article.title}」` : `📥 取消发布「${article.title}」`)
+}
+
+const renderArticlePreview = () => {
+  return editingArticle.content ? marked(editingArticle.content, { breaks: true, gfm: true }) : '<p style="color:#94a3b8">暂无内容</p>'
+}
+
+const isArticleInNav = computed(() => {
+  if (!editingArticle.id) return false
+  const link = '#article:' + editingArticle.id
+  return store.navCategories.some(c => c.links.some(l => l.url === link))
+})
+
+const addArticleToNav = () => {
+  if (!editingArticle.id || !editingArticle.title) return
+  const link = '#article:' + editingArticle.id
+  // Find "万物归一" category (id: 1)
+  const wanyi = store.navCategories.find(c => c.id === 1 || c.title === '万物归一')
+  if (wanyi) {
+    addNavLink(wanyi.id, editingArticle.title, link)
+    log(`🧭 已添加「${editingArticle.title}」到导航`)
+  }
+}
+
+const removeArticleFromNav = () => {
+  if (!editingArticle.id) return
+  const link = '#article:' + editingArticle.id
+  for (const cat of store.navCategories) {
+    const idx = cat.links.findIndex(l => l.url === link)
+    if (idx >= 0) {
+      deleteNavLink(cat.id, idx)
+      log(`🧭 已从导航移除「${editingArticle.title}」`)
+      return
+    }
+  }
+}
+
 // ─── Undo System ───
 const undoStack = ref([])
 const pushUndo = (type, snapshot, desc) => {
@@ -251,6 +365,7 @@ const handleUndo = (item) => {
   if (item.type === 'nav') restoreNavSnapshot(item.snapshot)
   else if (item.type === 'news') restoreNewsSnapshot(item.snapshot)
   else if (item.type === 'mac') restoreMacSnapshot(item.snapshot)
+  else if (item.type === 'articles') restoreArticlesSnapshot(item.snapshot)
   undoStack.value = undoStack.value.filter(u => u !== item)
   log(`↩️ 撤销: ${item.desc}`)
 }
@@ -659,6 +774,11 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
           Mac
           <span class="admin-tab-count">{{ macTotalItems }}</span>
         </button>
+        <button :class="['admin-tab', { active: activeTab === 'articles' }]" @click="activeTab = 'articles'; articleView = 'list'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          文章
+          <span class="admin-tab-count">{{ articlesTotal }}</span>
+        </button>
         <button :class="['admin-tab', { active: activeTab === 'help' }]" @click="activeTab = 'help'">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           帮助
@@ -853,6 +973,16 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 </div>
               </div>
               <button v-if="actionLog.length > 0" class="admin-btn admin-btn-xs admin-btn-ghost" style="margin-top:8px;" @click="actionLog = []; localStorage.removeItem('yihao_action_log')">清除日志</button>
+            </div>
+
+            <div class="admin-panel-card">
+              <h3 class="admin-panel-title">修改密码</h3>
+              <div class="admin-pwd-form">
+                <input v-model="newPwd.username" class="admin-input admin-input-sm" placeholder="新账号" />
+                <input v-model="newPwd.password" type="password" class="admin-input admin-input-sm" placeholder="新密码" />
+                <button class="admin-btn admin-btn-primary admin-btn-sm" @click="handleChangePwd" :disabled="!newPwd.username.trim() || !newPwd.password">保存</button>
+              </div>
+              <p v-if="pwdMsg" class="admin-pwd-msg">{{ pwdMsg }}</p>
             </div>
           </div>
         </div>
@@ -1185,26 +1315,26 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
       <!-- ── MAC ── -->
       <template v-if="activeTab === 'mac'">
         <div class="admin-mac">
-          <!-- Left: Section Sidebar -->
+          <!-- Sidebar: Header + Category Tabs -->
           <aside class="admin-mac-sidebar">
             <div class="admin-mac-header">
               <h2>🍎 Mac 管理</h2>
               <p>{{ store.macSections.length }} 个分类 · {{ macTotalItems }} 个工具</p>
             </div>
-            <div class="admin-mac-tabs">
+            <nav class="admin-mac-tabs">
               <button
                 v-for="sec in store.macSections"
                 :key="sec.id"
                 :class="['admin-mac-tab', { active: activeMacSection === sec.id }]"
                 @click="activeMacSection = sec.id"
               >
-                {{ sec.icon }} {{ sec.title }}
+                <span class="admin-mac-tab-label">{{ sec.icon }} {{ sec.title }}</span>
                 <span class="admin-mac-tab-count">{{ sec.items.length }}</span>
               </button>
-            </div>
+            </nav>
           </aside>
 
-          <!-- Right: Content -->
+          <!-- Main Content -->
           <main class="admin-mac-main">
             <div v-if="currentMacSection" class="admin-mac-content">
               <!-- Section title -->
@@ -1215,18 +1345,16 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
 
               <!-- Add new item form -->
               <div class="admin-mac-add">
-                <div class="admin-mac-add-row">
-                  <input v-model="newMacItem.name" placeholder="软件名称" class="admin-mac-input" />
-                  <input v-model="newMacItem.url" placeholder="链接 URL（可选）" class="admin-mac-input" />
-                </div>
-                <input v-model="newMacItem.desc" placeholder="描述" class="admin-mac-input admin-mac-input-full" />
-                <div class="admin-mac-add-row">
+                <input v-model="newMacItem.name" placeholder="软件名称" class="admin-mac-input" />
+                <input v-model="newMacItem.url" placeholder="链接 URL（可选）" class="admin-mac-input" />
+                <input v-model="newMacItem.desc" placeholder="描述" class="admin-mac-input" />
+                <div class="admin-mac-add-footer">
                   <input v-model="newMacItem.tags" placeholder="标签（逗号分隔）" class="admin-mac-input" />
                   <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveAddMacItem" :disabled="!newMacItem.name.trim()">添加</button>
                 </div>
               </div>
 
-              <!-- Items grid -->
+              <!-- Items list -->
               <div v-if="currentMacSection.items.length > 0" class="admin-mac-list">
                 <div
                   v-for="(item, idx) in currentMacSection.items"
@@ -1236,12 +1364,10 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                   <!-- Edit mode -->
                   <template v-if="editingMacItem.sectionId === activeMacSection && editingMacItem.index === idx">
                     <div class="admin-mac-edit">
-                      <div class="admin-mac-add-row">
-                        <input v-model="editingMacItem.name" class="admin-mac-input" placeholder="名称" />
-                        <input v-model="editingMacItem.url" class="admin-mac-input" placeholder="链接" />
-                      </div>
-                      <input v-model="editingMacItem.desc" class="admin-mac-input admin-mac-input-full" placeholder="描述" />
-                      <div class="admin-mac-add-row">
+                      <input v-model="editingMacItem.name" class="admin-mac-input" placeholder="名称" />
+                      <input v-model="editingMacItem.url" class="admin-mac-input" placeholder="链接" />
+                      <input v-model="editingMacItem.desc" class="admin-mac-input" placeholder="描述" />
+                      <div class="admin-mac-add-footer">
                         <input v-model="editingMacItem.tags" class="admin-mac-input" placeholder="标签" />
                         <div class="admin-mac-edit-actions">
                           <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveEditMacItem">保存</button>
@@ -1271,6 +1397,72 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
               </div>
             </div>
           </main>
+        </div>
+      </template>
+
+      <!-- ── ARTICLES ── -->
+      <template v-if="activeTab === 'articles'">
+        <div class="admin-articles">
+          <!-- List View -->
+          <template v-if="articleView === 'list'">
+            <div class="admin-articles-header">
+              <div>
+                <h2>文章管理</h2>
+                <p>{{ articlesTotal }} 篇文章 · {{ articlesPublished }} 已发布</p>
+              </div>
+              <button class="admin-btn admin-btn-primary" @click="handleNewArticle">+ 新建文章</button>
+            </div>
+            <div class="admin-articles-list">
+              <div v-if="!store.articles.length" class="admin-articles-empty">
+                <p>还没有文章，点击上方按钮新建</p>
+              </div>
+              <div v-for="article in store.articles" :key="article.id" class="admin-article-row">
+                <div class="admin-article-info">
+                  <h3>{{ article.title }}</h3>
+                  <div class="admin-article-meta">
+                    <span :class="['admin-article-status', article.published ? 'published' : 'draft']">
+                      {{ article.published ? '已发布' : '草稿' }}
+                    </span>
+                    <span class="admin-article-date">{{ new Date(article.updatedAt).toLocaleDateString('zh-CN') }}</span>
+                    <span class="admin-article-words">{{ article.content.length }} 字</span>
+                  </div>
+                </div>
+                <div class="admin-article-actions">
+                  <button class="admin-btn admin-btn-xs admin-btn-ghost" @click="handleTogglePublish(article)">
+                    {{ article.published ? '取消发布' : '发布' }}
+                  </button>
+                  <button class="admin-btn admin-btn-xs admin-btn-ghost" @click="handleEditArticle(article)">编辑</button>
+                  <button class="admin-btn admin-btn-xs admin-btn-warn" @click="handleDeleteArticle(article.id)">删除</button>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Edit View -->
+          <template v-if="articleView === 'edit'">
+            <div class="admin-article-editor">
+              <div class="admin-article-editor-header">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="articleView = 'list'">← 返回列表</button>
+                <div class="admin-article-editor-actions">
+                  <label class="admin-article-publish-toggle">
+                    <input type="checkbox" v-model="editingArticle.published" />
+                    <span>{{ editingArticle.published ? '已发布' : '草稿' }}</span>
+                  </label>
+                  <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="articlePreview = !articlePreview">
+                    {{ articlePreview ? '编辑' : '预览' }}
+                  </button>
+                  <button v-if="isArticleInNav" class="admin-btn admin-btn-warn admin-btn-sm" @click="removeArticleFromNav">已在导航</button>
+                  <button v-else class="admin-btn admin-btn-ghost admin-btn-sm" @click="addArticleToNav">+ 导航</button>
+                  <button class="admin-btn admin-btn-primary admin-btn-sm" @click="handleSaveArticle">保存</button>
+                </div>
+              </div>
+              <input v-model="editingArticle.title" class="admin-article-title-input" placeholder="文章标题" />
+              <div class="admin-article-editor-body">
+                <textarea v-if="!articlePreview" v-model="editingArticle.content" class="admin-article-textarea" placeholder="在此输入 Markdown 内容..."></textarea>
+                <div v-else class="admin-article-preview article-body" v-html="renderArticlePreview()"></div>
+              </div>
+            </div>
+          </template>
         </div>
       </template>
 
@@ -1632,7 +1824,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <div class="help-section-badge badge-green">🍎</div>
                 <div>
                   <h2>Mac 软件页</h2>
-                  <p class="help-section-sub">管理 Mac 软件推荐页面，支持分类增删改查</p>
+                  <p class="help-section-sub">管理 Mac 软件推荐页面，左右布局 + 多列网格，支持分类增删改查</p>
                 </div>
               </div>
               <div class="help-steps">
@@ -1640,25 +1832,102 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                   <span class="help-step-num">1</span>
                   <div class="help-step-body">
                     <strong>进入页面</strong>
-                    <p>在导航页「万物归一」分类下点击「mac」链接，即可进入 Mac 软件推荐页</p>
+                    <p>在导航页「万物归一」分类下点击「mac」链接，即可进入 Mac 软件推荐页（占屏幕 80% 宽度）</p>
                   </div>
                 </div>
                 <div class="help-step">
                   <span class="help-step-num">2</span>
                   <div class="help-step-body">
                     <strong>后台管理</strong>
-                    <p>在后台点击「Mac」标签，切换分类后可添加、编辑、删除软件条目</p>
+                    <p>在后台点击「Mac」标签，左侧显示分类侧边栏，右侧显示 3 列网格。切换分类后可添加、编辑、删除软件条目</p>
                   </div>
                 </div>
                 <div class="help-step">
                   <span class="help-step-num">3</span>
                   <div class="help-step-body">
                     <strong>数据结构</strong>
-                    <p>每个软件包含名称、描述、链接、Emoji 图标和标签，支持按分类浏览和搜索</p>
+                    <p>每个软件包含名称、描述、链接和标签，支持按分类浏览和搜索</p>
                   </div>
                 </div>
               </div>
-              <div class="help-tip"><span class="help-tip-icon">💡</span> Mac 页面数据支持导出/导入，备份时会自动包含。</div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> Mac 页面数据支持导出/导入，备份时会自动包含。移动端自动切换为上下布局 + 单列显示。</div>
+            </section>
+
+            <!-- 文章管理 -->
+            <section :id="'h16'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-blue">📝</div>
+                <div>
+                  <h2>文章管理</h2>
+                  <p class="help-section-sub">支持 Markdown 语法，写完后自动生成页面，可发布到导航「万物归一」</p>
+                </div>
+              </div>
+              <div class="help-steps">
+                <div class="help-step">
+                  <span class="help-step-num">1</span>
+                  <div class="help-step-body">
+                    <strong>新建文章</strong>
+                    <p>在后台点击「文章」标签，点击「+ 新建文章」按钮，进入编辑器</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">2</span>
+                  <div class="help-step-body">
+                    <strong>编写内容</strong>
+                    <p>输入标题，在文本框中输入 Markdown 内容，支持标题、加粗、列表、代码块、图片等语法。点击「预览」可实时查看渲染效果</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">3</span>
+                  <div class="help-step-body">
+                    <strong>添加到导航</strong>
+                    <p>点击「+ 导航」按钮，文章会自动添加到「万物归一」分类中，用户点击即可打开文章页面</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">4</span>
+                  <div class="help-step-body">
+                    <strong>发布/取消发布</strong>
+                    <p>在列表中点击「发布」或「取消发布」，控制文章是否在导航中可见</p>
+                  </div>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 文章数据支持导出/导入，撤销操作可回滚。导航链接格式为 <code>#article:文章ID</code>。</div>
+            </section>
+
+            <!-- 后台登录 -->
+            <section :id="'h17'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-red">🔑</div>
+                <div>
+                  <h2>后台登录</h2>
+                  <p class="help-section-sub">管理后台需要账号密码登录，保护数据安全</p>
+                </div>
+              </div>
+              <div class="help-steps">
+                <div class="help-step">
+                  <span class="help-step-num">1</span>
+                  <div class="help-step-body">
+                    <strong>默认账号</strong>
+                    <p>账号：<code>admin</code>，密码：<code>yihao2027</code>。首次登录后请及时修改密码</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">2</span>
+                  <div class="help-step-body">
+                    <strong>进入后台</strong>
+                    <p>通过快捷键 Ctrl+Shift+A、URL 参数 ?admin=1、或长按首页 tab 3 秒触发登录弹窗</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">3</span>
+                  <div class="help-step-body">
+                    <strong>修改密码</strong>
+                    <p>登录后台后，在总览页底部「修改密码」卡片中设置新账号和密码</p>
+                  </div>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 密码使用 SHA-256 哈希存储，不会明文保存。修改密码后旧密码立即失效。</div>
             </section>
 
             <!-- 开发环境 -->

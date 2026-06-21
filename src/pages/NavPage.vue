@@ -14,7 +14,10 @@ const contentRef = ref(null)
 const navCategories = computed(() => store.navCategories)
 
 const isInternalMacLink = (url) => url === 'http://yihaozhan.xyz/mac.html' || url === 'https://yihaozhan.xyz/mac.html'
+const isArticleLink = (url) => url?.startsWith('#article:')
+const getArticleId = (url) => url?.replace('#article:', '')
 const openMacPage = () => { window.__yihaoOpenMac?.() }
+const openArticle = (id) => { window.__yihaoOpenArticle?.(id) }
 
 const midIndex = computed(() => Math.ceil(navCategories.value.length / 2))
 const topNavCats = computed(() => navCategories.value.slice(0, midIndex.value))
@@ -140,11 +143,11 @@ onUnmounted(() => {
               <a
                 v-for="(link, i) in cat.links"
                 :key="i"
-                :href="isInternalMacLink(link.url) ? undefined : link.url"
-                :target="isInternalMacLink(link.url) ? undefined : '_blank'"
-                :rel="isInternalMacLink(link.url) ? undefined : 'noopener noreferrer'"
+                :href="(isInternalMacLink(link.url) || isArticleLink(link.url)) ? undefined : link.url"
+                :target="(isInternalMacLink(link.url) || isArticleLink(link.url)) ? undefined : '_blank'"
+                :rel="(isInternalMacLink(link.url) || isArticleLink(link.url)) ? undefined : 'noopener noreferrer'"
                 class="nav-link-item"
-                @click="isInternalMacLink(link.url) ? ($event.preventDefault(), openMacPage()) : null"
+                @click="isInternalMacLink(link.url) ? ($event.preventDefault(), openMacPage()) : isArticleLink(link.url) ? ($event.preventDefault(), openArticle(getArticleId(link.url))) : null"
               >
                 {{ link.name }}
               </a>

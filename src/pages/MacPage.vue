@@ -7,7 +7,6 @@ const props = defineProps({
   active: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['back'])
 const search = ref('')
 const contentRef = ref(null)
 
@@ -55,10 +54,6 @@ onUnmounted(() => {
 
         <!-- Hero -->
         <header class="mac-hero">
-          <button class="mac-back-btn" @click="$emit('back')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            返回导航
-          </button>
           <h1 class="mac-hero-title">
             <span class="mac-hero-icon">🍎</span>
             Mac 软件推荐

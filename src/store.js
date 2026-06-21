@@ -16,6 +16,7 @@ const NAV_STORAGE_KEY = 'yihao_nav_categories'
 const NEWS_STORAGE_KEY = 'yihao_news_timeline'
 const HERO_LINKS_KEY = 'yihao_hero_links'
 const MAC_DATA_KEY = 'yihao_mac_data'
+const ARTICLES_KEY = 'yihao_articles'
 
 const defaultNav = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
 const defaultTimeline = fullTimelineData
@@ -25,29 +26,42 @@ const defaultHeroLinks = [
   { name: '靠谱大流量卡', url: 'https://simhaoka.com/phone/index?id=8EA4003D1FD6DBE5E7121A88C0DA52C5' },
 ]
 const defaultMac = JSON.parse(JSON.stringify(defaultMacSections))
+const defaultArticles = []
 
 // ─── Initialize from localStorage or defaults ───
 const savedNav = localStorage.getItem(NAV_STORAGE_KEY)
 const savedNews = localStorage.getItem(NEWS_STORAGE_KEY)
 const savedHeroLinks = localStorage.getItem(HERO_LINKS_KEY)
 const savedMac = localStorage.getItem(MAC_DATA_KEY)
+const savedArticles = localStorage.getItem(ARTICLES_KEY)
 
 export const store = reactive({
   navCategories: savedNav ? JSON.parse(savedNav) : JSON.parse(JSON.stringify(defaultNav)),
   timelineItems: savedNews ? JSON.parse(savedNews) : JSON.parse(JSON.stringify(defaultTimeline)),
   heroLinks: savedHeroLinks ? JSON.parse(savedHeroLinks) : JSON.parse(JSON.stringify(defaultHeroLinks)),
   macSections: savedMac ? JSON.parse(savedMac) : defaultMac,
+  articles: savedArticles ? JSON.parse(savedArticles) : JSON.parse(JSON.stringify(defaultArticles)),
   dataReady: false,
   isAdmin: localStorage.getItem('yihao_admin') === 'true',
 })
 
 export function toggleAdmin() {
-  store.isAdmin = !store.isAdmin
   if (store.isAdmin) {
-    localStorage.setItem('yihao_admin', 'true')
+    logoutAdmin()
   } else {
-    localStorage.removeItem('yihao_admin')
+    // Will be handled by App.vue to show login modal
+    window.dispatchEvent(new Event('yihao:show-login'))
   }
+}
+
+export function loginAdmin() {
+  store.isAdmin = true
+  localStorage.setItem('yihao_admin', 'true')
+}
+
+export function logoutAdmin() {
+  store.isAdmin = false
+  localStorage.removeItem('yihao_admin')
 }
 
 // ─── Try to load from ./data.json (relative path for static deployment) ───
@@ -60,6 +74,7 @@ async function loadRemoteData() {
       if (data.timelineItems) store.timelineItems = data.timelineItems
       if (data.heroLinks) store.heroLinks = data.heroLinks
       if (data.macSections) store.macSections = data.macSections
+      if (data.articles) store.articles = data.articles
       console.log('✅ 已加载 ./data.json')
     }
   } catch {
@@ -75,11 +90,13 @@ const persistNav = debounce((v) => localStorage.setItem(NAV_STORAGE_KEY, JSON.st
 const persistNews = debounce((v) => localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(v)), 300)
 const persistHero = debounce((v) => localStorage.setItem(HERO_LINKS_KEY, JSON.stringify(v)), 300)
 const persistMac = debounce((v) => localStorage.setItem(MAC_DATA_KEY, JSON.stringify(v)), 300)
+const persistArticles = debounce((v) => localStorage.setItem(ARTICLES_KEY, JSON.stringify(v)), 300)
 
 watch(() => store.navCategories, (v) => persistNav(v), { deep: true })
 watch(() => store.timelineItems, (v) => persistNews(v), { deep: true })
 watch(() => store.heroLinks, (v) => persistHero(v), { deep: true })
 watch(() => store.macSections, (v) => persistMac(v), { deep: true })
+watch(() => store.articles, (v) => persistArticles(v), { deep: true })
 
 // ─── Nav CRUD ───
 export function getNextNavId() {
@@ -164,6 +181,7 @@ export function exportAllData() {
     timelineItems: sortedNews,
     heroLinks: store.heroLinks,
     macSections: store.macSections,
+    articles: store.articles,
   }, null, 2)
 }
 
@@ -173,6 +191,7 @@ export function importAllData(jsonStr) {
   if (data.timelineItems) store.timelineItems = data.timelineItems
   if (data.heroLinks) store.heroLinks = data.heroLinks
   if (data.macSections) store.macSections = data.macSections
+  if (data.articles) store.articles = data.articles
 }
 
 export function resetToDefaults() {
@@ -180,10 +199,12 @@ export function resetToDefaults() {
   localStorage.removeItem(NEWS_STORAGE_KEY)
   localStorage.removeItem(HERO_LINKS_KEY)
   localStorage.removeItem(MAC_DATA_KEY)
+  localStorage.removeItem(ARTICLES_KEY)
   store.navCategories = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
   store.timelineItems = JSON.parse(JSON.stringify(defaultTimeline))
   store.heroLinks = JSON.parse(JSON.stringify(defaultHeroLinks))
   store.macSections = JSON.parse(JSON.stringify(defaultMacSections))
+  store.articles = JSON.parse(JSON.stringify(defaultArticles))
 }
 
 // ─── Hero Links CRUD ───
@@ -266,4 +287,45 @@ export function getMacSnapshot() {
 
 export function restoreMacSnapshot(snapshot) {
   store.macSections = snapshot
+}
+
+// ─── Articles CRUD ───
+export function generateArticleId() {
+  return 'a_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+}
+
+export function addArticle(title, content) {
+  const now = new Date().toISOString()
+  store.articles.push({
+    id: generateArticleId(),
+    title: title || '未命名文章',
+    content: content || '',
+    published: false,
+    createdAt: now,
+    updatedAt: now
+  })
+}
+
+export function updateArticle(id, updates) {
+  const article = store.articles.find(a => a.id === id)
+  if (article) {
+    Object.assign(article, updates, { updatedAt: new Date().toISOString() })
+  }
+}
+
+export function deleteArticle(id) {
+  const idx = store.articles.findIndex(a => a.id === id)
+  if (idx >= 0) store.articles.splice(idx, 1)
+}
+
+export function getArticleById(id) {
+  return store.articles.find(a => a.id === id)
+}
+
+export function getArticlesSnapshot() {
+  return JSON.parse(JSON.stringify(store.articles))
+}
+
+export function restoreArticlesSnapshot(snapshot) {
+  store.articles = snapshot
 }

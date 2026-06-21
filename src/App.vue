@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { store, toggleAdmin } from './store'
+import { store, toggleAdmin, loginAdmin } from './store'
 import HomePage from './pages/HomePage.vue'
 import NavPage from './pages/NavPage.vue'
 import NewsPage from './pages/NewsPage.vue'
 import NotesPage from './pages/NotesPage.vue'
 import AdminPanel from './pages/AdminPanel.vue'
 import MacPage from './pages/MacPage.vue'
+import ArticlePage from './pages/ArticlePage.vue'
+import LoginModal from './components/LoginModal.vue'
 
 const allTabs = [
   { key: 'home', label: '首页' },
@@ -53,13 +55,35 @@ const toggleDarkMode = () => {
   applyTheme(darkMode.value)
 }
 
+// ─── Login Modal ───
+const showLogin = ref(false)
+const handleShowLogin = () => { showLogin.value = true }
+const handleLoginSuccess = () => {
+  loginAdmin()
+  showLogin.value = false
+  // Switch to admin tab
+  activeTab.value = tabs.value.length - 1
+}
+const handleLoginClose = () => { showLogin.value = false }
+
 // ─── Mac Page (overlay) ───
 const showMacPage = ref(false)
 const openMacPage = () => { showMacPage.value = true }
-const closeMacPage = () => { showMacPage.value = false }
+
+// ─── Article Page (overlay) ───
+const showArticlePage = ref(false)
+const currentArticle = ref(null)
+const openArticlePage = (articleId) => {
+  const article = store.articles.find(a => a.id === articleId)
+  if (article) {
+    currentArticle.value = article
+    showArticlePage.value = true
+  }
+}
 
 // Expose for NavPage link interception
 window.__yihaoOpenMac = openMacPage
+window.__yihaoOpenArticle = openArticlePage
 
 // ─── Admin shortcut: Ctrl+Shift+A / Cmd+Shift+A ───
 const handleAdminShortcut = (e) => {
@@ -73,15 +97,17 @@ onMounted(() => {
   applyTheme(darkMode.value)
   window.addEventListener('resize', handleResize)
   window.addEventListener('keydown', handleAdminShortcut)
+  window.addEventListener('yihao:show-login', handleShowLogin)
 
-  // URL parameter: ?admin=1 to enable, ?admin=0 to disable
+  // URL parameter: ?admin=1 to show login, ?admin=0 to disable
   const params = new URLSearchParams(window.location.search)
-  if (params.get('admin') === '1' && !store.isAdmin) toggleAdmin()
+  if (params.get('admin') === '1' && !store.isAdmin) showLogin.value = true
   if (params.get('admin') === '0' && store.isAdmin) toggleAdmin()
 })
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('keydown', handleAdminShortcut)
+  window.removeEventListener('yihao:show-login', handleShowLogin)
 })
 
 const handleResize = () => { isMobile.value = window.innerWidth <= 768 }
@@ -127,9 +153,19 @@ const handleTouchEnd = (e) => {
     <!-- Mac Page Overlay -->
     <Transition name="mac-slide">
       <div v-if="showMacPage" class="mac-overlay">
-        <MacPage :active="showMacPage" @back="closeMacPage" />
+        <MacPage :active="showMacPage" />
       </div>
     </Transition>
+
+    <!-- Article Page Overlay -->
+    <Transition name="mac-slide">
+      <div v-if="showArticlePage" class="mac-overlay">
+        <ArticlePage :article="currentArticle" />
+      </div>
+    </Transition>
+
+    <!-- Login Modal -->
+    <LoginModal v-if="showLogin" @login="handleLoginSuccess" @close="handleLoginClose" />
 
     <!-- Bottom Tab Bar -->
     <div class="tab-bar">
