@@ -37,6 +37,7 @@ const helpSections = [
   { id: 'h14', icon: '🔔', title: '备份提醒' },
   { id: 'h15', icon: '🍎', title: 'Mac 软件页' },
   { id: 'h16', icon: '📝', title: '文章管理' },
+  { id: 'h18', icon: '📖', title: '回忆过往' },
   { id: 'h17', icon: '🔑', title: '后台登录' },
   { id: 'h11', icon: '💻', title: '开发环境' },
   { id: 'h8', icon: '🌍', title: '部署到服务器' },
@@ -1665,7 +1666,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <div class="help-section-badge badge-blue">🌐</div>
                 <div>
                   <h2>网站架构</h2>
-                  <p class="help-section-sub">壹号栈是一个单页应用（SPA），包含 4 个公开页面和 1 个隐藏管理后台</p>
+                  <p class="help-section-sub">壹号栈是一个单页应用（SPA），包含 5 个公开页面和 1 个隐藏管理后台</p>
                 </div>
               </div>
               <div class="help-card-grid">
@@ -1673,6 +1674,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <div class="help-page-card"><div class="help-page-icon">🧭</div><strong>导航</strong><span>收录的网站链接，按分类整理</span></div>
                 <div class="help-page-card"><div class="help-page-icon">📰</div><strong>讯息</strong><span>时间线形式记录的资源、资讯和灵感</span></div>
                 <div class="help-page-card"><div class="help-page-icon">✏️</div><strong>随记</strong><span>个人笔记，支持搜索、置顶、标签和排序</span></div>
+                <div class="help-page-card"><div class="help-page-icon">📖</div><strong>回忆过往</strong><span>以卡片形式记录回忆，桌面端瀑布流展示，移动端抖音式滑动浏览</span></div>
                 <div class="help-page-card"><div class="help-page-icon">⚙️</div><strong>管理后台</strong><span>隐藏页面，快捷键/URL参数/长按首页tab激活</span></div>
               </div>
               <div class="help-tip"><span class="help-tip-icon">💡</span> 管理后台默认隐藏。进入方式（任选其一）：① 快捷键 <kbd>Ctrl+Shift+A</kbd>（Mac: <kbd>⌘+Shift+A</kbd>）；② URL 加参数 <code>?admin=1</code>；③ 长按底部「首页」tab 3 秒；④ 控制台执行 <code>localStorage.setItem('yihao_admin','true')</code> 后刷新。</div>
@@ -1862,6 +1864,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <div class="help-search-card"><div class="help-search-icon">🧭</div><strong>导航</strong><span>搜索导航链接名称和 URL</span></div>
                 <div class="help-search-card"><div class="help-search-icon">📰</div><strong>讯息</strong><span>搜索讯息标题和描述</span></div>
                 <div class="help-search-card"><div class="help-search-icon">✏️</div><strong>随记</strong><span>搜索随记内容和标签</span></div>
+                <div class="help-search-card"><div class="help-search-icon">📖</div><strong>回忆</strong><span>在历史面板中按日期查找回忆卡片</span></div>
               </div>
             </section>
 
@@ -1906,7 +1909,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                   <ul>
                     <li><strong>恢复默认</strong>：点击卡片右上角「↺ 重置」按钮</li>
                     <li><strong>本地存储</strong>：图标设置保存在浏览器 localStorage，每个设备独立</li>
-                    <li><strong>支持范围</strong>：首页、导航、讯息、随记 4 个 Tab，管理 Tab 保持默认</li>
+                    <li><strong>支持范围</strong>：首页、导航、讯息、随记、回忆 5 个 Tab，管理 Tab 保持默认</li>
                   </ul>
                 </div>
               </div>
@@ -2060,6 +2063,68 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
               <div class="help-tip"><span class="help-tip-icon">💡</span> 文章数据支持导出/导入，撤销操作可回滚。导航链接格式为 <code>#article:文章ID</code>。</div>
             </section>
 
+            <!-- 回忆过往 -->
+            <section :id="'h18'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-purple">📖</div>
+                <div>
+                  <h2>回忆过往</h2>
+                  <p class="help-section-sub">以卡片形式记录生活回忆，支持 Markdown 语法、心情标记，桌面端瀑布流展示，移动端抖音式滑动浏览</p>
+                </div>
+              </div>
+              <div class="help-steps">
+                <div class="help-step">
+                  <span class="help-step-num">1</span>
+                  <div class="help-step-body">
+                    <strong>新建回忆</strong>
+                    <p>在后台点击「回忆」标签，点击「+ 新建回忆」按钮，进入编辑器</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">2</span>
+                  <div class="help-step-body">
+                    <strong>填写内容</strong>
+                    <p>选择日期（自动计算星期），选择心情 Emoji（15 种可选），在文本框中输入 Markdown 内容，支持标题、加粗、列表、引用、代码块等语法。可切换预览实时查看渲染效果</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">3</span>
+                  <div class="help-step-body">
+                    <strong>发布/取消发布</strong>
+                    <p>在列表中点击「发布」或「取消发布」，控制回忆卡片是否在前台可见。草稿状态仅后台可见</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">4</span>
+                  <div class="help-step-body">
+                    <strong>前台浏览</strong>
+                    <p>桌面端：卡片以瀑布流方式铺满屏幕宽度，每张卡片背景色随机轮换（12 种浅色/暗色）。移动端：单卡片全屏展示，上下滑动切换，类似抖音的卡片堆叠动画</p>
+                  </div>
+                </div>
+              </div>
+              <div class="help-two-col">
+                <div class="help-col">
+                  <h3>卡片信息</h3>
+                  <ul>
+                    <li><strong>日期</strong>：选择日期后自动显示星期</li>
+                    <li><strong>心情</strong>：15 种 Emoji 可选（😊😢🔥🌙 等）</li>
+                    <li><strong>内容</strong>：支持完整 Markdown 语法</li>
+                    <li><strong>背景色</strong>：每张卡片自动分配不同的渐变背景</li>
+                  </ul>
+                </div>
+                <div class="help-col">
+                  <h3>浏览方式</h3>
+                  <ul>
+                    <li><strong>桌面端</strong>：瀑布流展示全部已发布回忆，占满屏幕宽度</li>
+                    <li><strong>移动端</strong>：单卡片展示，上下滑动随机切换，带堆叠动画</li>
+                    <li><strong>历史记录</strong>：点击「📋 历史」按钮打开侧边面板，按日期列出所有回忆，点击跳转</li>
+                    <li><strong>随机排列</strong>：桌面端可点击「🔀 随机排列」打乱卡片顺序</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 回忆数据支持导出/导入和撤销操作，备份时会自动包含。移动端滑动时支持实时跟手、缩放渐隐过渡动画。</div>
+            </section>
+
             <!-- 后台登录 -->
             <section :id="'h17'" class="help-section">
               <div class="help-section-head">
@@ -2189,7 +2254,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
             </section>
 
             <div class="help-footer">
-              <p>壹号栈 v1.2 · 如需更多功能或有使用问题，请联系开发者</p>
+              <p>壹号栈 v1.3 · 如需更多功能或有使用问题，请联系开发者</p>
             </div>
           </div>
         </div>
