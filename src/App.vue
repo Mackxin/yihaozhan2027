@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage.vue'
 import NavPage from './pages/NavPage.vue'
 import NewsPage from './pages/NewsPage.vue'
 import NotesPage from './pages/NotesPage.vue'
+import MemoryPage from './pages/MemoryPage.vue'
 import AdminPanel from './pages/AdminPanel.vue'
 import MacPage from './pages/MacPage.vue'
 import ArticlePage from './pages/ArticlePage.vue'
@@ -15,10 +16,11 @@ const allTabs = [
   { key: 'nav', label: '导航' },
   { key: 'news', label: '讯息' },
   { key: 'notes', label: '随记' },
+  { key: 'memory', label: '回忆' },
   { key: 'admin', label: '管理' },
 ]
 
-const tabs = computed(() => store.isAdmin ? allTabs : allTabs.slice(0, 4))
+const tabs = computed(() => store.isAdmin ? allTabs : allTabs.slice(0, 5))
 const slideWidth = computed(() => 100 / tabs.value.length)
 const activeTab = ref(0)
 const isMobile = ref(window.innerWidth <= 768)
@@ -146,6 +148,7 @@ const handleTouchEnd = (e) => {
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NavPage :active="activeTab === 1" /></div>
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NewsPage :active="activeTab === 2" /></div>
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NotesPage :active="activeTab === 3" /></div>
+        <div class="page-slide" :style="{ width: `${slideWidth}%` }"><MemoryPage :active="activeTab === 4" /></div>
         <div v-if="store.isAdmin" class="page-slide" :style="{ width: `${slideWidth}%` }"><AdminPanel /></div>
       </div>
     </div>
@@ -219,6 +222,16 @@ const handleTouchEnd = (e) => {
           <polyline points="14 2 14 8 20 8"/>
           <line x1="8" y1="13" x2="16" y2="13" stroke-width="1.5"/>
           <line x1="8" y1="17" x2="13" y2="17" stroke-width="1.5"/>
+        </svg>
+        <!-- Memory Icon -->
+        <svg v-else-if="tab.key === 'memory'" viewBox="0 0 24 24" width="22" height="22" fill="none"
+          :stroke="activeTab === i ? 'var(--primary)' : 'var(--text-light)'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+            :fill="activeTab === i ? 'rgba(255,29,85,0.12)' : 'none'"/>
+          <line x1="8" y1="7" x2="16" y2="7" stroke-width="1.5"/>
+          <line x1="8" y1="11" x2="16" y2="11" stroke-width="1.5"/>
+          <line x1="8" y1="15" x2="12" y2="15" stroke-width="1.5"/>
         </svg>
         <!-- Admin Icon -->
         <svg v-else viewBox="0 0 24 24" width="22" height="22" fill="none"

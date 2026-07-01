@@ -17,6 +17,7 @@ const NEWS_STORAGE_KEY = 'yihao_news_timeline'
 const HERO_LINKS_KEY = 'yihao_hero_links'
 const MAC_DATA_KEY = 'yihao_mac_data'
 const ARTICLES_KEY = 'yihao_articles'
+const MEMORIES_KEY = 'yihao_memories'
 
 const defaultNav = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
 const defaultTimeline = fullTimelineData
@@ -27,6 +28,7 @@ const defaultHeroLinks = [
 ]
 const defaultMac = JSON.parse(JSON.stringify(defaultMacSections))
 const defaultArticles = []
+const defaultMemories = []
 
 // ─── Initialize from localStorage or defaults ───
 const savedNav = localStorage.getItem(NAV_STORAGE_KEY)
@@ -34,6 +36,7 @@ const savedNews = localStorage.getItem(NEWS_STORAGE_KEY)
 const savedHeroLinks = localStorage.getItem(HERO_LINKS_KEY)
 const savedMac = localStorage.getItem(MAC_DATA_KEY)
 const savedArticles = localStorage.getItem(ARTICLES_KEY)
+const savedMemories = localStorage.getItem(MEMORIES_KEY)
 
 export const store = reactive({
   navCategories: savedNav ? JSON.parse(savedNav) : JSON.parse(JSON.stringify(defaultNav)),
@@ -41,6 +44,7 @@ export const store = reactive({
   heroLinks: savedHeroLinks ? JSON.parse(savedHeroLinks) : JSON.parse(JSON.stringify(defaultHeroLinks)),
   macSections: savedMac ? JSON.parse(savedMac) : defaultMac,
   articles: savedArticles ? JSON.parse(savedArticles) : JSON.parse(JSON.stringify(defaultArticles)),
+  memories: savedMemories ? JSON.parse(savedMemories) : JSON.parse(JSON.stringify(defaultMemories)),
   dataReady: false,
   isAdmin: localStorage.getItem('yihao_admin') === 'true',
 })
@@ -75,6 +79,7 @@ async function loadRemoteData() {
       if (data.heroLinks) store.heroLinks = data.heroLinks
       if (data.macSections) store.macSections = data.macSections
       if (data.articles) store.articles = data.articles
+      if (data.memories) store.memories = data.memories
       console.log('✅ 已加载 ./data.json')
     }
   } catch {
@@ -91,12 +96,14 @@ const persistNews = debounce((v) => localStorage.setItem(NEWS_STORAGE_KEY, JSON.
 const persistHero = debounce((v) => localStorage.setItem(HERO_LINKS_KEY, JSON.stringify(v)), 300)
 const persistMac = debounce((v) => localStorage.setItem(MAC_DATA_KEY, JSON.stringify(v)), 300)
 const persistArticles = debounce((v) => localStorage.setItem(ARTICLES_KEY, JSON.stringify(v)), 300)
+const persistMemories = debounce((v) => localStorage.setItem(MEMORIES_KEY, JSON.stringify(v)), 300)
 
 watch(() => store.navCategories, (v) => persistNav(v), { deep: true })
 watch(() => store.timelineItems, (v) => persistNews(v), { deep: true })
 watch(() => store.heroLinks, (v) => persistHero(v), { deep: true })
 watch(() => store.macSections, (v) => persistMac(v), { deep: true })
 watch(() => store.articles, (v) => persistArticles(v), { deep: true })
+watch(() => store.memories, (v) => persistMemories(v), { deep: true })
 
 // ─── Nav CRUD ───
 export function getNextNavId() {
@@ -182,6 +189,7 @@ export function exportAllData() {
     heroLinks: store.heroLinks,
     macSections: store.macSections,
     articles: store.articles,
+    memories: store.memories,
   }, null, 2)
 }
 
@@ -192,6 +200,7 @@ export function importAllData(jsonStr) {
   if (data.heroLinks) store.heroLinks = data.heroLinks
   if (data.macSections) store.macSections = data.macSections
   if (data.articles) store.articles = data.articles
+  if (data.memories) store.memories = data.memories
 }
 
 export function resetToDefaults() {
@@ -200,11 +209,13 @@ export function resetToDefaults() {
   localStorage.removeItem(HERO_LINKS_KEY)
   localStorage.removeItem(MAC_DATA_KEY)
   localStorage.removeItem(ARTICLES_KEY)
+  localStorage.removeItem(MEMORIES_KEY)
   store.navCategories = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
   store.timelineItems = JSON.parse(JSON.stringify(defaultTimeline))
   store.heroLinks = JSON.parse(JSON.stringify(defaultHeroLinks))
   store.macSections = JSON.parse(JSON.stringify(defaultMacSections))
   store.articles = JSON.parse(JSON.stringify(defaultArticles))
+  store.memories = JSON.parse(JSON.stringify(defaultMemories))
 }
 
 // ─── Hero Links CRUD ───
@@ -328,4 +339,43 @@ export function getArticlesSnapshot() {
 
 export function restoreArticlesSnapshot(snapshot) {
   store.articles = snapshot
+}
+
+// ─── Memories CRUD ───
+export function generateMemoryId() {
+  return 'm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+}
+
+export function addMemory(memory) {
+  const now = new Date().toISOString()
+  store.memories.push({
+    id: generateMemoryId(),
+    content: memory.content || '',
+    date: memory.date || new Date().toISOString().slice(0, 10),
+    weekday: memory.weekday || '',
+    mood: memory.mood || '😊',
+    published: memory.published || false,
+    createdAt: now,
+    updatedAt: now
+  })
+}
+
+export function updateMemory(id, updates) {
+  const memory = store.memories.find(m => m.id === id)
+  if (memory) {
+    Object.assign(memory, updates, { updatedAt: new Date().toISOString() })
+  }
+}
+
+export function deleteMemory(id) {
+  const idx = store.memories.findIndex(m => m.id === id)
+  if (idx >= 0) store.memories.splice(idx, 1)
+}
+
+export function getMemoriesSnapshot() {
+  return JSON.parse(JSON.stringify(store.memories))
+}
+
+export function restoreMemoriesSnapshot(snapshot) {
+  store.memories = snapshot
 }

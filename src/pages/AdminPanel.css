@@ -684,9 +684,9 @@
     font-size: 12px;
   }
   .admin-topbar-right .admin-btn svg { width: 13px; height: 13px; }
-  .admin-topbar-center { order: 3; width: 100%; }
-  .admin-tab { flex: 1; justify-content: center; padding: 6px 10px; font-size: 12px; }
-  .admin-tab-count { display: none; }
+  .admin-topbar-center { order: 3; width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; background: transparent; padding: 0; }
+  .admin-tab { flex: none; justify-content: center; padding: 6px 12px; font-size: 12px; white-space: normal; flex-wrap: wrap; min-width: 64px; }
+  .admin-tab-count { display: inline-flex; font-size: 10px; padding: 1px 5px; }
 
   .admin-main { flex-direction: column; }
   .admin-sidebar {
@@ -2183,6 +2183,58 @@
   .admin-mac-edit-actions .admin-btn { flex: 1; justify-content: center; }
   [data-theme="dark"] .admin-mac-sidebar { border-bottom-color: #334155; }
 }
+
+/* ─── Memories Admin ─── */
+.admin-memory-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+.admin-memory-weekday {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+.admin-memory-mood-select {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.admin-memory-mood-label {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-right: 4px;
+}
+.admin-memory-mood-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.admin-memory-mood-btn:hover { background: rgba(255,29,85,0.06); border-color: rgba(255,29,85,0.15); }
+.admin-memory-mood-btn.active { background: rgba(255,29,85,0.1); border-color: var(--primary); }
+
+[data-theme="dark"] .admin-memory-meta {
+  background: #0f172a;
+  border-color: #334155;
+}
+[data-theme="dark"] .admin-memory-weekday { color: #94a3b8; }
+[data-theme="dark"] .admin-memory-mood-btn:hover { background: rgba(255,29,85,0.1); }
 
 /* ─── Articles Admin ─── */
 .admin-articles {

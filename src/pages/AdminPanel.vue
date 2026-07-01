@@ -14,7 +14,8 @@ import {
   addHeroLink, updateHeroLink, deleteHeroLink,
   addMacItem, updateMacItem, deleteMacItem, getMacSnapshot, restoreMacSnapshot,
   addArticle, updateArticle, deleteArticle, getArticleById,
-  getArticlesSnapshot, restoreArticlesSnapshot
+  getArticlesSnapshot, restoreArticlesSnapshot,
+  addMemory, updateMemory, deleteMemory, getMemoriesSnapshot, restoreMemoriesSnapshot
 } from '../store'
 
 const activeTab = ref('overview')
@@ -355,6 +356,87 @@ const removeArticleFromNav = () => {
   }
 }
 
+// ─── Memories state ───
+const memoryView = ref('list') // 'list' | 'edit'
+const editingMemory = reactive({ id: '', content: '', date: '', weekday: '', mood: '😊', published: false })
+const memoryPreview = ref(false)
+
+const memoriesTotal = computed(() => store.memories.length)
+const memoriesPublished = computed(() => store.memories.filter(m => m.published).length)
+
+const handleNewMemory = () => {
+  const today = new Date()
+  const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+  addMemory({
+    content: '',
+    date: today.toISOString().slice(0, 10),
+    weekday: weekdays[today.getDay()],
+    mood: '😊',
+    published: false
+  })
+  const mem = store.memories[store.memories.length - 1]
+  editingMemory.id = mem.id
+  editingMemory.content = mem.content
+  editingMemory.date = mem.date
+  editingMemory.weekday = mem.weekday
+  editingMemory.mood = mem.mood
+  editingMemory.published = mem.published
+  memoryView.value = 'edit'
+  log('➕ 新建回忆')
+}
+
+const handleEditMemory = (mem) => {
+  editingMemory.id = mem.id
+  editingMemory.content = mem.content
+  editingMemory.date = mem.date
+  editingMemory.weekday = mem.weekday
+  editingMemory.mood = mem.mood
+  editingMemory.published = mem.published
+  memoryView.value = 'edit'
+}
+
+const handleSaveMemory = () => {
+  if (!editingMemory.id) return
+  // Auto-calculate weekday from date
+  if (editingMemory.date) {
+    const d = new Date(editingMemory.date)
+    const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+    editingMemory.weekday = weekdays[d.getDay()]
+  }
+  pushUndo('memories', getMemoriesSnapshot(), '保存回忆')
+  updateMemory(editingMemory.id, {
+    content: editingMemory.content,
+    date: editingMemory.date,
+    weekday: editingMemory.weekday,
+    mood: editingMemory.mood,
+    published: editingMemory.published
+  })
+  log(`✏️ 保存回忆（${editingMemory.date}）`)
+  memoryView.value = 'list'
+}
+
+const handleDeleteMemory = (id) => {
+  const mem = store.memories.find(m => m.id === id)
+  if (!confirm(`确定删除「${mem?.date}」的回忆？`)) return
+  pushUndo('memories', getMemoriesSnapshot(), `删除回忆「${mem?.date}」`)
+  deleteMemory(id)
+  log(`🗑️ 删除回忆「${mem?.date}」`)
+  if (editingMemory.id === id) memoryView.value = 'list'
+}
+
+const handleToggleMemoryPublish = (mem) => {
+  pushUndo('memories', getMemoriesSnapshot(), mem.published ? '取消发布回忆' : '发布回忆')
+  updateMemory(mem.id, { published: !mem.published })
+  log(mem.published ? `📤 发布回忆（${mem.date}）` : `📥 取消发布回忆（${mem.date}）`)
+}
+
+const renderMemoryPreview = () => {
+  return editingMemory.content ? marked(editingMemory.content, { breaks: true, gfm: true }) : '<p style="color:#94a3b8">暂无内容</p>'
+}
+
+// Mood emoji options
+const moodOptions = ['😊', '😄', '🥰', '😌', '🤔', '😢', '😤', '🥳', '😎', '😴', '🤩', '😇', '🤗', '😐', '🙃']
+
 // ─── Undo System ───
 const undoStack = ref([])
 const pushUndo = (type, snapshot, desc) => {
@@ -366,6 +448,7 @@ const handleUndo = (item) => {
   else if (item.type === 'news') restoreNewsSnapshot(item.snapshot)
   else if (item.type === 'mac') restoreMacSnapshot(item.snapshot)
   else if (item.type === 'articles') restoreArticlesSnapshot(item.snapshot)
+  else if (item.type === 'memories') restoreMemoriesSnapshot(item.snapshot)
   undoStack.value = undoStack.value.filter(u => u !== item)
   log(`↩️ 撤销: ${item.desc}`)
 }
@@ -714,6 +797,7 @@ const navIconTabs = [
   { key: 'nav', label: '导航', options: ['🧭', '🗺️', '🌐', '🔗', '📡', '🧩', '📌', '🎯', '🔮', '⚓'] },
   { key: 'news', label: '讯息', options: ['📰', '📋', '📜', '📝', '📡', '💬', '🔔', '📣', '🗞️', '🏷️'] },
   { key: 'notes', label: '随记', options: ['✏️', '📝', '📒', '📔', '🖊️', '✍️', '💡', '📌', '🗒️', '🧠'] },
+  { key: 'memory', label: '回忆', options: ['📖', '📔', '📕', '📗', '💭', '🌟', '📚', '🕰️', '🎞️', '🧩'] },
 ]
 const navIcons = ref(JSON.parse(localStorage.getItem('yihao_nav_icons') || '{}'))
 
@@ -778,6 +862,11 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           文章
           <span class="admin-tab-count">{{ articlesTotal }}</span>
+        </button>
+        <button :class="['admin-tab', { active: activeTab === 'memories' }]" @click="activeTab = 'memories'; memoryView = 'list'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/></svg>
+          回忆
+          <span class="admin-tab-count">{{ memoriesTotal }}</span>
         </button>
         <button :class="['admin-tab', { active: activeTab === 'help' }]" @click="activeTab = 'help'">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -1460,6 +1549,82 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
               <div class="admin-article-editor-body">
                 <textarea v-if="!articlePreview" v-model="editingArticle.content" class="admin-article-textarea" placeholder="在此输入 Markdown 内容..."></textarea>
                 <div v-else class="admin-article-preview article-body" v-html="renderArticlePreview()"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <!-- ── MEMORIES ── -->
+      <template v-if="activeTab === 'memories'">
+        <div class="admin-articles">
+          <!-- List View -->
+          <template v-if="memoryView === 'list'">
+            <div class="admin-articles-header">
+              <div>
+                <h2>回忆管理</h2>
+                <p>{{ memoriesTotal }} 条回忆 · {{ memoriesPublished }} 已发布</p>
+              </div>
+              <button class="admin-btn admin-btn-primary" @click="handleNewMemory">+ 新建回忆</button>
+            </div>
+            <div class="admin-articles-list">
+              <div v-if="!store.memories.length" class="admin-articles-empty">
+                <p>还没有回忆，点击"新建回忆"开始记录</p>
+              </div>
+              <div v-for="mem in [...store.memories].sort((a,b) => b.date.localeCompare(a.date))" :key="mem.id" class="admin-article-row">
+                <div class="admin-article-info">
+                  <h3>{{ mem.mood }} {{ mem.date }} {{ mem.weekday }}</h3>
+                  <div class="admin-article-meta">
+                    <span :class="['admin-article-status', mem.published ? 'published' : 'draft']">
+                      {{ mem.published ? '已发布' : '草稿' }}
+                    </span>
+                    <span class="admin-article-date">{{ mem.content.slice(0, 60) }}{{ mem.content.length > 60 ? '...' : '' }}</span>
+                  </div>
+                </div>
+                <div class="admin-article-actions">
+                  <button class="admin-btn admin-btn-xs admin-btn-ghost" @click="handleToggleMemoryPublish(mem)">
+                    {{ mem.published ? '取消发布' : '发布' }}
+                  </button>
+                  <button class="admin-btn admin-btn-xs admin-btn-ghost" @click="handleEditMemory(mem)">编辑</button>
+                  <button class="admin-btn admin-btn-xs admin-btn-warn" @click="handleDeleteMemory(mem.id)">删除</button>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Edit View -->
+          <template v-if="memoryView === 'edit'">
+            <div class="admin-article-editor">
+              <div class="admin-article-editor-header">
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="memoryView = 'list'">← 返回列表</button>
+                <div class="admin-article-editor-actions">
+                  <label class="admin-article-publish-toggle">
+                    <input type="checkbox" v-model="editingMemory.published" />
+                    <span>{{ editingMemory.published ? '已发布' : '草稿' }}</span>
+                  </label>
+                  <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="memoryPreview = !memoryPreview">
+                    {{ memoryPreview ? '编辑' : '预览' }}
+                  </button>
+                  <button class="admin-btn admin-btn-primary admin-btn-sm" @click="handleSaveMemory">保存</button>
+                </div>
+              </div>
+              <!-- Metadata row -->
+              <div class="admin-memory-meta">
+                <input v-model="editingMemory.date" type="date" class="admin-mac-input" style="width:160px" title="日期" />
+                <span class="admin-memory-weekday" v-if="editingMemory.weekday">{{ editingMemory.weekday }}</span>
+                <div class="admin-memory-mood-select">
+                  <span class="admin-memory-mood-label">心情：</span>
+                  <button
+                    v-for="m in moodOptions"
+                    :key="m"
+                    :class="['admin-memory-mood-btn', { active: editingMemory.mood === m }]"
+                    @click="editingMemory.mood = m"
+                  >{{ m }}</button>
+                </div>
+              </div>
+              <div class="admin-article-editor-body">
+                <textarea v-if="!memoryPreview" v-model="editingMemory.content" class="admin-article-textarea" placeholder="在此输入 Markdown 内容...&#10;&#10;支持：# 标题、**粗体**、*斜体*、- 列表、> 引用等"></textarea>
+                <div v-else class="admin-article-preview article-body" v-html="renderMemoryPreview()"></div>
               </div>
             </div>
           </template>
