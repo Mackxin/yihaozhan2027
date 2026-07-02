@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { store } from '../store'
+import { store, toolPageConfigs } from '../store'
 import UniSearch from '../components/UniSearch.vue'
 
 const props = defineProps({
@@ -13,10 +13,28 @@ const contentRef = ref(null)
 
 const navCategories = computed(() => store.navCategories)
 
-const isInternalMacLink = (url) => url === 'http://yihaozhan.xyz/mac.html' || url === 'https://yihaozhan.xyz/mac.html'
+const resolveToolLink = (url) => {
+  if (!url) return null
+  // 先检查 toolPageConfigs（registerToolPage 填充）
+  for (const key of Object.keys(toolPageConfigs)) {
+    const cfg = toolPageConfigs[key]
+    if (url === cfg.url || url === cfg.url.replace('http://', 'https://')) {
+      return key
+    }
+  }
+  // 再检查 store.toolPages（用户自定义页面）
+  for (const tp of store.toolPages) {
+    const expectedUrl = `http://yihaozhan.xyz/${tp.key}.html`
+    if (url === expectedUrl || url === expectedUrl.replace('http://', 'https://')) {
+      return tp.key
+    }
+  }
+  return null
+}
+const isToolLink = (url) => resolveToolLink(url) !== null
 const isArticleLink = (url) => url?.startsWith('#article:')
 const getArticleId = (url) => url?.replace('#article:', '')
-const openMacPage = () => { window.__yihaoOpenMac?.() }
+const openToolPage = (key) => { window.__yihaoOpenTool?.(key) }
 const openArticle = (id) => { window.__yihaoOpenArticle?.(id) }
 
 const midIndex = computed(() => Math.ceil(navCategories.value.length / 2))
@@ -143,11 +161,11 @@ onUnmounted(() => {
               <a
                 v-for="(link, i) in cat.links"
                 :key="i"
-                :href="(isInternalMacLink(link.url) || isArticleLink(link.url)) ? undefined : link.url"
-                :target="(isInternalMacLink(link.url) || isArticleLink(link.url)) ? undefined : '_blank'"
-                :rel="(isInternalMacLink(link.url) || isArticleLink(link.url)) ? undefined : 'noopener noreferrer'"
+                :href="(isToolLink(link.url) || isArticleLink(link.url)) ? undefined : link.url"
+                :target="(isToolLink(link.url) || isArticleLink(link.url)) ? undefined : '_blank'"
+                :rel="(isToolLink(link.url) || isArticleLink(link.url)) ? undefined : 'noopener noreferrer'"
                 class="nav-link-item"
-                @click="isInternalMacLink(link.url) ? ($event.preventDefault(), openMacPage()) : isArticleLink(link.url) ? ($event.preventDefault(), openArticle(getArticleId(link.url))) : null"
+                @click="isToolLink(link.url) ? ($event.preventDefault(), openToolPage(resolveToolLink(link.url))) : isArticleLink(link.url) ? ($event.preventDefault(), openArticle(getArticleId(link.url))) : null"
               >
                 {{ link.name }}
               </a>

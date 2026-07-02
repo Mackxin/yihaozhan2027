@@ -13,10 +13,18 @@ import {
   getNavSnapshot, getNewsSnapshot, restoreNavSnapshot, restoreNewsSnapshot,
   addHeroLink, updateHeroLink, deleteHeroLink,
   addMacItem, updateMacItem, deleteMacItem, getMacSnapshot, restoreMacSnapshot,
+  addMacSection, updateMacSection, deleteMacSection,
   addArticle, updateArticle, deleteArticle, getArticleById,
   getArticlesSnapshot, restoreArticlesSnapshot,
-  addMemory, updateMemory, deleteMemory, getMemoriesSnapshot, restoreMemoriesSnapshot
+  addMemory, updateMemory, deleteMemory, getMemoriesSnapshot, restoreMemoriesSnapshot,
+  addToolPage, updateToolPage, deleteToolPage, getAllToolPages,
+  getToolSections, getToolConfig,
+  addToolSection, updateToolSection, deleteToolSection,
+  addToolItem, updateToolItem, deleteToolItem,
+  getToolSnapshot, restoreToolSnapshot
 } from '../store'
+
+marked.setOptions({ breaks: true, gfm: true })
 
 const activeTab = ref('overview')
 const contentRef = ref(null)
@@ -35,7 +43,7 @@ const helpSections = [
   { id: 'h12', icon: '🎨', title: '导航栏图标' },
   { id: 'h13', icon: '👁️', title: 'Markdown 预览' },
   { id: 'h14', icon: '🔔', title: '备份提醒' },
-  { id: 'h15', icon: '🍎', title: 'Mac 软件页' },
+  { id: 'h15', icon: '📦', title: '资源页面' },
   { id: 'h16', icon: '📝', title: '文章管理' },
   { id: 'h18', icon: '📖', title: '回忆过往' },
   { id: 'h17', icon: '🔑', title: '后台登录' },
@@ -200,9 +208,22 @@ const handleDeleteHeroLink = (index) => {
 const activeMacSection = ref(store.macSections[0]?.id || '')
 const newMacItem = reactive({ name: '', desc: '', url: '', tags: '' })
 const editingMacItem = reactive({ sectionId: '', index: -1, name: '', desc: '', url: '', tags: '' })
+const showAddMacSection = ref(false)
+const newMacSection = reactive({ icon: '📦', title: '', subtitle: '' })
+const editingMacSection = reactive({ id: '', icon: '', title: '', subtitle: '' })
 
 const currentMacSection = computed(() => store.macSections.find(s => s.id === activeMacSection.value))
 const macTotalItems = computed(() => store.macSections.reduce((s, sec) => s + sec.items.length, 0))
+const resourcePageTotal = computed(() => {
+  let total = store.macSections.reduce((s, sec) => s + sec.items.length, 0)
+  for (const tp of store.toolPages) {
+    if (tp.key !== 'mac') {
+      const sections = store.toolPagesData[tp.key] || []
+      total += sections.reduce((s, sec) => s + sec.items.length, 0)
+    }
+  }
+  return total
+})
 const saveAddMacItem = () => {
   if (!newMacItem.name.trim()) return
   const sectionId = activeMacSection.value
@@ -246,6 +267,263 @@ const handleDeleteMacItem = (sectionId, idx) => {
   pushUndo('mac', getMacSnapshot(), `删除Mac软件「${name}」`)
   deleteMacItem(sectionId, idx)
   log(`删除Mac软件「${name}」`)
+}
+const saveAddMacSection = () => {
+  if (!newMacSection.title.trim()) return
+  pushUndo('mac', getMacSnapshot(), '新增Mac分类')
+  const id = addMacSection({
+    icon: newMacSection.icon || '📦',
+    title: newMacSection.title.trim(),
+    subtitle: newMacSection.subtitle.trim()
+  })
+  activeMacSection.value = id
+  newMacSection.icon = '📦'
+  newMacSection.title = ''
+  newMacSection.subtitle = ''
+  showAddMacSection.value = false
+  log(`新增Mac分类「${newMacSection.title.trim()}」`)
+}
+const startEditMacSection = (section) => {
+  editingMacSection.id = section.id
+  editingMacSection.icon = section.icon || '📦'
+  editingMacSection.title = section.title
+  editingMacSection.subtitle = section.subtitle || ''
+}
+const saveEditMacSection = () => {
+  if (!editingMacSection.id || !editingMacSection.title.trim()) return
+  pushUndo('mac', getMacSnapshot(), '编辑Mac分类')
+  updateMacSection(editingMacSection.id, {
+    icon: editingMacSection.icon || '📦',
+    title: editingMacSection.title.trim(),
+    subtitle: editingMacSection.subtitle.trim()
+  })
+  log(`编辑Mac分类「${editingMacSection.title.trim()}」`)
+  editingMacSection.id = ''
+}
+const handleDeleteMacSection = (sectionId) => {
+  const sec = store.macSections.find(s => s.id === sectionId)
+  if (!sec) return
+  const msg = sec.items.length > 0
+    ? `「${sec.title}」内有 ${sec.items.length} 个工具，删除分类会同时删除这些工具，确定删除？`
+    : `确定删除空分类「${sec.title}」？`
+  if (!confirm(msg)) return
+  pushUndo('mac', getMacSnapshot(), `删除Mac分类「${sec.title}」`)
+  deleteMacSection(sectionId)
+  activeMacSection.value = store.macSections[0]?.id || ''
+  log(`删除Mac分类「${sec.title}」`)
+}
+
+// ─── Tool Page Management state ───
+const activeToolPageKey = ref('')
+const showAddToolPage = ref(false)
+const newToolPage = reactive({ key: '', label: '', icon: '📦', themeColor: '#6366f1', heroTitle: '', heroSubtitle: '', heroDesc: '' })
+const editingToolPage = reactive({ key: '', label: '', icon: '', themeColor: '', heroTitle: '', heroSubtitle: '', heroDesc: '' })
+const toolPageFormError = ref('')
+
+// 某个工具页面的 section/item 管理状态
+const activeTPSection = ref(null)
+const newTPItem = reactive({ name: '', desc: '', url: '', tags: '' })
+const editingTPItem = reactive({ sectionId: '', index: -1, name: '', desc: '', url: '', tags: '' })
+const showAddTPSection = ref(false)
+const newTPSection = reactive({ icon: '📦', title: '', subtitle: '' })
+const editingTPSection = reactive({ id: '', icon: '', title: '', subtitle: '' })
+
+const currentTPSections = computed(() => getToolSections(activeToolPageKey.value))
+const currentTPConfig = computed(() => getToolConfig(activeToolPageKey.value))
+const currentTPSection = computed(() => currentTPSections.value.find(s => s.id === activeTPSection.value))
+const tpTotalItems = computed(() => currentTPSections.value.reduce((s, sec) => s + sec.items.length, 0))
+
+const saveAddToolPage = () => {
+  toolPageFormError.value = ''
+  try {
+    const tp = addToolPage({
+      key: newToolPage.key.trim().toLowerCase(),
+      label: newToolPage.label.trim() || newToolPage.key.trim(),
+      icon: newToolPage.icon || '📦',
+      themeColor: newToolPage.themeColor || '#6366f1',
+      heroTitle: newToolPage.heroTitle.trim() || newToolPage.label.trim(),
+      heroSubtitle: newToolPage.heroSubtitle.trim(),
+      heroDesc: newToolPage.heroDesc.trim(),
+    })
+    log(`新增工具页面「${tp.label}」`)
+    // 自动添加到「万物归一」导航
+    autoAddToNav(tp)
+    showAddToolPage.value = false
+    newToolPage.key = ''; newToolPage.label = ''; newToolPage.icon = '📦'
+    newToolPage.themeColor = '#6366f1'; newToolPage.heroTitle = ''
+    newToolPage.heroSubtitle = ''; newToolPage.heroDesc = ''
+  } catch (e) {
+    toolPageFormError.value = e.message
+  }
+}
+
+// 自动添加资源页面到「万物归一」导航
+const autoAddToNav = (tp) => {
+  const wanyi = store.navCategories.find(c => c.id === 1 || c.title === '万物归一')
+  if (!wanyi) return
+  const url = `http://yihaozhan.xyz/${tp.key}.html`
+  // 检查是否已存在同名链接
+  const exists = wanyi.links.some(l => l.url === url)
+  if (!exists) {
+    addNavLink(wanyi.id, tp.label, url)
+    log(`🧭 自动添加「${tp.label}」到万物归一导航`)
+  }
+}
+
+// 从「万物归一」导航移除资源页面链接
+const removeFromNav = (tp) => {
+  const url = `http://yihaozhan.xyz/${tp.key}.html`
+  for (const cat of store.navCategories) {
+    const idx = cat.links.findIndex(l => l.url === url)
+    if (idx >= 0) {
+      deleteNavLink(cat.id, idx)
+      log(`🧭 已从导航移除「${tp.label}」`)
+      return
+    }
+  }
+}
+
+// 检查资源页面是否已存在于导航中
+const isInNav = (tp) => {
+  const url = `http://yihaozhan.xyz/${tp.key}.html`
+  return store.navCategories.some(cat => cat.links.some(l => l.url === url))
+}
+
+const startEditToolPage = (tp) => {
+  editingToolPage.key = tp.key
+  editingToolPage.label = tp.label
+  editingToolPage.icon = tp.icon || '📦'
+  editingToolPage.themeColor = tp.themeColor || '#6366f1'
+  editingToolPage.heroTitle = tp.heroTitle || ''
+  editingToolPage.heroSubtitle = tp.heroSubtitle || ''
+  editingToolPage.heroDesc = tp.heroDesc || ''
+}
+
+const saveEditToolPage = () => {
+  if (!editingToolPage.label.trim()) return
+  updateToolPage(editingToolPage.key, {
+    label: editingToolPage.label.trim(),
+    icon: editingToolPage.icon || '📦',
+    themeColor: editingToolPage.themeColor || '#6366f1',
+    heroTitle: editingToolPage.heroTitle.trim() || editingToolPage.label.trim(),
+    heroSubtitle: editingToolPage.heroSubtitle.trim(),
+    heroDesc: editingToolPage.heroDesc.trim(),
+  })
+  log(`编辑工具页面「${editingToolPage.label.trim()}」`)
+  editingToolPage.key = ''
+}
+
+const handleDeleteToolPage = (tp) => {
+  if (!confirm(`确定删除资源页面「${tp.label}」？\n分类和所有条目将一并删除。`)) return
+  deleteToolPage(tp.key)
+  removeFromNav(tp)
+  log(`删除资源页面「${tp.label}」`)
+  if (activeToolPageKey.value === tp.key) {
+    activeToolPageKey.value = ''
+  }
+}
+
+const openToolPageManage = (key) => {
+  activeToolPageKey.value = key
+  const sections = getToolSections(key)
+  activeTPSection.value = sections[0]?.id || null
+}
+
+// Tool Page section CRUD
+const saveAddTPSection = () => {
+  if (!newTPSection.title.trim()) return
+  pushUndo('tp-' + activeToolPageKey.value, getToolSnapshot(activeToolPageKey.value), `新增${currentTPConfig.value.label}分类`)
+  const id = addToolSection(activeToolPageKey.value, {
+    icon: newTPSection.icon || '📦',
+    title: newTPSection.title.trim(),
+    subtitle: newTPSection.subtitle.trim()
+  })
+  activeTPSection.value = id
+  newTPSection.icon = '📦'; newTPSection.title = ''; newTPSection.subtitle = ''
+  showAddTPSection.value = false
+  log(`新增${currentTPConfig.value.label}分类「${newTPSection.title.trim()}」`)
+}
+
+const startEditTPSection = (section) => {
+  editingTPSection.id = section.id
+  editingTPSection.icon = section.icon || '📦'
+  editingTPSection.title = section.title
+  editingTPSection.subtitle = section.subtitle || ''
+}
+
+const saveEditTPSection = () => {
+  if (!editingTPSection.id || !editingTPSection.title.trim()) return
+  pushUndo('tp-' + activeToolPageKey.value, getToolSnapshot(activeToolPageKey.value), `编辑${currentTPConfig.value.label}分类`)
+  updateToolSection(activeToolPageKey.value, editingTPSection.id, {
+    icon: editingTPSection.icon || '📦',
+    title: editingTPSection.title.trim(),
+    subtitle: editingTPSection.subtitle.trim()
+  })
+  log(`编辑${currentTPConfig.value.label}分类「${editingTPSection.title.trim()}」`)
+  editingTPSection.id = ''
+}
+
+const handleDeleteTPSection = (sectionId) => {
+  const sec = currentTPSections.value.find(s => s.id === sectionId)
+  if (!sec) return
+  const msg = sec.items.length > 0
+    ? `「${sec.title}」内有 ${sec.items.length} 个条目，删除分类会同时删除，确定删除？`
+    : `确定删除空分类「${sec.title}」？`
+  if (!confirm(msg)) return
+  pushUndo('tp-' + activeToolPageKey.value, getToolSnapshot(activeToolPageKey.value), `删除${currentTPConfig.value.label}分类「${sec.title}」`)
+  deleteToolSection(activeToolPageKey.value, sectionId)
+  activeTPSection.value = currentTPSections.value[0]?.id || null
+  log(`删除${currentTPConfig.value.label}分类「${sec.title}」`)
+}
+
+// Tool Page item CRUD
+const saveAddTPItem = () => {
+  if (!newTPItem.name.trim()) return
+  const sectionId = activeTPSection.value
+  if (!sectionId) return
+  pushUndo('tp-' + activeToolPageKey.value, getToolSnapshot(activeToolPageKey.value), `新增${currentTPConfig.value.label}条目`)
+  addToolItem(activeToolPageKey.value, sectionId, {
+    name: newTPItem.name.trim(),
+    desc: newTPItem.desc.trim(),
+    url: newTPItem.url.trim(),
+    emoji: '📦',
+    tags: newTPItem.tags.split(',').map(t => t.trim()).filter(Boolean)
+  })
+  log(`新增${currentTPConfig.value.label}条目「${newTPItem.name.trim()}」`)
+  newTPItem.name = ''; newTPItem.desc = ''; newTPItem.url = ''; newTPItem.tags = ''
+}
+
+const startEditTPItem = (sectionId, idx, item) => {
+  editingTPItem.sectionId = sectionId
+  editingTPItem.index = idx
+  editingTPItem.name = item.name
+  editingTPItem.desc = item.desc
+  editingTPItem.url = item.url
+  editingTPItem.tags = (item.tags || []).join(', ')
+}
+
+const saveEditTPItem = () => {
+  if (editingTPItem.index < 0 || !editingTPItem.name.trim()) return
+  pushUndo('tp-' + activeToolPageKey.value, getToolSnapshot(activeToolPageKey.value), `编辑${currentTPConfig.value.label}条目`)
+  updateToolItem(activeToolPageKey.value, editingTPItem.sectionId, editingTPItem.index, {
+    name: editingTPItem.name.trim(),
+    desc: editingTPItem.desc.trim(),
+    url: editingTPItem.url.trim(),
+    emoji: '📦',
+    tags: editingTPItem.tags.split(',').map(t => t.trim()).filter(Boolean)
+  })
+  log(`修改${currentTPConfig.value.label}条目「${editingTPItem.name.trim()}」`)
+  editingTPItem.index = -1
+}
+
+const handleDeleteTPItem = (sectionId, idx) => {
+  const sec = currentTPSections.value.find(s => s.id === sectionId)
+  if (!sec) return
+  const name = sec.items[idx]?.name || '未知'
+  if (!confirm(`确定删除「${name}」？`)) return
+  pushUndo('tp-' + activeToolPageKey.value, getToolSnapshot(activeToolPageKey.value), `删除${currentTPConfig.value.label}条目「${name}」`)
+  deleteToolItem(activeToolPageKey.value, sectionId, idx)
+  log(`删除${currentTPConfig.value.label}条目「${name}」`)
 }
 
 // ─── Password Change ───
@@ -324,7 +602,7 @@ const handleTogglePublish = (article) => {
 }
 
 const renderArticlePreview = () => {
-  return editingArticle.content ? marked(editingArticle.content, { breaks: true, gfm: true }) : '<p style="color:#94a3b8">暂无内容</p>'
+  return editingArticle.content ? marked(editingArticle.content) : '<p style="color:#94a3b8">暂无内容</p>'
 }
 
 const isArticleInNav = computed(() => {
@@ -432,7 +710,7 @@ const handleToggleMemoryPublish = (mem) => {
 }
 
 const renderMemoryPreview = () => {
-  return editingMemory.content ? marked(editingMemory.content, { breaks: true, gfm: true }) : '<p style="color:#94a3b8">暂无内容</p>'
+  return editingMemory.content ? marked(editingMemory.content) : '<p style="color:#94a3b8">暂无内容</p>'
 }
 
 // Mood emoji options
@@ -450,6 +728,10 @@ const handleUndo = (item) => {
   else if (item.type === 'mac') restoreMacSnapshot(item.snapshot)
   else if (item.type === 'articles') restoreArticlesSnapshot(item.snapshot)
   else if (item.type === 'memories') restoreMemoriesSnapshot(item.snapshot)
+  else if (typeof item.type === 'string' && item.type.startsWith('tp-')) {
+    const key = item.type.slice(3)
+    restoreToolSnapshot(key, item.snapshot)
+  }
   undoStack.value = undoStack.value.filter(u => u !== item)
   log(`↩️ 撤销: ${item.desc}`)
 }
@@ -821,6 +1103,58 @@ const resetNavIcons = () => {
 
 const hasCustomIcons = computed(() => Object.keys(navIcons.value).length > 0)
 
+// ─── Site Favicon Setting ───
+const faviconUrl = ref('')
+const faviconEmoji = ref('')
+const faviconFileInput = ref(null)
+const isEmoji = (str) => {
+  if (!str || typeof str !== 'string') return false
+  if (str.startsWith('http') || str.startsWith('/') || str.startsWith('data:')) return false
+  const emojiRegex = /(?:[\u2700-\u27BF]|\u2B50|\u2B55|[\u2600-\u26FF]|\u200D|(?:\uD83C[\uDDE6-\uDDFF]){1,2}|(?:\uD83C[\uDDE8-\uDDEC\uDDE0-\uDDE5\uDDEF\uDDF2\uDDF5\uDDF7\uDDFA-\uDDFD]|\uD83D[\uDC00-\uDCFD\uDDFF\uDE80-\uDEA9\uDEC0-\uDEF8\uDF00-\uDF73\uDF80-\uDFF3\uDFA0-\uDFD5\uDFF8-\uDFFF])|(?:\uD83E[\uDD0C-\uDDAF\uDDC0-\uDDE8\uDE68-\uDE7F]))/
+  const hasEmoji = emojiRegex.test(str)
+  const hasText = /[a-zA-Z0-9]/.test(str)
+  return hasEmoji && !hasText
+}
+const faviconPreview = computed(() => {
+  if (isEmoji(store.siteFavicon)) return store.siteFavicon
+  if (store.siteFavicon && store.siteFavicon !== '/avatar.png') return store.siteFavicon
+  return '/avatar.png'
+})
+const isDefaultFavicon = computed(() => !store.siteFavicon || store.siteFavicon === '/avatar.png')
+const setFaviconFromEmoji = () => {
+  const emoji = faviconEmoji.value.trim()
+  if (!emoji) return alert('请输入一个 emoji')
+  if (!isEmoji(emoji)) return alert('输入的不是有效的 emoji')
+  store.siteFavicon = emoji
+  faviconEmoji.value = ''
+  log(`网站图标已更换为 emoji ${emoji}`)
+}
+const setFaviconFromUrl = () => {
+  const url = faviconUrl.value.trim()
+  if (!url) return alert('请输入图片地址')
+  store.siteFavicon = url
+  faviconUrl.value = ''
+  log('网站图标已更换为图片 URL')
+}
+const handleFaviconFileUpload = (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) return alert('请上传图片文件')
+  if (file.size > 2 * 1024 * 1024) return alert('图片大小不能超过 2MB')
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    store.siteFavicon = ev.target.result
+    log('网站图标已上传')
+  }
+  reader.readAsDataURL(file)
+  e.target.value = ''
+}
+const resetFavicon = () => {
+  if (!confirm('确认恢复默认网站图标？')) return
+  store.siteFavicon = '/avatar.png'
+  log('网站图标已恢复默认')
+}
+
 // ─── Auto-save: warn before leaving ───
 const handleBeforeUnload = (e) => {
   if (newLink.name || newItem.title || batchImportText.value) {
@@ -854,10 +1188,10 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
           讯息
           <span class="admin-tab-count">{{ newsTotalItems }}</span>
         </button>
-        <button :class="['admin-tab', { active: activeTab === 'mac' }]" @click="activeTab = 'mac'">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 7.5V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v1.5"/><rect x="4" y="7.5" width="16" height="12.5" rx="2"/><line x1="12" y1="12" x2="12" y2="12.01"/></svg>
-          Mac
-          <span class="admin-tab-count">{{ macTotalItems }}</span>
+        <button :class="['admin-tab', { active: activeTab === 'resourcePages' }]" @click="activeTab = 'resourcePages'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          资源页
+          <span class="admin-tab-count">{{ resourcePageTotal }}</span>
         </button>
         <button :class="['admin-tab', { active: activeTab === 'articles' }]" @click="activeTab = 'articles'; articleView = 'list'">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -1032,6 +1366,34 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                       @click="setNavIcon(tab.key, emoji)"
                     >{{ emoji }}</button>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Site Favicon Setting -->
+            <div class="admin-panel-card">
+              <div class="admin-panel-card-head">
+                <h3 class="admin-panel-title">🌐 网站图标</h3>
+                <button v-if="!isDefaultFavicon" class="admin-btn admin-btn-xs admin-btn-ghost" @click="resetFavicon" title="恢复默认图标">↺ 重置</button>
+              </div>
+              <p class="admin-panel-sub">自定义浏览器标签页左上角显示的图标，支持 emoji、图片 URL 或本地上传</p>
+              <div class="favicon-preview">
+                <img v-if="faviconPreview !== '/avatar.png' && !isEmoji(faviconPreview)" :src="faviconPreview" alt="favicon" />
+                <span v-else class="favicon-emoji">{{ isEmoji(faviconPreview) ? faviconPreview : '👤' }}</span>
+                <span class="favicon-label">当前图标</span>
+              </div>
+              <div class="favicon-form">
+                <div class="favicon-row">
+                  <input v-model="faviconEmoji" placeholder="输入 emoji，如 🎆" class="admin-input admin-input-sm" style="flex:1;" />
+                  <button class="admin-btn admin-btn-primary admin-btn-sm" @click="setFaviconFromEmoji" :disabled="!faviconEmoji.trim()">应用</button>
+                </div>
+                <div class="favicon-row">
+                  <input v-model="faviconUrl" placeholder="输入图片地址 https://..." class="admin-input admin-input-sm" style="flex:1;" />
+                  <button class="admin-btn admin-btn-primary admin-btn-sm" @click="setFaviconFromUrl" :disabled="!faviconUrl.trim()">应用</button>
+                </div>
+                <div class="favicon-row">
+                  <input ref="faviconFileInput" type="file" accept="image/*" style="display:none" @change="handleFaviconFileUpload" />
+                  <button class="admin-btn admin-btn-ghost admin-btn-sm" style="width:100%;" @click="faviconFileInput?.click()">📤 上传本地图片</button>
                 </div>
               </div>
             </div>
@@ -1402,90 +1764,226 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
         </main>
       </template>
 
-      <!-- ── MAC ── -->
-      <template v-if="activeTab === 'mac'">
-        <div class="admin-mac">
-          <!-- Sidebar: Header + Category Tabs -->
-          <aside class="admin-mac-sidebar">
-            <div class="admin-mac-header">
-              <h2>🍎 Mac 管理</h2>
-              <p>{{ store.macSections.length }} 个分类 · {{ macTotalItems }} 个工具</p>
+      <!-- ── RESOURCE PAGES ── -->
+      <template v-if="activeTab === 'resourcePages'">
+        <div class="admin-resource-layout">
+          <!-- Left Sidebar: Resource Page Tabs -->
+          <aside class="admin-resource-sidebar">
+            <div class="admin-resource-sidebar-header">
+              <h2>📦 资源页面</h2>
+              <p>{{ getAllToolPages().length }} 个页面</p>
             </div>
-            <nav class="admin-mac-tabs">
+            <div class="admin-resource-sidebar-scroll">
+            <nav class="admin-resource-tabs">
               <button
-                v-for="sec in store.macSections"
-                :key="sec.id"
-                :class="['admin-mac-tab', { active: activeMacSection === sec.id }]"
-                @click="activeMacSection = sec.id"
+                v-for="tp in getAllToolPages()"
+                :key="tp.key"
+                :class="['admin-resource-tab', { active: activeToolPageKey === tp.key }]"
+                @click="openToolPageManage(tp.key)"
               >
-                <span class="admin-mac-tab-label">{{ sec.icon }} {{ sec.title }}</span>
-                <span class="admin-mac-tab-count">{{ sec.items.length }}</span>
+                <span class="admin-resource-tab-icon">{{ tp.icon || '📦' }}</span>
+                <span class="admin-resource-tab-label">{{ tp.label }}</span>
+                <span class="admin-resource-tab-badge" v-if="tp.key === 'mac'">内置</span>
               </button>
             </nav>
+            <div class="admin-resource-sidebar-footer">
+              <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="showAddToolPage = !showAddToolPage" style="width:100%;">
+                {{ showAddToolPage ? '取消' : '+ 新增资源页面' }}
+              </button>
+            </div>
+            <!-- Inline add form -->
+            <div v-if="showAddToolPage" class="admin-resource-add-form">
+              <div class="admin-resource-edit-field" style="margin-bottom:10px;">
+                <label>Key <small style="font-weight:400;">(唯一标识)</small></label>
+                <input v-model="newToolPage.key" placeholder="windows" class="admin-input" />
+              </div>
+              <div class="admin-resource-edit-field" style="margin-bottom:10px;">
+                <label>名称</label>
+                <input v-model="newToolPage.label" placeholder="Windows 软件" class="admin-input" />
+              </div>
+              <div class="admin-form-row" style="margin-bottom:10px;">
+                <div class="admin-resource-edit-field icon-field">
+                  <label>图标</label>
+                  <input v-model="newToolPage.icon" placeholder="📦" class="admin-input icon-input" />
+                </div>
+                <div class="admin-resource-edit-field" style="flex:0 0 auto;">
+                  <label>主题色</label>
+                  <input v-model="newToolPage.themeColor" type="color" class="color-input" />
+                </div>
+              </div>
+              <div class="admin-resource-edit-field" style="margin-bottom:10px;">
+                <label>Hero 标题</label>
+                <input v-model="newToolPage.heroTitle" placeholder="Hero 标题" class="admin-input" />
+              </div>
+              <div class="admin-resource-edit-field" style="margin-bottom:10px;">
+                <label>Hero 描述</label>
+                <textarea v-model="newToolPage.heroDesc" placeholder="描述..." class="admin-input" rows="2"></textarea>
+              </div>
+              <div v-if="toolPageFormError" class="admin-form-error" style="margin-bottom:10px;">{{ toolPageFormError }}</div>
+              <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveAddToolPage" :disabled="!newToolPage.key.trim()" style="width:100%;">创建</button>
+            </div>
+            </div>
           </aside>
 
-          <!-- Main Content -->
-          <main class="admin-mac-main">
-            <div v-if="currentMacSection" class="admin-mac-content">
-              <!-- Section title -->
-              <div class="admin-mac-section-title">
-                <span>{{ currentMacSection.icon }} {{ currentMacSection.title }}</span>
-                <small>{{ currentMacSection.subtitle }}</small>
+          <!-- Right: Main Content -->
+          <main class="admin-resource-main">
+            <!-- No page selected -->
+            <div v-if="!activeToolPageKey" class="admin-detail-empty">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              <p>从左侧选择一个资源页面开始管理</p>
+            </div>
+
+            <!-- Page selected: header + sections + items -->
+            <template v-else>
+              <!-- Header -->
+              <div class="admin-resource-content-header">
+                <template v-if="editingToolPage.key === activeToolPageKey">
+                  <div class="admin-resource-edit-header">
+                    <div class="admin-resource-edit-row">
+                      <div class="admin-resource-edit-field" style="width:160px;">
+                        <label>名称</label>
+                        <input v-model="editingToolPage.label" class="admin-input" placeholder="页面名称" />
+                      </div>
+                      <div class="admin-resource-edit-field" style="width:48px;">
+                        <label>图标</label>
+                        <input v-model="editingToolPage.icon" class="admin-input" style="text-align:center;" />
+                      </div>
+                      <div class="admin-resource-edit-field" style="width:52px;">
+                        <label>主题色</label>
+                        <input v-model="editingToolPage.themeColor" type="color" style="width:42px;height:34px;padding:2px;border:1px solid #ddd;border-radius:6px;" />
+                      </div>
+                      <div class="admin-resource-edit-field" style="flex:1;">
+                        <label>Hero 标题</label>
+                        <input v-model="editingToolPage.heroTitle" class="admin-input" placeholder="Hero 标题" />
+                      </div>
+                      <div class="admin-resource-edit-actions">
+                        <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveEditToolPage">保存</button>
+                        <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="editingToolPage.key = ''">取消</button>
+                      </div>
+                    </div>
+                    <div class="admin-resource-edit-row">
+                      <div class="admin-resource-edit-field" style="flex:1;">
+                        <label>Hero 副标题</label>
+                        <input v-model="editingToolPage.heroSubtitle" class="admin-input" placeholder="Hero 副标题" />
+                      </div>
+                    </div>
+                    <div class="admin-resource-edit-row">
+                      <div class="admin-resource-edit-field" style="flex:1;">
+                        <label>Hero 描述</label>
+                        <textarea v-model="editingToolPage.heroDesc" class="admin-input" rows="2" placeholder="Hero 描述"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <div class="admin-resource-header-info">
+                    <div>
+                      <h2>{{ currentTPConfig.icon || '📦' }} {{ currentTPConfig.label }}</h2>
+                      <p>{{ currentTPSections.length }} 个分类 · {{ tpTotalItems }} 个条目</p>
+                    </div>
+                    <div class="admin-resource-header-actions">
+                      <button v-if="!isInNav(currentTPConfig)" class="admin-btn admin-btn-ghost admin-btn-sm" @click="autoAddToNav(currentTPConfig)">+ 加导航</button>
+                      <button class="admin-icon-btn" @click="startEditToolPage({ key: activeToolPageKey, label: currentTPConfig.label, icon: currentTPConfig.icon, themeColor: currentTPConfig.themeColor, heroTitle: currentTPConfig.heroTitle, heroSubtitle: currentTPConfig.heroSubtitle, heroDesc: currentTPConfig.heroDesc })" title="编辑页面">✏️</button>
+                      <button v-if="activeToolPageKey !== 'mac'" class="admin-icon-btn" @click="handleDeleteToolPage({ key: activeToolPageKey, label: currentTPConfig.label })" title="删除页面">🗑️</button>
+                    </div>
+                  </div>
+                </template>
               </div>
 
-              <!-- Add new item form -->
-              <div class="admin-mac-add">
-                <input v-model="newMacItem.name" placeholder="软件名称" class="admin-mac-input" />
-                <input v-model="newMacItem.url" placeholder="链接 URL（可选）" class="admin-mac-input" />
-                <input v-model="newMacItem.desc" placeholder="描述" class="admin-mac-input" />
-                <div class="admin-mac-add-footer">
-                  <input v-model="newMacItem.tags" placeholder="标签（逗号分隔）" class="admin-mac-input" />
-                  <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveAddMacItem" :disabled="!newMacItem.name.trim()">添加</button>
+              <!-- Section Tabs (horizontal) + Add Section -->
+              <div class="admin-resource-section-bar">
+                <nav class="admin-resource-section-tabs">
+                  <button
+                    v-for="sec in currentTPSections"
+                    :key="sec.id"
+                    :class="['admin-resource-section-tab', { active: activeTPSection === sec.id }]"
+                    @click="activeTPSection = sec.id"
+                  >
+                    {{ sec.icon }} {{ sec.title }}
+                    <span class="admin-resource-section-count">{{ sec.items.length }}</span>
+                  </button>
+                </nav>
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="showAddTPSection = !showAddTPSection">
+                  {{ showAddTPSection ? '取消' : '+ 分类' }}
+                </button>
+              </div>
+
+              <!-- Add Section Form -->
+              <div v-if="showAddTPSection" class="admin-resource-add-section">
+                <input v-model="newTPSection.icon" placeholder="图标" class="admin-input" style="width:52px;text-align:center;" />
+                <input v-model="newTPSection.title" placeholder="分类名称" class="admin-input" style="flex:1;" />
+                <input v-model="newTPSection.subtitle" placeholder="副标题（可选）" class="admin-input" style="flex:1;" />
+                <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveAddTPSection" :disabled="!newTPSection.title.trim()">保存</button>
+              </div>
+
+              <!-- Section Content -->
+              <div v-if="currentTPSection" class="admin-resource-section-content">
+                <!-- Section Title -->
+                <div class="admin-resource-section-title">
+                  <template v-if="editingTPSection.id === currentTPSection.id">
+                    <input v-model="editingTPSection.icon" class="admin-input" style="width:48px;text-align:center;" />
+                    <input v-model="editingTPSection.title" class="admin-input" placeholder="分类名称" style="flex:1;" />
+                    <input v-model="editingTPSection.subtitle" class="admin-input" placeholder="副标题" style="flex:1;" />
+                    <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveEditTPSection" :disabled="!editingTPSection.title.trim()">保存</button>
+                    <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="editingTPSection.id = ''">取消</button>
+                  </template>
+                  <template v-else>
+                    <span>{{ currentTPSection.icon }} {{ currentTPSection.title }}</span>
+                    <small v-if="currentTPSection.subtitle">{{ currentTPSection.subtitle }}</small>
+                    <div style="margin-left:auto;display:flex;gap:6px;">
+                      <button class="admin-icon-btn" @click="startEditTPSection(currentTPSection)" title="编辑分类">✏️</button>
+                      <button class="admin-icon-btn" @click="handleDeleteTPSection(currentTPSection.id)" title="删除分类">🗑️</button>
+                    </div>
+                  </template>
                 </div>
-              </div>
 
-              <!-- Items list -->
-              <div v-if="currentMacSection.items.length > 0" class="admin-mac-list">
-                <div
-                  v-for="(item, idx) in currentMacSection.items"
-                  :key="idx"
-                  class="admin-mac-item"
-                >
-                  <!-- Edit mode -->
-                  <template v-if="editingMacItem.sectionId === activeMacSection && editingMacItem.index === idx">
-                    <div class="admin-mac-edit">
-                      <input v-model="editingMacItem.name" class="admin-mac-input" placeholder="名称" />
-                      <input v-model="editingMacItem.url" class="admin-mac-input" placeholder="链接" />
-                      <input v-model="editingMacItem.desc" class="admin-mac-input" placeholder="描述" />
-                      <div class="admin-mac-add-footer">
-                        <input v-model="editingMacItem.tags" class="admin-mac-input" placeholder="标签" />
-                        <div class="admin-mac-edit-actions">
-                          <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveEditMacItem">保存</button>
-                          <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="editingMacItem.index = -1">取消</button>
+                <!-- Add Item -->
+                <div class="admin-resource-add-item">
+                  <input v-model="newTPItem.name" placeholder="名称" class="admin-input" />
+                  <input v-model="newTPItem.url" placeholder="链接" class="admin-input" />
+                  <input v-model="newTPItem.desc" placeholder="描述" class="admin-input" />
+                  <div style="display:flex;gap:8px;">
+                    <input v-model="newTPItem.tags" placeholder="标签（逗号分隔）" class="admin-input" style="flex:1;" />
+                    <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveAddTPItem" :disabled="!newTPItem.name.trim()">添加</button>
+                  </div>
+                </div>
+
+                <!-- Items Grid -->
+                <div v-if="currentTPSection.items.length > 0" class="admin-resource-items">
+                  <div v-for="(item, idx) in currentTPSection.items" :key="idx" class="admin-resource-item-card">
+                    <template v-if="editingTPItem.sectionId === activeTPSection && editingTPItem.index === idx">
+                      <input v-model="editingTPItem.name" class="admin-input" placeholder="名称" />
+                      <input v-model="editingTPItem.url" class="admin-input" placeholder="链接" />
+                      <input v-model="editingTPItem.desc" class="admin-input" placeholder="描述" />
+                      <div style="display:flex;gap:8px;">
+                        <input v-model="editingTPItem.tags" class="admin-input" placeholder="标签" style="flex:1;" />
+                        <button class="admin-btn admin-btn-primary admin-btn-sm" @click="saveEditTPItem">保存</button>
+                        <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="editingTPItem.index = -1">取消</button>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="admin-resource-item-body">
+                        <strong>{{ item.name }}</strong>
+                        <small v-if="item.desc">{{ item.desc.slice(0, 80) }}{{ item.desc.length > 80 ? '...' : '' }}</small>
+                        <div v-if="item.tags?.length" class="admin-resource-item-tags">
+                          <span v-for="t in item.tags" :key="t">{{ t }}</span>
                         </div>
                       </div>
-                    </div>
-                  </template>
-                  <!-- Display mode -->
-                  <template v-else>
-                    <div class="admin-mac-item-body">
-                      <strong>{{ item.name }}</strong>
-                      <small>{{ item.desc.slice(0, 80) }}{{ item.desc.length > 80 ? '...' : '' }}</small>
-                      <div v-if="item.tags?.length" class="admin-mac-item-tags">
-                        <span v-for="t in item.tags" :key="t">{{ t }}</span>
+                      <div class="admin-resource-item-actions">
+                        <button class="admin-icon-btn" @click="startEditTPItem(activeTPSection, idx, item)" title="编辑">✏️</button>
+                        <button class="admin-icon-btn" @click="handleDeleteTPItem(activeTPSection, idx)" title="删除">🗑️</button>
                       </div>
-                    </div>
-                    <div class="admin-mac-item-actions">
-                      <button class="admin-icon-btn" @click="startEditMacItem(activeMacSection, idx, item)" title="编辑">✏️</button>
-                      <button class="admin-icon-btn" @click="handleDeleteMacItem(activeMacSection, idx)" title="删除">🗑️</button>
-                    </div>
-                  </template>
+                    </template>
+                  </div>
+                </div>
+                <div v-else class="admin-resource-empty">
+                  <p>该分类下暂无条目，请在上方添加</p>
                 </div>
               </div>
-              <div v-else class="admin-mac-empty">
-                <p>该分类下暂无软件，请在上方添加</p>
+              <div v-else class="admin-detail-empty">
+                <p>请先新增一个分类</p>
               </div>
-            </div>
+            </template>
           </main>
         </div>
       </template>
@@ -1986,39 +2484,46 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
               <div class="help-tip"><span class="help-tip-icon">💡</span> 每次导出数据时会自动记录时间，重置备份提醒计时。</div>
             </section>
 
-            <!-- Mac 软件页 -->
+            <!-- 资源页面 -->
             <section :id="'h15'" class="help-section">
               <div class="help-section-head">
-                <div class="help-section-badge badge-green">🍎</div>
+                <div class="help-section-badge badge-green">📦</div>
                 <div>
-                  <h2>Mac 软件页</h2>
-                  <p class="help-section-sub">管理 Mac 软件推荐页面，左右布局 + 多列网格，支持分类增删改查</p>
+                  <h2>资源页面</h2>
+                  <p class="help-section-sub">左右布局管理所有资源推荐页面（Mac 软件、Windows 工具等），创建后自动加入导航</p>
                 </div>
               </div>
               <div class="help-steps">
                 <div class="help-step">
                   <span class="help-step-num">1</span>
                   <div class="help-step-body">
-                    <strong>进入页面</strong>
-                    <p>在导航页「万物归一」分类下点击「mac」链接，即可进入 Mac 软件推荐页（占屏幕 80% 宽度）</p>
+                    <strong>创建资源页面</strong>
+                    <p>在后台点击「资源页」标签 → 左侧底部点击「+ 新增资源页面」→ 填写 Key（唯一标识，如 windows）、名称、图标、主题色 → 创建。<strong>创建后自动添加到「万物归一」导航中。</strong></p>
                   </div>
                 </div>
                 <div class="help-step">
                   <span class="help-step-num">2</span>
                   <div class="help-step-body">
-                    <strong>后台管理</strong>
-                    <p>在后台点击「Mac」标签，左侧显示分类侧边栏，右侧显示 3 列网格。切换分类后可添加、编辑、删除软件条目</p>
+                    <strong>管理内容</strong>
+                    <p>左侧选择资源页面 → 右侧点击「+ 分类」添加分类 → 选中分类后在下方添加条目（名称、链接、描述、标签）。每个条目以卡片形式展示，支持编辑和删除。</p>
                   </div>
                 </div>
                 <div class="help-step">
                   <span class="help-step-num">3</span>
                   <div class="help-step-body">
-                    <strong>数据结构</strong>
-                    <p>每个软件包含名称、描述、链接和标签，支持按分类浏览和搜索</p>
+                    <strong>编辑页面配置</strong>
+                    <p>选中资源页面后，点击右侧顶部的 ✏️ 按钮可修改名称、图标、主题色、Hero 文案等配置。点击页面标题旁的 🗑️ 可删除整个页面（内置 Mac 软件页不可删除）。</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">4</span>
+                  <div class="help-step-body">
+                    <strong>导航入口</strong>
+                    <p>创建页面时自动添加到「万物归一」。如果链接被误删，可在右侧顶部点击「+ 加导航」重新添加。页面 URL 格式为 <code>http://yihaozhan.xyz/你的key.html</code>。</p>
                   </div>
                 </div>
               </div>
-              <div class="help-tip"><span class="help-tip-icon">💡</span> Mac 页面数据支持导出/导入，备份时会自动包含。移动端自动切换为上下布局 + 单列显示。</div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 所有资源页面样式统一（Hero + 分类 + 多列网格），支持搜索、暗黑模式、移动端自适应。所有操作支持撤销。</div>
             </section>
 
             <!-- 文章管理 -->

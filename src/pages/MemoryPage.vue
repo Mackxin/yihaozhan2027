@@ -41,9 +41,11 @@ const darkCardColors = [
   { bg: 'linear-gradient(145deg, #24212b, #1c1923)', accent: '#342a3a' },
 ]
 
+// ─── Theme reactivity ───
+const isDark = ref(document.documentElement.getAttribute('data-theme') === 'dark')
+
 function getCardStyle(index) {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
-  const palette = isDark ? darkCardColors : cardColors
+  const palette = isDark.value ? darkCardColors : cardColors
   const color = palette[index % palette.length]
   return {
     background: color.bg,
@@ -187,9 +189,11 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
 
-watch(publishedMemories, () => {
+// 只在已发布回忆的「数量」变化时才重新洗牌（增删/发布/取消发布），
+// 内容编辑不会触发（避免保存后卡片重排、丢失浏览位置）
+watch(() => publishedMemories.value.length, () => {
   buildOrder()
-}, { deep: true })
+})
 
 // ─── Markdown render ───
 function renderMarkdown(content) {
@@ -242,8 +246,7 @@ function shuffleMemories() {
 function getStackCardStyle(position) {
   const offset = dragOffsetY.value
   const progress = Math.min(Math.abs(offset) / 300, 1)
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
-  const palette = isDark ? darkCardColors : cardColors
+  const palette = isDark.value ? darkCardColors : cardColors
   const baseColor = palette[(currentOrderIndex.value + position) % palette.length]
 
   if (position === 0) {
@@ -296,7 +299,7 @@ function getCardAnimatingClass(position) {
 
 // ─── Refresh on theme change ───
 function onThemeChange() {
-  // Force reactivity
+  isDark.value = document.documentElement.getAttribute('data-theme') === 'dark'
 }
 onMounted(() => {
   const observer = new MutationObserver(onThemeChange)
@@ -431,10 +434,10 @@ onMounted(() => {
       </div>
 
       <!-- Indicator -->
-      <div class="memory-swipe-indicator">
+      <div v-if="publishedMemories.length > 0" class="memory-swipe-indicator">
         <div class="memory-swipe-progress">
           <span>{{ currentOrderIndex + 1 }}</span>
-          <span class="memory-swipe-progress-bar"><i :style="{ width: ((currentOrderIndex + 1) / orderedIndices.length * 100) + '%' }"></i></span>
+          <span class="memory-swipe-progress-bar"><i :style="{ width: orderedIndices.length ? ((currentOrderIndex + 1) / orderedIndices.length * 100) + '%' : '0%' }"></i></span>
           <span>{{ orderedIndices.length }}</span>
         </div>
         <span class="memory-swipe-hint">上下滑动切换</span>

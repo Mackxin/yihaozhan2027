@@ -7,7 +7,7 @@ import NewsPage from './pages/NewsPage.vue'
 import NotesPage from './pages/NotesPage.vue'
 import MemoryPage from './pages/MemoryPage.vue'
 import AdminPanel from './pages/AdminPanel.vue'
-import MacPage from './pages/MacPage.vue'
+import ToolPage from './pages/ToolPage.vue'
 import ArticlePage from './pages/ArticlePage.vue'
 import LoginModal from './components/LoginModal.vue'
 
@@ -68,9 +68,13 @@ const handleLoginSuccess = () => {
 }
 const handleLoginClose = () => { showLogin.value = false }
 
-// ─── Mac Page (overlay) ───
-const showMacPage = ref(false)
-const openMacPage = () => { showMacPage.value = true }
+// ─── Tool Pages (overlay) ───
+const showToolPage = ref(false)
+const activeToolKey = ref('')
+const openToolPage = (key) => {
+  activeToolKey.value = key
+  showToolPage.value = true
+}
 
 // ─── Article Page (overlay) ───
 const showArticlePage = ref(false)
@@ -84,7 +88,8 @@ const openArticlePage = (articleId) => {
 }
 
 // Expose for NavPage link interception
-window.__yihaoOpenMac = openMacPage
+window.__yihaoOpenTool = openToolPage
+window.__yihaoOpenMac = () => openToolPage('mac')  // backward compat
 window.__yihaoOpenArticle = openArticlePage
 
 // ─── Admin shortcut: Ctrl+Shift+A / Cmd+Shift+A ───
@@ -153,16 +158,16 @@ const handleTouchEnd = (e) => {
       </div>
     </div>
 
-    <!-- Mac Page Overlay -->
-    <Transition name="mac-slide">
-      <div v-if="showMacPage" class="mac-overlay">
-        <MacPage :active="showMacPage" />
+    <!-- Tool Page Overlay -->
+    <Transition name="tool-slide">
+      <div v-if="showToolPage" class="tool-overlay">
+        <ToolPage :active="showToolPage" :toolKey="activeToolKey" />
       </div>
     </Transition>
 
     <!-- Article Page Overlay -->
-    <Transition name="mac-slide">
-      <div v-if="showArticlePage" class="mac-overlay">
+    <Transition name="tool-slide">
+      <div v-if="showArticlePage" class="tool-overlay">
         <ArticlePage :article="currentArticle" />
       </div>
     </Transition>
@@ -176,7 +181,7 @@ const handleTouchEnd = (e) => {
         v-for="(tab, i) in tabs"
         :key="tab.key"
         :class="['tab-item', { active: activeTab === i }]"
-        @click="activeTab = i; showMacPage = false"
+        @click="activeTab = i; showToolPage = false; showArticlePage = false"
         @pointerdown="startTabLongPress(tab.key)"
         @pointerup="cancelTabLongPress"
         @pointerleave="cancelTabLongPress"
