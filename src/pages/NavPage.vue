@@ -33,9 +33,18 @@ const resolveToolLink = (url) => {
 }
 const isToolLink = (url) => resolveToolLink(url) !== null
 const isArticleLink = (url) => url?.startsWith('#article:')
+const isDeliveryLink = (url) => url === '#delivery'
 const getArticleId = (url) => url?.replace('#article:', '')
 const openToolPage = (key) => { window.__yihaoOpenTool?.(key) }
 const openArticle = (id) => { window.__yihaoOpenArticle?.(id) }
+const openDelivery = () => { window.__yihaoOpenDelivery?.() }
+
+const handleLinkClick = (link, e) => {
+  if (isToolLink(link.url)) { e.preventDefault(); openToolPage(resolveToolLink(link.url)) }
+  else if (isArticleLink(link.url)) { e.preventDefault(); openArticle(getArticleId(link.url)) }
+  else if (isDeliveryLink(link.url)) { e.preventDefault(); openDelivery() }
+}
+const isInternalLink = (url) => isToolLink(url) || isArticleLink(url) || isDeliveryLink(url)
 
 const midIndex = computed(() => Math.ceil(navCategories.value.length / 2))
 const topNavCats = computed(() => navCategories.value.slice(0, midIndex.value))
@@ -89,7 +98,7 @@ onUnmounted(() => {
   <div class="nav-page" ref="contentRef">
     <!-- Desktop sticky top nav (teleported to body to avoid overflow clipping) -->
     <Teleport to="body">
-    <div v-if="active" class="desktop-nav">
+    <div v-if="active && !store.overlayOpen" class="desktop-nav">
       <div class="desktop-nav-inner">
         <div class="desktop-nav-list">
           <a
@@ -161,11 +170,11 @@ onUnmounted(() => {
               <a
                 v-for="(link, i) in cat.links"
                 :key="i"
-                :href="(isToolLink(link.url) || isArticleLink(link.url)) ? undefined : link.url"
-                :target="(isToolLink(link.url) || isArticleLink(link.url)) ? undefined : '_blank'"
-                :rel="(isToolLink(link.url) || isArticleLink(link.url)) ? undefined : 'noopener noreferrer'"
+                :href="isInternalLink(link.url) ? undefined : link.url"
+                :target="isInternalLink(link.url) ? undefined : '_blank'"
+                :rel="isInternalLink(link.url) ? undefined : 'noopener noreferrer'"
                 class="nav-link-item"
-                @click="isToolLink(link.url) ? ($event.preventDefault(), openToolPage(resolveToolLink(link.url))) : isArticleLink(link.url) ? ($event.preventDefault(), openArticle(getArticleId(link.url))) : null"
+                @click="handleLinkClick(link, $event)"
               >
                 {{ link.name }}
               </a>
@@ -181,7 +190,7 @@ onUnmounted(() => {
 
     <!-- Desktop fixed bottom nav (teleported to body to avoid overflow clipping) -->
     <Teleport to="body">
-    <div v-if="active" class="desktop-footer">
+    <div v-if="active && !store.overlayOpen" class="desktop-footer">
       <div class="desktop-footer-inner">
         <div class="desktop-footer-list">
           <a

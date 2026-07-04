@@ -6,6 +6,7 @@
   overflow: hidden;
   background: var(--bg);
   min-height: 0;
+  position: relative;
 }
 
 /* ========== Content Area ========== */
@@ -110,6 +111,10 @@
     height: 60px;
     border-top: 1px solid var(--border);
     box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .tool-overlay {
+    bottom: 60px;
   }
 
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
@@ -288,11 +293,11 @@
 
 /* ─── Tool Page Overlay ─── */
 .tool-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  bottom: var(--tab-height, 56px);
+  bottom: var(--tab-height);
   z-index: 50;
   background: var(--bg);
   overflow: hidden;

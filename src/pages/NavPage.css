@@ -248,6 +248,11 @@
   color: #ff1d55;
 }
 
+body.overlay-open .desktop-nav,
+body.overlay-open .desktop-footer {
+  display: none !important;
+}
+
 /* ═══ Dark Mode ═══ */
 [data-theme="dark"] .nav-page { background: #0f172a; }
 [data-theme="dark"] .desktop-nav { background-color: rgba(30, 41, 59, 0.95); border-color: #334155; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2); }

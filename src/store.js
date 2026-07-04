@@ -21,6 +21,9 @@ const MEMORIES_KEY = 'yihao_memories'
 const TOOL_PAGES_KEY = 'yihao_tool_pages'
 const TOOL_PAGES_DATA_KEY = 'yihao_tool_pages_data'
 const FAVICON_KEY = 'yihao_favicon'
+const DELIVERY_RECORDS_KEY = 'yihao_delivery_records'
+const DELIVERY_PLATFORMS_KEY = 'yihao_delivery_platforms'
+const DELIVERY_GOAL_KEY = 'yihao_delivery_goal'
 
 const defaultNav = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
 const defaultTimeline = fullTimelineData
@@ -37,6 +40,14 @@ const defaultToolPages = [
 ]
 const defaultToolPagesData = {}
 const defaultFavicon = '/avatar.png'
+const defaultDeliveryPlatforms = [
+  { name: '美团众包', icon: '🛵', color: '#ffc700' },
+  { name: '京东秒送', icon: '📦', color: '#e1251b' },
+  { name: '蜂鸟众包', icon: '🐝', color: '#0091ff' },
+  { name: '货拉拉', icon: '🚚', color: '#ff7f00' },
+]
+const defaultDeliveryRecords = []
+const defaultDeliveryGoal = { daily: 200, monthly: 6000, enabled: true }
 
 // ─── Initialize from localStorage or defaults ───
 const savedNav = localStorage.getItem(NAV_STORAGE_KEY)
@@ -48,6 +59,9 @@ const savedMemories = localStorage.getItem(MEMORIES_KEY)
 const savedToolPages = localStorage.getItem(TOOL_PAGES_KEY)
 const savedToolPagesData = localStorage.getItem(TOOL_PAGES_DATA_KEY)
 const savedFavicon = localStorage.getItem(FAVICON_KEY)
+const savedDeliveryRecords = localStorage.getItem(DELIVERY_RECORDS_KEY)
+const savedDeliveryPlatforms = localStorage.getItem(DELIVERY_PLATFORMS_KEY)
+const savedDeliveryGoal = localStorage.getItem(DELIVERY_GOAL_KEY)
 
 export const store = reactive({
   navCategories: savedNav ? JSON.parse(savedNav) : JSON.parse(JSON.stringify(defaultNav)),
@@ -59,8 +73,12 @@ export const store = reactive({
   toolPages: savedToolPages ? JSON.parse(savedToolPages) : JSON.parse(JSON.stringify(defaultToolPages)),
   toolPagesData: savedToolPagesData ? JSON.parse(savedToolPagesData) : JSON.parse(JSON.stringify(defaultToolPagesData)),
   siteFavicon: savedFavicon || defaultFavicon,
+  deliveryRecords: savedDeliveryRecords ? JSON.parse(savedDeliveryRecords) : JSON.parse(JSON.stringify(defaultDeliveryRecords)),
+  deliveryPlatforms: savedDeliveryPlatforms ? JSON.parse(savedDeliveryPlatforms) : JSON.parse(JSON.stringify(defaultDeliveryPlatforms)),
+  deliveryGoal: savedDeliveryGoal ? JSON.parse(savedDeliveryGoal) : JSON.parse(JSON.stringify(defaultDeliveryGoal)),
   dataReady: false,
   isAdmin: localStorage.getItem('yihao_admin') === 'true',
+  overlayOpen: false,
 })
 
 export function toggleAdmin() {
@@ -97,11 +115,19 @@ async function loadRemoteData() {
       if (data.toolPages) store.toolPages = data.toolPages
       if (data.toolPagesData) store.toolPagesData = data.toolPagesData
       if (data.siteFavicon) store.siteFavicon = data.siteFavicon
+      if (data.deliveryRecords) store.deliveryRecords = data.deliveryRecords
+      if (data.deliveryPlatforms) store.deliveryPlatforms = data.deliveryPlatforms
+      if (data.deliveryGoal) store.deliveryGoal = data.deliveryGoal
       console.log('✅ 已加载 ./data.json')
     }
   } catch {
     // file:// protocol or no data.json — localStorage data already loaded, keep it
     console.log('ℹ️ fetch 不可用，使用 localStorage 数据')
+  }
+  // 迁移：确保「万物归一」中有外卖入口
+  const wanyi = store.navCategories.find(c => c.id === 1 || c.title === '万物归一')
+  if (wanyi && !wanyi.links.some(l => l.url === '#delivery')) {
+    wanyi.links.splice(3, 0, { name: '外卖', url: '#delivery' })
   }
   store.dataReady = true
 }
@@ -117,6 +143,9 @@ const persistMemories = debounce((v) => localStorage.setItem(MEMORIES_KEY, JSON.
 const persistToolPages = debounce((v) => localStorage.setItem(TOOL_PAGES_KEY, JSON.stringify(v)), 300)
 const persistToolPagesData = debounce((v) => localStorage.setItem(TOOL_PAGES_DATA_KEY, JSON.stringify(v)), 300)
 const persistFavicon = debounce((v) => localStorage.setItem(FAVICON_KEY, v), 300)
+const persistDeliveryRecords = debounce((v) => localStorage.setItem(DELIVERY_RECORDS_KEY, JSON.stringify(v)), 300)
+const persistDeliveryPlatforms = debounce((v) => localStorage.setItem(DELIVERY_PLATFORMS_KEY, JSON.stringify(v)), 300)
+const persistDeliveryGoal = debounce((v) => localStorage.setItem(DELIVERY_GOAL_KEY, JSON.stringify(v)), 300)
 
 watch(() => store.navCategories, (v) => persistNav(v), { deep: true })
 watch(() => store.timelineItems, (v) => persistNews(v), { deep: true })
@@ -127,6 +156,9 @@ watch(() => store.memories, (v) => persistMemories(v), { deep: true })
 watch(() => store.toolPages, (v) => persistToolPages(v), { deep: true })
 watch(() => store.toolPagesData, (v) => persistToolPagesData(v), { deep: true })
 watch(() => store.siteFavicon, (v) => persistFavicon(v))
+watch(() => store.deliveryRecords, (v) => persistDeliveryRecords(v), { deep: true })
+watch(() => store.deliveryPlatforms, (v) => persistDeliveryPlatforms(v), { deep: true })
+watch(() => store.deliveryGoal, (v) => persistDeliveryGoal(v), { deep: true })
 
 // ─── Nav CRUD ───
 export function getNextNavId() {
@@ -216,6 +248,9 @@ export function exportAllData() {
     toolPages: store.toolPages,
     toolPagesData: store.toolPagesData,
     siteFavicon: store.siteFavicon,
+    deliveryRecords: store.deliveryRecords,
+    deliveryPlatforms: store.deliveryPlatforms,
+    deliveryGoal: store.deliveryGoal,
   }, null, 2)
 }
 
@@ -230,6 +265,9 @@ export function importAllData(jsonStr) {
   if (data.toolPages) store.toolPages = data.toolPages
   if (data.toolPagesData) store.toolPagesData = data.toolPagesData
   if (data.siteFavicon) store.siteFavicon = data.siteFavicon
+  if (data.deliveryRecords) store.deliveryRecords = data.deliveryRecords
+  if (data.deliveryPlatforms) store.deliveryPlatforms = data.deliveryPlatforms
+  if (data.deliveryGoal) store.deliveryGoal = data.deliveryGoal
 }
 
 export function resetToDefaults() {
@@ -242,6 +280,9 @@ export function resetToDefaults() {
   localStorage.removeItem(TOOL_PAGES_KEY)
   localStorage.removeItem(TOOL_PAGES_DATA_KEY)
   localStorage.removeItem(FAVICON_KEY)
+  localStorage.removeItem(DELIVERY_RECORDS_KEY)
+  localStorage.removeItem(DELIVERY_PLATFORMS_KEY)
+  localStorage.removeItem(DELIVERY_GOAL_KEY)
   store.navCategories = navCategoriesPart1.map((c, i) => ({ ...c, id: c.id || i + 1 }))
   store.timelineItems = JSON.parse(JSON.stringify(defaultTimeline))
   store.heroLinks = JSON.parse(JSON.stringify(defaultHeroLinks))
@@ -251,6 +292,9 @@ export function resetToDefaults() {
   store.toolPages = JSON.parse(JSON.stringify(defaultToolPages))
   store.toolPagesData = JSON.parse(JSON.stringify(defaultToolPagesData))
   store.siteFavicon = defaultFavicon
+  store.deliveryRecords = JSON.parse(JSON.stringify(defaultDeliveryRecords))
+  store.deliveryPlatforms = JSON.parse(JSON.stringify(defaultDeliveryPlatforms))
+  store.deliveryGoal = JSON.parse(JSON.stringify(defaultDeliveryGoal))
 }
 
 // ─── Hero Links CRUD ───
@@ -505,6 +549,78 @@ export function restoreToolSnapshot(key, snapshot) {
   } else {
     store.toolPagesData[key] = snapshot
   }
+}
+
+// ─── Delivery (外卖跑单) CRUD ───
+export function addDeliveryRecord(record) {
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+  const now = new Date().toISOString()
+  store.deliveryRecords.push({
+    id,
+    date: record.date || new Date().toISOString().slice(0, 10),
+    platform: record.platform || '美团众包',
+    orders: Number(record.orders) || 0,
+    income: Number(record.income) || 0,
+    insurance: Number(record.insurance) || 0,
+    mileage: Number(record.mileage) || 0,
+    duration: Number(record.duration) || 0,
+    note: record.note || '',
+    createdAt: now,
+    updatedAt: now,
+  })
+  // 按日期降序排序（新的在前）
+  store.deliveryRecords.sort((a, b) => b.date.localeCompare(a.date))
+  return id
+}
+
+export function updateDeliveryRecord(id, record) {
+  const r = store.deliveryRecords.find(r => r.id === id)
+  if (!r) return
+  if (record.date !== undefined) r.date = record.date
+  if (record.platform !== undefined) r.platform = record.platform
+  if (record.orders !== undefined) r.orders = Number(record.orders) || 0
+  if (record.income !== undefined) r.income = Number(record.income) || 0
+  if (record.insurance !== undefined) r.insurance = Number(record.insurance) || 0
+  if (record.mileage !== undefined) r.mileage = Number(record.mileage) || 0
+  if (record.duration !== undefined) r.duration = Number(record.duration) || 0
+  if (record.note !== undefined) r.note = record.note
+  r.updatedAt = new Date().toISOString()
+  // 重新排序
+  store.deliveryRecords.sort((a, b) => b.date.localeCompare(a.date))
+}
+
+export function deleteDeliveryRecord(id) {
+  const idx = store.deliveryRecords.findIndex(r => r.id === id)
+  if (idx !== -1) store.deliveryRecords.splice(idx, 1)
+}
+
+export function getDeliverySnapshot() {
+  return JSON.parse(JSON.stringify(store.deliveryRecords))
+}
+
+export function restoreDeliverySnapshot(snapshot) {
+  store.deliveryRecords = snapshot
+}
+
+// 平台管理
+export function addDeliveryPlatform(name, icon, color) {
+  const exists = store.deliveryPlatforms.some(p => p.name === name)
+  if (exists) return
+  store.deliveryPlatforms.push({
+    name,
+    icon: icon || '🛵',
+    color: color || '#6366f1',
+  })
+}
+
+export function deleteDeliveryPlatform(name) {
+  const idx = store.deliveryPlatforms.findIndex(p => p.name === name)
+  if (idx !== -1) store.deliveryPlatforms.splice(idx, 1)
+}
+
+// 目标管理
+export function updateDeliveryGoal(goal) {
+  store.deliveryGoal = { ...store.deliveryGoal, ...goal }
 }
 
 // ─── Articles CRUD ───

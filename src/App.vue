@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { store, toggleAdmin, loginAdmin } from './store'
 import HomePage from './pages/HomePage.vue'
 import NavPage from './pages/NavPage.vue'
@@ -9,6 +9,7 @@ import MemoryPage from './pages/MemoryPage.vue'
 import AdminPanel from './pages/AdminPanel.vue'
 import ToolPage from './pages/ToolPage.vue'
 import ArticlePage from './pages/ArticlePage.vue'
+import DeliveryPage from './pages/DeliveryPage.vue'
 import LoginModal from './components/LoginModal.vue'
 
 const allTabs = [
@@ -74,6 +75,13 @@ const activeToolKey = ref('')
 const openToolPage = (key) => {
   activeToolKey.value = key
   showToolPage.value = true
+  document.body.classList.add('overlay-open')
+  store.overlayOpen = true
+}
+const closeToolPage = () => {
+  showToolPage.value = false
+  document.body.classList.remove('overlay-open')
+  store.overlayOpen = false
 }
 
 // ─── Article Page (overlay) ───
@@ -84,13 +92,43 @@ const openArticlePage = (articleId) => {
   if (article) {
     currentArticle.value = article
     showArticlePage.value = true
+    document.body.classList.add('overlay-open')
+    store.overlayOpen = true
   }
 }
+const closeArticlePage = () => {
+  showArticlePage.value = false
+  document.body.classList.remove('overlay-open')
+  store.overlayOpen = false
+}
+
+// ─── Delivery Page (overlay) ───
+const showDeliveryPage = ref(false)
+const openDeliveryPage = () => {
+  showDeliveryPage.value = true
+  document.body.classList.add('overlay-open')
+  store.overlayOpen = true
+}
+const closeDeliveryPage = () => {
+  showDeliveryPage.value = false
+  document.body.classList.remove('overlay-open')
+  store.overlayOpen = false
+}
+
+// Sync overlay state for any overlay
+const syncOverlayState = () => {
+  const open = showToolPage.value || showArticlePage.value || showDeliveryPage.value
+  store.overlayOpen = open
+  if (open) document.body.classList.add('overlay-open')
+  else document.body.classList.remove('overlay-open')
+}
+watch(() => showToolPage.value || showArticlePage.value || showDeliveryPage.value, syncOverlayState)
 
 // Expose for NavPage link interception
 window.__yihaoOpenTool = openToolPage
 window.__yihaoOpenMac = () => openToolPage('mac')  // backward compat
 window.__yihaoOpenArticle = openArticlePage
+window.__yihaoOpenDelivery = openDeliveryPage
 
 // ─── Admin shortcut: Ctrl+Shift+A / Cmd+Shift+A ───
 const handleAdminShortcut = (e) => {
@@ -172,16 +210,23 @@ const handleTouchEnd = (e) => {
       </div>
     </Transition>
 
+    <!-- Delivery Page Overlay -->
+    <Transition name="tool-slide">
+      <div v-if="showDeliveryPage" class="tool-overlay">
+        <DeliveryPage @close="closeDeliveryPage" />
+      </div>
+    </Transition>
+
     <!-- Login Modal -->
     <LoginModal v-if="showLogin" @login="handleLoginSuccess" @close="handleLoginClose" />
 
-    <!-- Bottom Tab Bar -->
+    <!-- Bottom Tab Bar (always visible) -->
     <div class="tab-bar">
       <div
         v-for="(tab, i) in tabs"
         :key="tab.key"
         :class="['tab-item', { active: activeTab === i }]"
-        @click="activeTab = i; showToolPage = false; showArticlePage = false"
+        @click="activeTab = i; closeToolPage(); closeArticlePage(); closeDeliveryPage()"
         @pointerdown="startTabLongPress(tab.key)"
         @pointerup="cancelTabLongPress"
         @pointerleave="cancelTabLongPress"
