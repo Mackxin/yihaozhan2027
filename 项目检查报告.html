@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>壹号栈 · 项目完整检查报告</title>
+<style>
+  :root { --p: #ff1d55; --ok: #16a34a; --warn: #d97706; --bad: #dc2626; --bg: #f6f7f9; --card: #fff; --bd: #e6e8eb; --tx: #1a1a1a; --mut: #6b7280; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--tx); line-height: 1.7; padding: 24px 16px 60px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 24px; margin-bottom: 4px; }
+  .sub { color: var(--mut); font-size: 13px; margin-bottom: 22px; }
+  .sec { background: var(--card); border: 1px solid var(--bd); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; }
+  .sec h2 { font-size: 17px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .sec h2 .n { background: var(--p); color: #fff; font-size: 12px; width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
+  .item { padding: 10px 0; border-top: 1px dashed var(--bd); }
+  .item:first-of-type { border-top: none; }
+  .item .t { font-weight: 600; font-size: 14.5px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+  .t-p0 { background: #fee2e2; color: var(--bad); }
+  .t-p1 { background: #fef3c7; color: var(--warn); }
+  .t-p2 { background: #e0f2fe; color: #0369a1; }
+  .t-fix { background: #dcfce7; color: var(--ok); }
+  .desc { font-size: 13px; color: #374151; margin-top: 4px; }
+  .fix { font-size: 12.5px; color: var(--ok); margin-top: 3px; }
+  .note { font-size: 12.5px; color: var(--mut); margin-top: 3px; }
+  .pill { display:inline-block; background:var(--p); color:#fff; font-size:11px; padding:2px 9px; border-radius:999px; }
+  ul.feat { list-style: none; }
+  ul.feat li { padding: 9px 0; border-top: 1px dashed var(--bd); }
+  ul.feat li:first-child { border-top: none; }
+  .b { font-weight: 600; }
+  .meta { font-size:12px; color:var(--mut); }
+  .okbox { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 14px; font-size:13px; color:#166534; margin-bottom:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>壹号栈 · 项目完整检查报告</h1>
+  <div class="sub">检查日期：2026-07-08 ｜ 检查方式：核心源码阅读 + 全页 Explore 审查 + 真实浏览器实测</div>
+
+  <div class="okbox">
+    ✅ 本轮已直接修复 <b>5 项问题</b> 并已本地提交（commit <code>ca126b8</code>）。其中最关键的是「随记 / 流记共用存储键导致数据互相覆盖丢失」的 P0 级 bug，已通过真实浏览器注入脏数据验证：两类数据现已彻底分离、互不污染、历史数据不丢。
+  </div>
+
+  <div class="sec">
+    <h2><span class="n">1</span>已修复的问题（已提交）</h2>
+    <div class="item">
+      <div class="t">【P0】随记页与流记共用 localStorage 键，互相覆盖丢数据<span class="tag t-fix">已修复·已验证</span></div>
+      <div class="desc">随记（NotesPage）和流记（store.ideas）原本都用 <code>yihao_ideas</code> 键，但数据结构完全不同（随记 <code>{text,tags,pinned}</code> vs 流记 <code>{content,images,author}</code>），各自维护独立内存数组，会互相覆盖导致一方数据静默丢失。</div>
+      <div class="fix">修复：随记改用独立键 <code>yihao_notes</code>；store 初始化时把历史混存里的「随记结构」自动迁移到 <code>yihao_notes</code>（不丢历史）。浏览器实测：随记页只显随记、流记页只显流记，迁移键正确写入，控制台零报错。</div>
+    </div>
+    <div class="item">
+      <div class="t">【P0】localStorage 数据损坏即整站白屏<span class="tag t-fix">已修复</span></div>
+      <div class="desc">store.js / App.vue 顶部对所有 localStorage 键直接 <code>JSON.parse</code>，无任何 try/catch。任意一个键被写坏，模块加载即抛错，整个应用无法挂载。</div>
+      <div class="fix">修复：store.js 增加 <code>safeParse</code> 包装全部 13 个键，损坏只回退默认值并告警。</div>
+    </div>
+    <div class="item">
+      <div class="t">【中等】登出管理员后页面错位 / 空白<span class="tag t-fix">已修复</span></div>
+      <div class="desc">登出后底部 tab 从 6 个变回 5 个，但 <code>activeTab</code> 仍指向已卸载的 admin tab，导致滑块错位、显示空白。</div>
+      <div class="fix">修复：App.vue 增加 watch，<code>isAdmin</code> 变 false 时若索引越界则重置为 0。</div>
+    </div>
+    <div class="item">
+      <div class="t">【轻微】回忆页键盘导航逻辑写反<span class="tag t-fix">已修复</span></div>
+      <div class="desc">桌面端按 ↑/↓ 无法切换回忆卡片（条件写反，实际只在移动端生效）。</div>
+      <div class="fix">修复：条件改为 <code>if (isMobile.value || !props.active) return</code>。</div>
+    </div>
+    <div class="item">
+      <div class="t">【轻微】讯息页时间线缺空状态<span class="tag t-fix">已修复</span></div>
+      <div class="desc">搜索无结果或清空数据后，讯息页一片空白，像出错。</div>
+      <div class="fix">修复：增加「未找到 / 暂无讯息」占位。</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2><span class="n">2</span>仍发现的问题（待你拍板是否修）</h2>
+    <div class="item">
+      <div class="t">后台「导入数据」撤销不完整<span class="tag t-p1">P1</span></div>
+      <div class="desc">导入时只把 nav / news 压入撤销栈，但 <code>importAllData</code> 会替换全部模块。撤销后导航/讯息回退、文章/回忆/流记却停在导入后，数据状态互相矛盾。</div>
+      <div class="note">建议：导入前存一份全量快照，撤销时一次性整体还原。</div>
+    </div>
+    <div class="item">
+      <div class="t">marked 渲染 v-html 全站未做 XSS 清洗<span class="tag t-p1">P1</span></div>
+      <div class="desc">文章 / 回忆 / 流记 / 后台预览均用 <code>v-html="marked(...)"</code> 直接渲染，未 sanitize。当前为「自 XSS」（作者自己录入），但若后台账号泄露或内容未来对外开放，可注入恶意脚本窃取 <code>yihao_admin</code> / localStorage。</div>
+      <div class="note">建议：引入 DOMPurify，渲染前 <code>DOMPurify.sanitize(marked(content))</code>。</div>
+    </div>
+    <div class="item">
+      <div class="t">data.json 仅覆盖导航/讯息，与其余模块策略不一致<span class="tag t-p1">P1</span></div>
+      <div class="desc"><code>loadRemoteData()</code> 每次刷新用 <code>data.json</code> 覆盖 <code>navCategories</code> 和 <code>timelineItems</code>，但其他模块（流记/回忆/文章…）只存 localStorage。后果：在后台改了导航/讯息，刷新后被 <code>data.json</code> 覆盖丢失；而其余模块不会。行为不一致。</div>
+      <div class="note">建议：改为「首次以 data.json 为种子写入 localStorage，之后以 localStorage 为准」；或后台编辑能写回 data.json（需后端）。</div>
+    </div>
+    <div class="item">
+      <div class="t">底部固定 tab 栏遮挡各页底部内容<span class="tag t-p2">P2</span></div>
+      <div class="desc">导航页有底部留白补偿，但消息/随记/回忆/工具/文章等滚动容器未预留 56px + 安全区，最后一条记录或按钮被 tab 栏压住、点不到。</div>
+      <div class="note">建议：各页根滚动容器统一加 <code>padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom) + 12px)</code>。</div>
+    </div>
+    <div class="item">
+      <div class="t">构建产物单包 633KB，未做代码分割<span class="tag t-p2">P2</span></div>
+      <div class="desc">所有页面 + 依赖打进一个 chunk，首屏加载偏重（gzip 216KB）。</div>
+      <div class="note">建议：对各页面 / overlay 用 <code>defineAsyncComponent</code> 懒加载，拆 vendor。</div>
+    </div>
+    <div class="item">
+      <div class="t">个别字段遍历缺防御（轻微）<span class="tag t-p2">P2</span></div>
+      <div class="desc">ToolPage 的 <code>item.desc.toLowerCase()</code>、首页/讯息部分 <code>link.name</code> 等未加 <code>?.</code>，legacy / 外部注入数据缺字段时可能抛错。</div>
+      <div class="note">建议：统一用可选链 / <code>|| ''</code>。</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2><span class="n">3</span>建议新增功能（按价值排序）</h2>
+    <ul class="feat">
+      <li><span class="b">① 全局搜索升级</span><br><span class="desc">当前首页搜索只覆盖导航 + 讯息。扩展到随记 / 回忆 / 流记 / 文章，结果点击可直接打开对应弹层（点文章开 ArticlePage、点流记开 IdeaPage），做成真正的全站搜索。</span></li>
+      <li><span class="b">② 数据云备份 / 跨设备同步</span><br><span class="desc">现在纯 localStorage，清缓存或换设备即丢。加「一键导出完整备份」+ 可选 GitHub Gist / WebDAV 同步，解决多端一致性与防丢失。</span></li>
+      <li><span class="b">③ PWA 离线可安装</span><br><span class="desc">加 manifest + service worker（vite-plugin-pwa），手机加到主屏、离线也能看，体验接近原生 App——对工具/导航站非常值得。</span></li>
+      <li><span class="b">④ 首页「动态聚合」卡片</span><br><span class="desc">聚合流记 / 回忆 / 讯息最近 N 条，一屏看全站最新更新，提升首页信息密度与回访率。</span></li>
+      <li><span class="b">⑤ 外卖模块统计图表</span><br><span class="desc">已有日/月目标，加 ECharts 月报柱状图、目标完成率环形图、收入趋势折线，让跑单数据更直观。</span></li>
+      <li><span class="b">⑥ 文章阅读体验增强</span><br><span class="desc">阅读进度条、自动目录 TOC、代码高亮、上一篇/下一篇导航。</span></li>
+      <li><span class="b">⑦ 流记增强</span><br><span class="desc">话题标签 #、地理位置、@提及、长按图片保存；评论区已埋数据结构，可开放轻量互动。</span></li>
+      <li><span class="b">⑧ 主题自定义</span><br><span class="desc">后台可调主色（primary）、跟随系统深浅色、多套预设主题，强化品牌感。</span></li>
+      <li><span class="b">⑨ 分享卡片</span><br><span class="desc">流记 / 回忆 / 文章一键生成精美分享图（html2canvas）或复制链接。</span></li>
+      <li><span class="b">⑩ 讯息时间线增强</span><br><span class="desc">按年/月分组折叠、标签筛选、日历视图，长历史更好浏览。</span></li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <h2><span class="n">4</span>细节优化建议</h2>
+    <ul class="feat">
+      <li><span class="b">viewport 放开缩放</span><br><span class="desc"><code>user-scalable=no</code> 影响无障碍与放大查看，建议去掉或放宽。</span></li>
+      <li><span class="b">暗黑模式细节</span><br><span class="desc">增加切换过渡、图片 / 代码块暗色适配，提升夜间阅读舒适度。</span></li>
+      <li><span class="b">桌面导航锚点高亮</span><br><span class="desc">滚动时高亮当前所处分类、平滑滚动已具备，可补「当前分类」指示。</span></li>
+      <li><span class="b">无障碍 / 键盘</span><br><span class="desc">焦点管理、aria-label、把 Ctrl+Shift+A 等快捷键做成「?」唤起帮助。</span></li>
+      <li><span class="b">图片加载兜底</span><br><span class="desc">流记图片已 <code>loading=lazy</code> + 错误隐藏，可补统一占位图。</span></li>
+      <li><span class="b">确认文案统一</span><br><span class="desc">随记页仍称「灵感记录」（confirm 文案），可统一为「随记」。</span></li>
+    </ul>
+  </div>
+
+  <div class="sec">
+    <h2><span class="n">5</span>部署状态</h2>
+    <div class="desc">
+      • 修复已本地提交：<code>ca126b8</code>（领先 <code>origin/main</code>）。<br>
+      • 线上 GitHub Pages 仍待推送：本环境网络代理拦截（502），无法 <code>git push</code>。<br>
+      • <b>你需要做的</b>：在能联网的机器执行 <code>git push origin main</code>，GitHub Pages 即更新为含全部修复的版本。
+    </div>
+  </div>
+
+  <div class="meta" style="text-align:center;margin-top:8px;">本报告由代码检查自动生成 · 可逐项对照处理</div>
+</div>
+</body>
+</html>
