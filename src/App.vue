@@ -222,7 +222,7 @@ const handleTouchEnd = (e) => {
     <!-- Tool Page Overlay -->
     <Transition name="tool-slide">
       <div v-if="showToolPage" class="tool-overlay">
-        <ToolPage :active="showToolPage" :toolKey="activeToolKey" />
+        <ToolPage :active="showToolPage" :toolKey="activeToolKey" @close="closeToolPage" />
       </div>
     </Transition>
 

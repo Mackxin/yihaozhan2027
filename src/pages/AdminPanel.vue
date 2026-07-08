@@ -48,6 +48,7 @@ const helpSections = [
   { id: 'h16', icon: '📝', title: '文章管理' },
   { id: 'h18', icon: '📖', title: '回忆过往' },
   { id: 'h19', icon: '💭', title: '流记' },
+  { id: 'h20', icon: '✨', title: '最近优化' },
   { id: 'h17', icon: '🔑', title: '后台登录' },
   { id: 'h11', icon: '💻', title: '开发环境' },
   { id: 'h8', icon: '🌍', title: '部署到服务器' },
@@ -2721,7 +2722,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                   </div>
                 </div>
               </div>
-              <div class="help-tip"><span class="help-tip-icon">💡</span> 所有资源页面样式统一（Hero + 分类 + 多列网格），支持搜索、暗黑模式、移动端自适应。所有操作支持撤销。</div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 所有资源页面样式统一（Hero + 分类 + 多列网格），支持搜索、暗黑模式、移动端自适应。所有操作支持撤销。每个资源页面左上角提供圆形「返回」按钮，点击一键回到网站首页。</div>
             </section>
 
             <!-- 文章管理 -->
@@ -2834,7 +2835,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
                 <div class="help-section-badge badge-blue">💭</div>
                 <div>
                   <h2>流记</h2>
-                  <p class="help-section-sub">仿微博/朋友圈风格的灵感记录功能，支持图文发布，电脑端瀑布流多列展示，移动端单列滑动浏览</p>
+                  <p class="help-section-sub">仿微博/朋友圈风格的图文流记功能，支持图文发布，电脑端瀑布流多列展示，移动端单列滑动浏览</p>
                 </div>
               </div>
               <div class="help-steps">
@@ -3011,8 +3012,70 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
               </div>
             </section>
 
+            <!-- 最近优化 -->
+            <section :id="'h20'" class="help-section">
+              <div class="help-section-head">
+                <div class="help-section-badge badge-purple">✨</div>
+                <div>
+                  <h2>最近优化</h2>
+                  <p class="help-section-sub">近期版本的功能新增与体验改进一览</p>
+                </div>
+              </div>
+              <div class="help-steps">
+                <div class="help-step">
+                  <span class="help-step-num">1</span>
+                  <div class="help-step-body">
+                    <strong>流记功能上线</strong>
+                    <p>新增仿微博/朋友圈风格的图文流记模块，支持图文发布（最多 9 张图）、昵称与来源标记。前台电脑端瀑布流多列展示，移动端单列滑动浏览，后台可管理草稿/已发布状态。</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">2</span>
+                  <div class="help-step-body">
+                    <strong>随记 / 流记存储分离</strong>
+                    <p>修复随记（yihao_notes）与流记（yihao_ideas）曾共用同一存储键导致数据互相覆盖、丢失的问题。现已分离为独立 localStorage 键，并对历史数据做自动迁移，两个模块互不干扰。</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">3</span>
+                  <div class="help-step-body">
+                    <strong>资源页面返回按钮</strong>
+                    <p>每个资源页面（如 Mac 软件、Windows 工具）左上角新增圆形「返回」按钮，风格与流记、文章页一致，点击即可一键回到网站首页，移动端操作更顺手。</p>
+                  </div>
+                </div>
+                <div class="help-step">
+                  <span class="help-step-num">4</span>
+                  <div class="help-step-body">
+                    <strong>全站 XSS 防护</strong>
+                    <p>引入 DOMPurify 对 Markdown / HTML 渲染内容进行净化，防止富文本与用户内容注入恶意脚本，提升站点安全性。</p>
+                  </div>
+                </div>
+              </div>
+              <div class="help-two-col">
+                <div class="help-col">
+                  <h3>体验优化</h3>
+                  <ul>
+                    <li>暗黑模式主题与配色细节打磨</li>
+                    <li>全站搜索支持更多页面内容</li>
+                    <li>备份提醒逻辑与横幅样式优化</li>
+                    <li>移动端卡片动画与跟手过渡优化</li>
+                  </ul>
+                </div>
+                <div class="help-col">
+                  <h3>维护提示</h3>
+                  <ul>
+                    <li>改动前端代码后需重新 <code>npm run build</code></li>
+                    <li>线上版部署的是 git 内的 <code>docs/</code>，记得 <code>git push</code></li>
+                    <li>可用 <code>./deploy.sh</code> 一键构建 + 提交 + 推送</li>
+                    <li>定期在后台导出数据备份</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="help-tip"><span class="help-tip-icon">💡</span> 存储键隔离是数据安全的底线：新增数据模块务必使用全新 localStorage 键，避免与现有模块共用导致互相覆盖。</div>
+            </section>
+
             <div class="help-footer">
-              <p>壹号栈 v1.3 · 如需更多功能或有使用问题，请联系开发者</p>
+              <p>壹号栈 v1.4 · 如需更多功能或有使用问题，请联系开发者</p>
             </div>
           </div>
         </div>

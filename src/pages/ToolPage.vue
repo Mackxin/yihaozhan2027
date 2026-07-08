@@ -7,6 +7,7 @@ const props = defineProps({
   active: { type: Boolean, default: false },
   toolKey: { type: String, required: true },
 })
+const emit = defineEmits(['close'])
 
 const config = computed(() => getToolConfig(props.toolKey))
 const sections = computed(() => getToolSections(props.toolKey))
@@ -53,6 +54,9 @@ onUnmounted(() => {
 
 <template>
   <div class="tool-page" ref="contentRef">
+    <button class="tool-back" @click="emit('close')" title="返回" aria-label="返回">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
     <div class="tool-page-container">
       <div class="tool-page-inner">
 
