@@ -574,6 +574,13 @@
   border: none; background: none; color: var(--d-red);
   cursor: pointer; font-size: .7rem; padding: 0;
 }
+.d-plat-fee {
+  font-size: .62rem; color: #d97706; font-weight: 600;
+  background: rgba(217, 119, 6, .12); padding: 1px 6px; border-radius: 10px;
+}
+.d-plat-fee-none { color: var(--d-muted); background: rgba(120, 120, 120, .12); font-weight: 500; }
+.d-ins-hint { font-size: .62rem; color: #d97706; font-weight: 600; margin-left: 4px; }
+.d-input-fee { flex: 0 0 86px; width: 86px; }
 .d-plat-add { display: flex; gap: 6px; align-items: center; }
 .d-plat-add .d-input { flex: 1; }
 

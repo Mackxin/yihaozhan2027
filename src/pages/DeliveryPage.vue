@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   store,
   addDeliveryRecord,
@@ -39,6 +39,26 @@ const form = ref({
   insurance: '', mileage: '', duration: '', note: '',
 })
 const editingId = ref(null)
+
+// 当前选中平台的每日保险费（用于表单提示）
+const currentPlatInsurance = computed(() => {
+  const p = platforms.value.find(pl => pl.name === form.value.platform)
+  return p ? Number(p.insurance) || 0 : 0
+})
+
+// 选中平台或填写单量/收入时，按平台费率自动预填保险费（有单才扣，休息日归零；手动填写优先）
+const autoFillInsurance = () => {
+  const p = platforms.value.find(pl => pl.name === form.value.platform)
+  const fee = p && Number(p.insurance) > 0 ? Number(p.insurance) : 0
+  const hasOrder = (Number(form.value.orders) || 0) > 0 || (Number(form.value.income) || 0) > 0
+  if (!hasOrder) {
+    if (form.value.insurance === '' || Number(form.value.insurance) === 0) form.value.insurance = 0
+  } else if (form.value.insurance === '' || Number(form.value.insurance) === 0) {
+    form.value.insurance = fee
+  }
+}
+watch(() => form.value.platform, autoFillInsurance)
+watch(() => [form.value.orders, form.value.income], autoFillInsurance)
 
 const submitForm = () => {
   if (!form.value.orders && !form.value.income && !form.value.mileage) {
@@ -273,11 +293,11 @@ const groupedByYear = computed(() => {
 
 // ═══ Platform Manager ═══
 const showPlatformMgr = ref(false)
-const newPlatform = ref({ name: '', icon: '🛵', color: '#6366f1' })
+const newPlatform = ref({ name: '', icon: '🛵', color: '#6366f1', insurance: 0 })
 const addPlat = () => {
   if (!newPlatform.value.name.trim()) return
-  addDeliveryPlatform(newPlatform.value.name, newPlatform.value.icon, newPlatform.value.color)
-  newPlatform.value = { name: '', icon: '🛵', color: '#6366f1' }
+  addDeliveryPlatform(newPlatform.value.name, newPlatform.value.icon, newPlatform.value.color, newPlatform.value.insurance)
+  newPlatform.value = { name: '', icon: '🛵', color: '#6366f1', insurance: 0 }
 }
 const removePlat = (name) => {
   if (confirm(`确认删除平台「${name}」？`)) deleteDeliveryPlatform(name)
@@ -667,7 +687,7 @@ const onShareTypeChange = () => { shareDataUrl.value = '' }
             <div class="d-form-row">
               <input type="date" v-model="form.date" class="d-input" />
               <select v-model="form.platform" class="d-input">
-                <option v-for="p in platforms" :key="p.name" :value="p.name">{{ p.icon }} {{ p.name }}</option>
+                <option v-for="p in platforms" :key="p.name" :value="p.name">{{ p.icon }} {{ p.name }}<template v-if="p.insurance"> ·¥{{ p.insurance }}</template></option>
               </select>
             </div>
             <div class="d-form-row d-form-row-3">
@@ -680,7 +700,7 @@ const onShareTypeChange = () => { shareDataUrl.value = '' }
                 <input type="number" v-model="form.income" placeholder="0" class="d-input" min="0" step="0.01" />
               </div>
               <div class="d-form-g">
-                <label>保险 ¥</label>
+                <label>保险 ¥ <span class="d-ins-hint" v-if="currentPlatInsurance">平台 ¥{{ currentPlatInsurance }}/天</span></label>
                 <input type="number" v-model="form.insurance" placeholder="0" class="d-input" min="0" step="0.01" />
               </div>
             </div>
@@ -752,6 +772,8 @@ const onShareTypeChange = () => { shareDataUrl.value = '' }
             <div class="d-plat-tags">
               <span v-for="p in platforms" :key="p.name" class="d-plat-tag" :style="{ borderColor: p.color }">
                 {{ p.icon }} {{ p.name }}
+                <small class="d-plat-fee" v-if="p.insurance">¥{{ p.insurance }}/天</small>
+                <small class="d-plat-fee d-plat-fee-none" v-else>无保险</small>
                 <button @click="removePlat(p.name)">✕</button>
               </span>
             </div>
@@ -759,6 +781,7 @@ const onShareTypeChange = () => { shareDataUrl.value = '' }
               <input v-model="newPlatform.name" placeholder="名称" class="d-input d-input-sm" />
               <input v-model="newPlatform.icon" placeholder="🛵" class="d-input d-input-sm d-input-icon" />
               <input v-model="newPlatform.color" type="color" class="d-color-pick" />
+              <input v-model.number="newPlatform.insurance" type="number" placeholder="保险费/天" min="0" step="0.1" class="d-input d-input-sm d-input-fee" />
               <button class="d-btn d-btn-sm d-btn-primary" @click="addPlat">+</button>
             </div>
           </div>

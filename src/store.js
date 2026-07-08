@@ -53,10 +53,10 @@ const defaultToolPages = [
 const defaultToolPagesData = {}
 const defaultFavicon = '/avatar.png'
 const defaultDeliveryPlatforms = [
-  { name: '美团众包', icon: '🛵', color: '#ffc700' },
-  { name: '京东秒送', icon: '📦', color: '#e1251b' },
-  { name: '蜂鸟众包', icon: '🐝', color: '#0091ff' },
-  { name: '货拉拉', icon: '🚚', color: '#ff7f00' },
+  { name: '美团众包', icon: '🛵', color: '#ffc700', insurance: 2.5 },
+  { name: '京东秒送', icon: '📦', color: '#e1251b', insurance: 3 },
+  { name: '淘宝闪送', icon: '🛍️', color: '#ff5000', insurance: 2.5 },
+  { name: '货拉拉', icon: '🚚', color: '#ff7f00', insurance: 0 },
 ]
 const defaultDeliveryRecords = []
 const defaultDeliveryGoal = { daily: 200, monthly: 6000, enabled: true }
@@ -617,6 +617,16 @@ export function restoreToolSnapshot(key, snapshot) {
 }
 
 // ─── Delivery (外卖跑单) CRUD ───
+// 根据平台费率自动计算保险费：当天有单(单量>0 或 收入>0)才扣，否则为 0；用户手动填写则优先
+function resolveDeliveryInsurance(record) {
+  const p = store.deliveryPlatforms.find(pl => pl.name === record.platform)
+  const fee = p && Number(p.insurance) > 0 ? Number(p.insurance) : 0
+  const hasOrder = (Number(record.orders) || 0) > 0 || (Number(record.income) || 0) > 0
+  if (!hasOrder) return 0
+  const provided = Number(record.insurance) || 0
+  return provided > 0 ? provided : fee
+}
+
 export function addDeliveryRecord(record) {
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
   const now = new Date().toISOString()
@@ -626,7 +636,7 @@ export function addDeliveryRecord(record) {
     platform: record.platform || '美团众包',
     orders: Number(record.orders) || 0,
     income: Number(record.income) || 0,
-    insurance: Number(record.insurance) || 0,
+    insurance: resolveDeliveryInsurance(record),
     mileage: Number(record.mileage) || 0,
     duration: Number(record.duration) || 0,
     note: record.note || '',
@@ -645,7 +655,7 @@ export function updateDeliveryRecord(id, record) {
   if (record.platform !== undefined) r.platform = record.platform
   if (record.orders !== undefined) r.orders = Number(record.orders) || 0
   if (record.income !== undefined) r.income = Number(record.income) || 0
-  if (record.insurance !== undefined) r.insurance = Number(record.insurance) || 0
+  if (record.insurance !== undefined) r.insurance = resolveDeliveryInsurance(record)
   if (record.mileage !== undefined) r.mileage = Number(record.mileage) || 0
   if (record.duration !== undefined) r.duration = Number(record.duration) || 0
   if (record.note !== undefined) r.note = record.note
@@ -668,13 +678,14 @@ export function restoreDeliverySnapshot(snapshot) {
 }
 
 // 平台管理
-export function addDeliveryPlatform(name, icon, color) {
+export function addDeliveryPlatform(name, icon, color, insurance) {
   const exists = store.deliveryPlatforms.some(p => p.name === name)
   if (exists) return
   store.deliveryPlatforms.push({
     name,
     icon: icon || '🛵',
     color: color || '#6366f1',
+    insurance: Number(insurance) || 0,
   })
 }
 
