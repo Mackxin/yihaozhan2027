@@ -109,6 +109,10 @@ onUnmounted(() => {
                   </div>
                 </div>
               </article>
+              <div v-if="filtered.length === 0" style="text-align:center;padding:48px 20px;color:var(--text-light)">
+                <div style="font-size:42px;margin-bottom:10px">📭</div>
+                <p>{{ search ? '没有找到匹配的讯息' : '暂无讯息，去后台添加第一条吧' }}</p>
+              </div>
             </div>
           </section>
         </main>

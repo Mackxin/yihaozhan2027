@@ -12,6 +12,17 @@ const debounce = (fn, ms) => {
   }
 }
 
+// Safe JSON parse — 任意 localStorage 损坏都只回退默认值，绝不白屏
+const safeParse = (raw, fallbackFactory) => {
+  if (!raw) return fallbackFactory()
+  try {
+    return JSON.parse(raw)
+  } catch (e) {
+    console.warn('[store] 本地数据解析失败，已回退默认:', e.message)
+    return fallbackFactory()
+  }
+}
+
 const NAV_STORAGE_KEY = 'yihao_nav_categories'
 const NEWS_STORAGE_KEY = 'yihao_news_timeline'
 const HERO_LINKS_KEY = 'yihao_hero_links'
@@ -84,20 +95,37 @@ const savedDeliveryPlatforms = localStorage.getItem(DELIVERY_PLATFORMS_KEY)
 const savedDeliveryGoal = localStorage.getItem(DELIVERY_GOAL_KEY)
 const savedIdeas = localStorage.getItem(IDEAS_KEY)
 
+const cloneDefault = (v) => JSON.parse(JSON.stringify(v))
+
 export const store = reactive({
-  navCategories: savedNav ? JSON.parse(savedNav) : JSON.parse(JSON.stringify(defaultNav)),
-  timelineItems: savedNews ? JSON.parse(savedNews) : JSON.parse(JSON.stringify(defaultTimeline)),
-  heroLinks: savedHeroLinks ? JSON.parse(savedHeroLinks) : JSON.parse(JSON.stringify(defaultHeroLinks)),
-  macSections: savedMac ? JSON.parse(savedMac) : defaultMac,
-  articles: savedArticles ? JSON.parse(savedArticles) : JSON.parse(JSON.stringify(defaultArticles)),
-  memories: savedMemories ? JSON.parse(savedMemories) : JSON.parse(JSON.stringify(defaultMemories)),
-  toolPages: savedToolPages ? JSON.parse(savedToolPages) : JSON.parse(JSON.stringify(defaultToolPages)),
-  toolPagesData: savedToolPagesData ? JSON.parse(savedToolPagesData) : JSON.parse(JSON.stringify(defaultToolPagesData)),
+  navCategories: safeParse(savedNav, () => cloneDefault(defaultNav)),
+  timelineItems: safeParse(savedNews, () => cloneDefault(defaultTimeline)),
+  heroLinks: safeParse(savedHeroLinks, () => cloneDefault(defaultHeroLinks)),
+  macSections: safeParse(savedMac, () => cloneDefault(defaultMac)),
+  articles: safeParse(savedArticles, () => cloneDefault(defaultArticles)),
+  memories: safeParse(savedMemories, () => cloneDefault(defaultMemories)),
+  toolPages: safeParse(savedToolPages, () => cloneDefault(defaultToolPages)),
+  toolPagesData: safeParse(savedToolPagesData, () => cloneDefault(defaultToolPagesData)),
   siteFavicon: savedFavicon || defaultFavicon,
-  deliveryRecords: savedDeliveryRecords ? JSON.parse(savedDeliveryRecords) : JSON.parse(JSON.stringify(defaultDeliveryRecords)),
-  deliveryPlatforms: savedDeliveryPlatforms ? JSON.parse(savedDeliveryPlatforms) : JSON.parse(JSON.stringify(defaultDeliveryPlatforms)),
-  deliveryGoal: savedDeliveryGoal ? JSON.parse(savedDeliveryGoal) : JSON.parse(JSON.stringify(defaultDeliveryGoal)),
-  ideas: savedIdeas ? JSON.parse(savedIdeas) : JSON.parse(JSON.stringify(defaultIdeas)),
+  deliveryRecords: safeParse(savedDeliveryRecords, () => cloneDefault(defaultDeliveryRecords)),
+  deliveryPlatforms: safeParse(savedDeliveryPlatforms, () => cloneDefault(defaultDeliveryPlatforms)),
+  deliveryGoal: safeParse(savedDeliveryGoal, () => cloneDefault(defaultDeliveryGoal)),
+  ideas: (() => {
+    const raw = safeParse(savedIdeas, () => cloneDefault(defaultIdeas))
+    // 迁移：'yihao_ideas' 曾同时被「随记」页(NotesPage)误用，导致两类数据互相覆盖丢失。
+    // 这里把随记结构({text,...} 且无 content) 分离到 'yihao_notes'，流记结构保留。
+    if (Array.isArray(raw) && raw.length) {
+      const isNote = (it) => it && typeof it === 'object' && it.text !== undefined && it.content === undefined
+      const notes = raw.filter(isNote)
+      const realIdeas = raw.filter((it) => !isNote(it))
+      if (notes.length) {
+        const existing = safeParse(localStorage.getItem('yihao_notes'), () => [])
+        localStorage.setItem('yihao_notes', JSON.stringify([...existing, ...notes]))
+      }
+      return realIdeas.length ? realIdeas : cloneDefault(defaultIdeas)
+    }
+    return raw
+  })(),
   dataReady: false,
   isAdmin: localStorage.getItem('yihao_admin') === 'true',
   overlayOpen: false,

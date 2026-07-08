@@ -165,7 +165,7 @@ function handleTouchEnd() {
 
 // ─── Keyboard support for desktop testing ───
 function handleKeydown(e) {
-  if (!isMobile.value || !props.active) return
+  if (isMobile.value || !props.active) return
   if (e.key === 'ArrowDown') goToNext()
   if (e.key === 'ArrowUp') goToPrev()
 }

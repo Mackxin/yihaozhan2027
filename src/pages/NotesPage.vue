@@ -10,7 +10,7 @@ const props = defineProps({
   active: { type: Boolean, default: false },
 })
 
-const STORAGE_KEY = 'yihao_ideas'
+const STORAGE_KEY = 'yihao_notes'
 const todayStr = () => new Date().toISOString().slice(0, 10)
 
 const getRandomColor = () => {
@@ -38,7 +38,6 @@ const search = ref('')
 const sortBy = ref('newest') // newest, oldest, tags
 const showPinnedOnly = ref(false)
 
-const handleIdeasCleared = () => { ideas.value = [] }
 const handleEscape = (e) => {
   if (e.key === 'Escape') {
     if (editIdx.value >= 0) editIdx.value = -1
@@ -54,14 +53,11 @@ onMounted(() => {
   // Scroll detection for back-to-top
   const slide = contentRef.value?.closest('.page-slide')
   slide?.addEventListener('scroll', onScroll, { passive: true })
-  // Listen for clear-all from admin
-  window.addEventListener('yihao:ideas-cleared', handleIdeasCleared)
   window.addEventListener('keydown', handleEscape)
 })
 onUnmounted(() => {
   const slide = contentRef.value?.closest('.page-slide')
   slide?.removeEventListener('scroll', onScroll)
-  window.removeEventListener('yihao:ideas-cleared', handleIdeasCleared)
   window.removeEventListener('keydown', handleEscape)
 })
 

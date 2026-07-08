@@ -39,7 +39,10 @@ const cancelTabLongPress = () => {
 }
 
 // ─── Custom Nav Icons ───
-const navIcons = ref(JSON.parse(localStorage.getItem('yihao_nav_icons') || '{}'))
+const navIcons = ref({})
+try {
+  navIcons.value = JSON.parse(localStorage.getItem('yihao_nav_icons') || '{}')
+} catch { navIcons.value = {} }
 const getTabIcon = (key) => navIcons.value[key] || ''
 
 // ─── Dark Mode (2 states: light / dark) ───
@@ -137,6 +140,11 @@ const syncOverlayState = () => {
   else document.body.classList.remove('overlay-open')
 }
 watch(() => showToolPage.value || showArticlePage.value || showDeliveryPage.value || showIdeaPage.value, syncOverlayState)
+
+// 登出管理员后若仍停留在 admin tab，重置索引避免页面错位/空白
+watch(() => store.isAdmin, (v) => {
+  if (!v && activeTab.value >= tabs.value.length) activeTab.value = 0
+})
 
 // Expose for NavPage link interception
 window.__yihaoOpenTool = openToolPage
