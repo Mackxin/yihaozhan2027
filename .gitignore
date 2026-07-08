@@ -2,13 +2,11 @@
 node_modules/
 
 # Build output
+--output/
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
+# IDE / agent workspace (private, never commit)
+.codebuddy/
+.workbuddy/
 
 # Data files (large or sensitive)
 

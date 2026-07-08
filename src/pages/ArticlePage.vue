@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { marked } from 'marked'
 
+marked.setOptions({ breaks: true, gfm: true })
+
 const props = defineProps({
   article: { type: Object, default: null }
 })
@@ -11,7 +13,7 @@ const showBackTop = ref(false)
 
 const renderedContent = computed(() => {
   if (!props.article?.content) return '<p style="color:#94a3b8;text-align:center;padding:2rem;">暂无内容</p>'
-  return marked(props.article.content, { breaks: true, gfm: true })
+  return marked(props.article.content)
 })
 
 const formattedDate = computed(() => {

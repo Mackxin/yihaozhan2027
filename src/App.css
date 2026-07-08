@@ -6,6 +6,7 @@
   overflow: hidden;
   background: var(--bg);
   min-height: 0;
+  position: relative;
 }
 
 /* ========== Content Area ========== */
@@ -110,6 +111,10 @@
     height: 60px;
     border-top: 1px solid var(--border);
     box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .tool-overlay {
+    bottom: 60px;
   }
 
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
@@ -286,28 +291,28 @@
 [data-theme="dark"] .uni-search-clear:hover { background: var(--border); color: var(--text-primary); }
 [data-theme="dark"] .uni-search-stats { color: var(--text-muted); }
 
-/* ─── Mac Page Overlay ─── */
-.mac-overlay {
-  position: absolute;
+/* ─── Tool Page Overlay ─── */
+.tool-overlay {
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  bottom: var(--tab-height, 56px);
+  bottom: var(--tab-height);
   z-index: 50;
   background: var(--bg);
   overflow: hidden;
 }
-.mac-slide-enter-active,
-.mac-slide-leave-active {
+.tool-slide-enter-active,
+.tool-slide-leave-active {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
 }
-.mac-slide-enter-from,
-.mac-slide-leave-to {
+.tool-slide-enter-from,
+.tool-slide-leave-to {
   transform: translateX(100%);
   opacity: 0;
 }
-.mac-slide-enter-to,
-.mac-slide-leave-from {
+.tool-slide-enter-to,
+.tool-slide-leave-from {
   transform: translateX(0);
   opacity: 1;
 }

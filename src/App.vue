@@ -1,13 +1,16 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { store, toggleAdmin, loginAdmin } from './store'
 import HomePage from './pages/HomePage.vue'
 import NavPage from './pages/NavPage.vue'
 import NewsPage from './pages/NewsPage.vue'
 import NotesPage from './pages/NotesPage.vue'
+import MemoryPage from './pages/MemoryPage.vue'
 import AdminPanel from './pages/AdminPanel.vue'
-import MacPage from './pages/MacPage.vue'
+import ToolPage from './pages/ToolPage.vue'
 import ArticlePage from './pages/ArticlePage.vue'
+import DeliveryPage from './pages/DeliveryPage.vue'
+import IdeaPage from './pages/IdeaPage.vue'
 import LoginModal from './components/LoginModal.vue'
 
 const allTabs = [
@@ -15,10 +18,11 @@ const allTabs = [
   { key: 'nav', label: '导航' },
   { key: 'news', label: '讯息' },
   { key: 'notes', label: '随记' },
+  { key: 'memory', label: '回忆' },
   { key: 'admin', label: '管理' },
 ]
 
-const tabs = computed(() => store.isAdmin ? allTabs : allTabs.slice(0, 4))
+const tabs = computed(() => store.isAdmin ? allTabs : allTabs.slice(0, 5))
 const slideWidth = computed(() => 100 / tabs.value.length)
 const activeTab = ref(0)
 const isMobile = ref(window.innerWidth <= 768)
@@ -66,9 +70,20 @@ const handleLoginSuccess = () => {
 }
 const handleLoginClose = () => { showLogin.value = false }
 
-// ─── Mac Page (overlay) ───
-const showMacPage = ref(false)
-const openMacPage = () => { showMacPage.value = true }
+// ─── Tool Pages (overlay) ───
+const showToolPage = ref(false)
+const activeToolKey = ref('')
+const openToolPage = (key) => {
+  activeToolKey.value = key
+  showToolPage.value = true
+  document.body.classList.add('overlay-open')
+  store.overlayOpen = true
+}
+const closeToolPage = () => {
+  showToolPage.value = false
+  document.body.classList.remove('overlay-open')
+  store.overlayOpen = false
+}
 
 // ─── Article Page (overlay) ───
 const showArticlePage = ref(false)
@@ -78,12 +93,57 @@ const openArticlePage = (articleId) => {
   if (article) {
     currentArticle.value = article
     showArticlePage.value = true
+    document.body.classList.add('overlay-open')
+    store.overlayOpen = true
   }
 }
+const closeArticlePage = () => {
+  showArticlePage.value = false
+  document.body.classList.remove('overlay-open')
+  store.overlayOpen = false
+}
+
+// ─── Delivery Page (overlay) ───
+const showDeliveryPage = ref(false)
+const openDeliveryPage = () => {
+  showDeliveryPage.value = true
+  document.body.classList.add('overlay-open')
+  store.overlayOpen = true
+}
+const closeDeliveryPage = () => {
+  showDeliveryPage.value = false
+  document.body.classList.remove('overlay-open')
+  store.overlayOpen = false
+}
+
+// ─── Idea Page (overlay) ───
+const showIdeaPage = ref(false)
+const openIdeaPage = () => {
+  showIdeaPage.value = true
+  document.body.classList.add('overlay-open')
+  store.overlayOpen = true
+}
+const closeIdeaPage = () => {
+  showIdeaPage.value = false
+  document.body.classList.remove('overlay-open')
+  store.overlayOpen = false
+}
+
+// Sync overlay state for any overlay
+const syncOverlayState = () => {
+  const open = showToolPage.value || showArticlePage.value || showDeliveryPage.value || showIdeaPage.value
+  store.overlayOpen = open
+  if (open) document.body.classList.add('overlay-open')
+  else document.body.classList.remove('overlay-open')
+}
+watch(() => showToolPage.value || showArticlePage.value || showDeliveryPage.value || showIdeaPage.value, syncOverlayState)
 
 // Expose for NavPage link interception
-window.__yihaoOpenMac = openMacPage
+window.__yihaoOpenTool = openToolPage
+window.__yihaoOpenMac = () => openToolPage('mac')  // backward compat
 window.__yihaoOpenArticle = openArticlePage
+window.__yihaoOpenDelivery = openDeliveryPage
+window.__yihaoOpenIdea = openIdeaPage
 
 // ─── Admin shortcut: Ctrl+Shift+A / Cmd+Shift+A ───
 const handleAdminShortcut = (e) => {
@@ -146,34 +206,49 @@ const handleTouchEnd = (e) => {
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NavPage :active="activeTab === 1" /></div>
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NewsPage :active="activeTab === 2" /></div>
         <div class="page-slide" :style="{ width: `${slideWidth}%` }"><NotesPage :active="activeTab === 3" /></div>
+        <div class="page-slide" :style="{ width: `${slideWidth}%` }"><MemoryPage :active="activeTab === 4" /></div>
         <div v-if="store.isAdmin" class="page-slide" :style="{ width: `${slideWidth}%` }"><AdminPanel /></div>
       </div>
     </div>
 
-    <!-- Mac Page Overlay -->
-    <Transition name="mac-slide">
-      <div v-if="showMacPage" class="mac-overlay">
-        <MacPage :active="showMacPage" />
+    <!-- Tool Page Overlay -->
+    <Transition name="tool-slide">
+      <div v-if="showToolPage" class="tool-overlay">
+        <ToolPage :active="showToolPage" :toolKey="activeToolKey" />
       </div>
     </Transition>
 
     <!-- Article Page Overlay -->
-    <Transition name="mac-slide">
-      <div v-if="showArticlePage" class="mac-overlay">
+    <Transition name="tool-slide">
+      <div v-if="showArticlePage" class="tool-overlay">
         <ArticlePage :article="currentArticle" />
+      </div>
+    </Transition>
+
+    <!-- Delivery Page Overlay -->
+    <Transition name="tool-slide">
+      <div v-if="showDeliveryPage" class="tool-overlay">
+        <DeliveryPage @close="closeDeliveryPage" />
+      </div>
+    </Transition>
+
+    <!-- Idea Page Overlay -->
+    <Transition name="tool-slide">
+      <div v-if="showIdeaPage" class="tool-overlay">
+        <IdeaPage @close="closeIdeaPage" />
       </div>
     </Transition>
 
     <!-- Login Modal -->
     <LoginModal v-if="showLogin" @login="handleLoginSuccess" @close="handleLoginClose" />
 
-    <!-- Bottom Tab Bar -->
+    <!-- Bottom Tab Bar (always visible) -->
     <div class="tab-bar">
       <div
         v-for="(tab, i) in tabs"
         :key="tab.key"
         :class="['tab-item', { active: activeTab === i }]"
-        @click="activeTab = i; showMacPage = false"
+        @click="activeTab = i; closeToolPage(); closeArticlePage(); closeDeliveryPage(); closeIdeaPage()"
         @pointerdown="startTabLongPress(tab.key)"
         @pointerup="cancelTabLongPress"
         @pointerleave="cancelTabLongPress"
@@ -219,6 +294,16 @@ const handleTouchEnd = (e) => {
           <polyline points="14 2 14 8 20 8"/>
           <line x1="8" y1="13" x2="16" y2="13" stroke-width="1.5"/>
           <line x1="8" y1="17" x2="13" y2="17" stroke-width="1.5"/>
+        </svg>
+        <!-- Memory Icon -->
+        <svg v-else-if="tab.key === 'memory'" viewBox="0 0 24 24" width="22" height="22" fill="none"
+          :stroke="activeTab === i ? 'var(--primary)' : 'var(--text-light)'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+            :fill="activeTab === i ? 'rgba(255,29,85,0.12)' : 'none'"/>
+          <line x1="8" y1="7" x2="16" y2="7" stroke-width="1.5"/>
+          <line x1="8" y1="11" x2="16" y2="11" stroke-width="1.5"/>
+          <line x1="8" y1="15" x2="12" y2="15" stroke-width="1.5"/>
         </svg>
         <!-- Admin Icon -->
         <svg v-else viewBox="0 0 24 24" width="22" height="22" fill="none"

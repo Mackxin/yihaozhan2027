@@ -4,6 +4,8 @@ import { marked } from 'marked'
 import UniSearch from '../components/UniSearch.vue'
 import { store, addNewsGroup, addNewsItem } from '../store'
 
+marked.setOptions({ breaks: true, gfm: true })
+
 const props = defineProps({
   active: { type: Boolean, default: false },
 })
@@ -207,7 +209,7 @@ const displayed = computed(() => {
 
 const renderMd = (text) => {
   const cleaned = text.replace(/#[\u4e00-\u9fa5_a-zA-Z0-9]+/g, '').trim()
-  return marked(cleaned, { breaks: true })
+  return marked(cleaned)
 }
 
 const handleKeydown = (e) => {
