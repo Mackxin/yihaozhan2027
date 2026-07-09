@@ -35,19 +35,22 @@ const isToolLink = (url) => resolveToolLink(url) !== null
 const isArticleLink = (url) => url?.startsWith('#article:')
 const isDeliveryLink = (url) => url === '#delivery'
 const isIdeaLink = (url) => url === '#idea'
+const isDigitalLifeLink = (url) => url === '#digitallife'
 const getArticleId = (url) => url?.replace('#article:', '')
 const openToolPage = (key) => { window.__yihaoOpenTool?.(key) }
 const openArticle = (id) => { window.__yihaoOpenArticle?.(id) }
 const openDelivery = () => { window.__yihaoOpenDelivery?.() }
 const openIdea = () => { window.__yihaoOpenIdea?.() }
+const openDigitalLife = () => { window.__yihaoOpenDigitalLife?.() }
 
 const handleLinkClick = (link, e) => {
   if (isToolLink(link.url)) { e.preventDefault(); openToolPage(resolveToolLink(link.url)) }
   else if (isArticleLink(link.url)) { e.preventDefault(); openArticle(getArticleId(link.url)) }
   else if (isDeliveryLink(link.url)) { e.preventDefault(); openDelivery() }
   else if (isIdeaLink(link.url)) { e.preventDefault(); openIdea() }
+  else if (isDigitalLifeLink(link.url)) { e.preventDefault(); openDigitalLife() }
 }
-const isInternalLink = (url) => isToolLink(url) || isArticleLink(url) || isDeliveryLink(url) || isIdeaLink(url)
+const isInternalLink = (url) => isToolLink(url) || isArticleLink(url) || isDeliveryLink(url) || isIdeaLink(url) || isDigitalLifeLink(url)
 
 const midIndex = computed(() => Math.ceil(navCategories.value.length / 2))
 const topNavCats = computed(() => navCategories.value.slice(0, midIndex.value))

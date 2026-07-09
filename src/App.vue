@@ -11,6 +11,7 @@ import ToolPage from './pages/ToolPage.vue'
 import ArticlePage from './pages/ArticlePage.vue'
 import DeliveryPage from './pages/DeliveryPage.vue'
 import IdeaPage from './pages/IdeaPage.vue'
+import DigitalLifePage from './pages/DigitalLifePage.vue'
 import LoginModal from './components/LoginModal.vue'
 
 const allTabs = [
@@ -131,15 +132,26 @@ const closeIdeaPage = () => {
   document.body.classList.remove('overlay-open')
   store.overlayOpen = false
 }
+const showDigitalLifePage = ref(false)
+const openDigitalLifePage = () => {
+  showDigitalLifePage.value = true
+  document.body.classList.add('overlay-open')
+  store.overlayOpen = true
+}
+const closeDigitalLifePage = () => {
+  showDigitalLifePage.value = false
+  document.body.classList.remove('overlay-open')
+  store.overlayOpen = false
+}
 
 // Sync overlay state for any overlay
 const syncOverlayState = () => {
-  const open = showToolPage.value || showArticlePage.value || showDeliveryPage.value || showIdeaPage.value
+  const open = showToolPage.value || showArticlePage.value || showDeliveryPage.value || showIdeaPage.value || showDigitalLifePage.value
   store.overlayOpen = open
   if (open) document.body.classList.add('overlay-open')
   else document.body.classList.remove('overlay-open')
 }
-watch(() => showToolPage.value || showArticlePage.value || showDeliveryPage.value || showIdeaPage.value, syncOverlayState)
+watch(() => showToolPage.value || showArticlePage.value || showDeliveryPage.value || showIdeaPage.value || showDigitalLifePage.value, syncOverlayState)
 
 // 登出管理员后若仍停留在 admin tab，重置索引避免页面错位/空白
 watch(() => store.isAdmin, (v) => {
@@ -152,6 +164,7 @@ window.__yihaoOpenMac = () => openToolPage('mac')  // backward compat
 window.__yihaoOpenArticle = openArticlePage
 window.__yihaoOpenDelivery = openDeliveryPage
 window.__yihaoOpenIdea = openIdeaPage
+window.__yihaoOpenDigitalLife = openDigitalLifePage
 
 // ─── Admin shortcut: Ctrl+Shift+A / Cmd+Shift+A ───
 const handleAdminShortcut = (e) => {
@@ -245,6 +258,9 @@ const handleTouchEnd = (e) => {
       <div v-if="showIdeaPage" class="tool-overlay">
         <IdeaPage @close="closeIdeaPage" />
       </div>
+      <div v-if="showDigitalLifePage" class="tool-overlay">
+        <DigitalLifePage @close="closeDigitalLifePage" />
+      </div>
     </Transition>
 
     <!-- Login Modal -->
@@ -256,7 +272,7 @@ const handleTouchEnd = (e) => {
         v-for="(tab, i) in tabs"
         :key="tab.key"
         :class="['tab-item', { active: activeTab === i }]"
-        @click="activeTab = i; closeToolPage(); closeArticlePage(); closeDeliveryPage(); closeIdeaPage()"
+        @click="activeTab = i; closeToolPage(); closeArticlePage(); closeDeliveryPage(); closeIdeaPage(); closeDigitalLifePage()"
         @pointerdown="startTabLongPress(tab.key)"
         @pointerup="cancelTabLongPress"
         @pointerleave="cancelTabLongPress"

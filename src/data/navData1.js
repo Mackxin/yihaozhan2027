@@ -8,6 +8,7 @@ export const navCategoriesPart1 = [
       { name: "mac", url: "http://yihaozhan.xyz/mac.html" },
       { name: "外卖", url: "#delivery" },
       { name: "流记", url: "#idea" },
+      { name: "数字人生", url: "#digitallife" },
       { name: "灵感随记", url: "http://yihaozhan.xyz/linggan.html" },
       { name: "游猴脚本", url: "http://yihaozhan.xyz/jiaoben.html" },
       { name: "正规大流量卡", url: "https://h5.lot-ml.com/ProductEn/Index/45f704d8743b76f6" },

@@ -1,0 +1,226 @@
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue'
+import './DigitalLifePage.css'
+import { analyzeBirth, SHICHEN_OPTIONS, lunarMonthOptions, lunarDayOptions } from '../utils/lunar.js'
+
+const emit = defineEmits(['close'])
+
+const STORAGE_KEY = 'yihao_digitallife'
+
+// 表单状态
+const calendarType = ref('solar') // 'solar' | 'lunar'
+const solarDate = ref('')         // YYYY-MM-DD
+const lunarY = ref('')
+const lunarM = ref('')
+const lunarD = ref('')
+const hour = ref('')              // 时辰对应小时起点，'' 表示不填
+
+// 选项
+const years = []
+for (let y = 1900; y <= 2100; y++) years.push(y)
+const months = lunarMonthOptions().map((m, i) => ({ label: m, value: i + 1 }))
+const days = lunarDayOptions().map((d, i) => ({ label: d, value: i + 1 }))
+const shichenOptions = [{ value: '', label: '不填（仅算年月日柱）' }, ...SHICHEN_OPTIONS.map(o => ({ value: o.value, label: o.label }))]
+
+const ANIMAL_EMOJI = { 鼠: '🐭', 牛: '🐮', 虎: '🐯', 兔: '🐰', 龙: '🐲', 蛇: '🐍', 马: '🐴', 羊: '🐑', 猴: '🐵', 鸡: '🐔', 狗: '🐶', 猪: '🐷' }
+const ZODIAC_EMOJI = { 白羊座: '♈', 金牛座: '♉', 双子座: '♊', 巨蟹座: '♋', 狮子座: '♌', 处女座: '♍', 天秤座: '♎', 天蝎座: '♏', 射手座: '♐', 摩羯座: '♑', 水瓶座: '♒', 双鱼座: '♓' }
+const WX_COLOR = { 金: '#f59e0b', 木: '#22c55e', 水: '#3b82f6', 火: '#ef4444', 土: '#c08a4a' }
+
+const birthInput = computed(() => {
+  if (calendarType.value === 'solar') {
+    if (!solarDate.value) return null
+    const [y, m, d] = solarDate.value.split('-').map(Number)
+    if (!y || !m || !d) return null
+    return { calendarType: 'solar', year: y, month: m, day: d, hour: hour.value === '' ? null : Number(hour.value) }
+  } else {
+    if (!lunarY.value || !lunarM.value || !lunarD.value) return null
+    return { calendarType: 'lunar', year: Number(lunarY.value), month: Number(lunarM.value), day: Number(lunarD.value), hour: hour.value === '' ? null : Number(hour.value) }
+  }
+})
+
+const result = computed(() => (birthInput.value ? analyzeBirth(birthInput.value) : null))
+
+// 持久化
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      calendarType: calendarType.value,
+      solarDate: solarDate.value,
+      lunarY: lunarY.value,
+      lunarM: lunarM.value,
+      lunarD: lunarD.value,
+      hour: hour.value,
+    }))
+  } catch (e) { /* ignore */ }
+}
+
+onMounted(() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+    if (saved) {
+      calendarType.value = saved.calendarType || 'solar'
+      solarDate.value = saved.solarDate || ''
+      lunarY.value = saved.lunarY || ''
+      lunarM.value = saved.lunarM || ''
+      lunarD.value = saved.lunarD || ''
+      hour.value = saved.hour !== undefined ? saved.hour : ''
+    }
+  } catch (e) { /* ignore */ }
+})
+
+watch([calendarType, solarDate, lunarY, lunarM, lunarD, hour], save, { deep: true })
+
+const fmtDate = (d) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
+</script>
+
+<template>
+  <div class="dl-page">
+    <button class="tool-back" @click="emit('close')" title="返回" aria-label="返回">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5" /><polyline points="12 19 5 12 12 5" /></svg>
+    </button>
+
+    <div class="dl-hero">
+      <h1>🔢 数字人生</h1>
+      <p>输入你的出生信息，解锁生肖、星座、八字五行与关于你的一切数字</p>
+    </div>
+
+    <div class="dl-form">
+      <div class="dl-field">
+        <label>历法</label>
+        <div class="dl-seg">
+          <button :class="{ active: calendarType === 'solar' }" @click="calendarType = 'solar'">公历（新历）</button>
+          <button :class="{ active: calendarType === 'lunar' }" @click="calendarType = 'lunar'">农历（旧历）</button>
+        </div>
+      </div>
+
+      <div class="dl-field" v-if="calendarType === 'solar'">
+        <label>出生日期</label>
+        <input type="date" class="dl-date-input" v-model="solarDate" />
+      </div>
+
+      <div class="dl-field" v-else>
+        <label>农历出生日期</label>
+        <div class="dl-date-row">
+          <select class="dl-select" v-model="lunarY">
+            <option value="" disabled>年</option>
+            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+          </select>
+          <select class="dl-select" v-model="lunarM">
+            <option value="" disabled>月</option>
+            <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
+          </select>
+          <select class="dl-select" v-model="lunarD">
+            <option value="" disabled>日</option>
+            <option v-for="d in days" :key="d.value" :value="d.value">{{ d.label }}</option>
+          </select>
+        </div>
+        <div class="dl-hint">农历数据由 solarlunar 提供，覆盖 1900–2100 年</div>
+      </div>
+
+      <div class="dl-field">
+        <label>出生时辰（可选，用于推算八字时柱）</label>
+        <select class="dl-select" v-model="hour">
+          <option v-for="o in shichenOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div v-if="result && result.error" class="dl-empty">{{ result.error }}</div>
+
+    <template v-else-if="result">
+      <div class="dl-results">
+        <!-- 生肖 -->
+        <div class="dl-card feature">
+          <span class="dl-label">生肖</span>
+          <span class="dl-value"><span class="dl-emoji">{{ ANIMAL_EMOJI[result.animal] || '🐾' }}</span>{{ result.animal }}</span>
+          <span class="dl-sub">{{ result.gzYear }}年 · {{ result.lunarText.split(' ')[0] }}</span>
+        </div>
+
+        <!-- 星座 -->
+        <div class="dl-card feature">
+          <span class="dl-label">星座</span>
+          <span class="dl-value"><span class="dl-emoji">{{ ZODIAC_EMOJI[result.zodiac.name] }}</span>{{ result.zodiac.name }}</span>
+          <span class="dl-badge">{{ result.zodiac.element }}象</span>
+          <span class="dl-sub">{{ result.zodiac.desc }}</span>
+        </div>
+
+        <!-- 农历生日 -->
+        <div class="dl-card">
+          <span class="dl-label">农历生日</span>
+          <span class="dl-value sm">{{ result.lunarText }}</span>
+        </div>
+
+        <!-- 公历生日 -->
+        <div class="dl-card">
+          <span class="dl-label">公历生日</span>
+          <span class="dl-value sm">{{ result.solarText }}</span>
+          <span class="dl-sub">{{ result.weekday }}</span>
+        </div>
+
+        <!-- 年龄 -->
+        <div class="dl-card">
+          <span class="dl-label">年龄</span>
+          <span class="dl-value">{{ result.age }}<span style="font-size:.8rem;font-weight:400"> 周岁</span></span>
+          <span class="dl-sub">虚岁约 {{ result.virtualAge }} 岁</span>
+        </div>
+
+        <!-- 生命数字 -->
+        <div class="dl-card">
+          <span class="dl-label">生命数字</span>
+          <span class="dl-value">{{ result.lifePath }}</span>
+          <span class="dl-sub">{{ result.lifePathDesc }}</span>
+        </div>
+
+        <!-- 八字四柱 -->
+        <div class="dl-card wide">
+          <span class="dl-label">八字（四柱）</span>
+          <div class="dl-bazi">
+            <span>{{ result.gzYear }}</span>
+            <span>{{ result.gzMonth }}</span>
+            <span>{{ result.gzDay }}</span>
+            <span v-if="result.hasHour">{{ result.timeGz }}</span>
+          </div>
+          <span class="dl-sub" v-if="result.hasHour">时柱 {{ result.timeGz }} · {{ result.shiChenLabel }}</span>
+          <span class="dl-sub" v-else>未填出生时辰，仅年月日三柱</span>
+        </div>
+
+        <!-- 五行 -->
+        <div class="dl-card wide">
+          <span class="dl-label">五行分布</span>
+          <div class="dl-wuxing-row" v-for="w in result.wuxing.arr" :key="w.name">
+            <span class="dl-wx-name">{{ w.name }}</span>
+            <span class="dl-wuxing-bar"><i :style="{ width: w.width + '%', background: WX_COLOR[w.name] }"></i></span>
+            <span class="dl-wx-count">{{ w.count }}</span>
+          </div>
+          <div class="dl-wx-missing" v-if="result.wuxing.missing.length">
+            命中缺失：<b v-for="m in result.wuxing.missing" :key="m">{{ m }} </b>
+          </div>
+          <div class="dl-wx-missing" v-else>五行俱全 ✓</div>
+        </div>
+
+        <!-- 已来到世界 -->
+        <div class="dl-card wide">
+          <span class="dl-label">你已来到这个世界</span>
+          <span class="dl-value">{{ result.liveDays.toLocaleString() }} <span style="font-size:.8rem;font-weight:400">天</span></span>
+          <span class="dl-sub">约 {{ result.liveHours.toLocaleString() }} 小时 · {{ result.liveMinutes.toLocaleString() }} 分钟</span>
+        </div>
+
+        <!-- 下一个生日 -->
+        <div class="dl-card">
+          <span class="dl-label">下一个生日</span>
+          <span class="dl-value sm" v-if="result.nextBday">{{ result.nextBday.days }} 天后</span>
+          <span class="dl-sub" v-if="result.nextBday">{{ fmtDate(result.nextBday.date) }}</span>
+        </div>
+
+        <!-- 季节 / 第几天 -->
+        <div class="dl-card">
+          <span class="dl-label">时间坐标</span>
+          <span class="dl-value sm">{{ result.season }}</span>
+          <span class="dl-sub">今年第 {{ result.doy }} 天 · 第 {{ result.weekOfYear }} 周</span>
+        </div>
+      </div>
+    </template>
+
+    <div v-else class="dl-empty">👆 选择出生日期，开启你的数字人生</div>
+  </div>
+</template>
