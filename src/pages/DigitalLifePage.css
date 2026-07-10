@@ -169,97 +169,113 @@
 
 /* 八字四柱 */
 .dl-bazi {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: none;
 }
-.dl-bazi span {
-  flex: 1;
-  min-width: 56px;
-  text-align: center;
-  padding: 8px 4px;
-  border-radius: 10px;
+.dl-bazi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+}
+.dl-pillar {
   background: var(--bg-soft, #f1f5f9);
+  border-radius: 12px;
+  padding: 10px 6px;
+  text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   line-height: 1.2;
 }
-.dl-bazi span.is-day {
+.dl-pillar.is-day {
   background: var(--primary-soft, #eef2ff);
+  box-shadow: inset 0 0 0 1px var(--primary, #6366f1);
 }
-.dl-bazi span::first-line { font-size: .72rem; color: var(--text-muted, #94a3b8); font-weight: 600; }
-.dl-bazi-gz {
-  font-size: 1.1rem;
+.dl-pillar-label {
+  font-size: .7rem;
+  color: var(--text-muted, #94a3b8);
+  font-weight: 600;
+}
+.dl-pillar-gz {
+  font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: 1px;
-  font-style: normal;
   color: var(--text, #1e293b);
 }
-.dl-bazi-god {
-  font-size: .72rem;
-  font-style: normal;
+.dl-pillar-god {
+  font-size: .78rem;
   font-weight: 600;
   color: var(--primary, #6366f1);
+  background: rgba(99, 102, 241, 0.08);
+  padding: 2px 8px;
+  border-radius: 999px;
 }
-.dl-naming {
+.dl-pillar.is-day .dl-pillar-label { color: var(--primary, #6366f1); }
+.dl-pillar.is-day .dl-pillar-god { background: rgba(99, 102, 241, 0.15); }
+
+/* 五行喜用 · 起名参考 */
+.dl-yong-shen {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.dl-yong-tag {
+  font-size: .78rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--bg-soft, #f1f5f9);
+  color: var(--text-muted, #64748b);
+}
+.dl-yong-tag b { color: var(--text, #1e293b); font-weight: 700; }
+.dl-yong-tag.ok { background: rgba(34, 197, 94, .12); color: #16a34a; }
+.dl-yong-tag.ok b { color: #16a34a; }
+.dl-yong-tag.bad { background: rgba(239, 68, 68, .12); color: #dc2626; }
+.dl-yong-tag.bad b { color: #dc2626; }
+
+.dl-naming-list {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 12px;
+}
+.dl-naming-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg-soft, #f1f5f9);
 }
 .dl-naming-el {
   flex: 0 0 auto;
   font-size: .78rem;
   font-weight: 600;
-  padding: 3px 10px;
+  padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(34,197,94,.12);
-  color: #16a34a;
+  background: rgba(99, 102, 241, .12);
+  color: var(--primary, #6366f1);
+  margin-top: 2px;
 }
 .dl-naming-chars {
-  font-size: .9rem;
-  color: var(--text, #1e293b);
-  letter-spacing: 1px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
 }
-
-/* 五行条 */
-.dl-wuxing-row {
+.dl-naming-char {
+  font-size: .95rem;
+  color: var(--text, #1e293b);
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 4px;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
 }
-.dl-wuxing-row .dl-wx-name {
-  width: 18px;
-  font-size: .9rem;
-  font-weight: 700;
-}
-.dl-wuxing-bar {
-  flex: 1;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--bg-soft, #f1f5f9);
-  overflow: hidden;
-}
-.dl-wuxing-bar i {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-}
-.dl-wuxing-row .dl-wx-count {
-  width: 22px;
-  text-align: right;
-  font-size: .8rem;
-  color: var(--text-muted, #64748b);
-}
-.dl-wx-missing {
-  margin-top: 8px;
-  font-size: .78rem;
-  color: var(--text-muted, #94a3b8);
-}
-.dl-wx-missing b { color: var(--warn, #f59e0b); }
 
 /* 生肖 / 星座 档案 */
 .dl-traits {
@@ -270,7 +286,7 @@
 }
 .dl-kv-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   margin-bottom: 10px;
 }
@@ -281,6 +297,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 .dl-kv span {
   font-size: .72rem;
@@ -290,6 +307,9 @@
   font-size: .92rem;
   color: var(--text, #1e293b);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .dl-relate {
   display: flex;
@@ -350,6 +370,7 @@
   border-radius: 12px;
   padding: 12px;
   background: var(--bg-soft, #f1f5f9);
+  min-width: 0;
 }
 .dl-yiji b {
   font-size: .9rem;
@@ -389,13 +410,29 @@
 @media (min-width: 768px) and (max-width: 1199px) {
   .dl-page { padding-left: 24px; padding-right: 24px; }
   .dl-results { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .dl-kv-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* 移动端单列 */
-@media (max-width: 480px) {
+@media (max-width: 767px) {
   .dl-page { padding-left: 14px; padding-right: 14px; }
   .dl-results { grid-template-columns: 1fr; }
   .dl-card.wide { grid-column: auto; }
   .dl-form { padding: 16px; }
   .dl-almanac .dl-yiji-row { grid-template-columns: 1fr; }
+  .dl-bazi-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .dl-pillar { padding: 10px 4px; }
+  .dl-pillar-gz { font-size: 1.1rem; }
+  .dl-pillar-god { font-size: .72rem; }
+  .dl-kv-grid { grid-template-columns: repeat(2, 1fr); }
+  .dl-naming-item { flex-direction: column; gap: 8px; }
+}
+
+@media (max-width: 480px) {
+  .dl-kv-grid { grid-template-columns: repeat(2, 1fr); }
+  .dl-bazi-grid { gap: 6px; }
+  .dl-pillar { padding: 8px 3px; border-radius: 10px; }
+  .dl-pillar-gz { font-size: 1rem; }
+  .dl-pillar-god { font-size: .65rem; padding: 1px 5px; }
+  .dl-naming-char { width: 26px; height: 26px; font-size: .9rem; }
 }

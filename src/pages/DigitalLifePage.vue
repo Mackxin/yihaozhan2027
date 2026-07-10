@@ -174,10 +174,12 @@ const fmtDate = (d) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()
         <!-- 八字四柱 -->
         <div class="dl-card wide">
           <span class="dl-label">八字（四柱）· 十神</span>
-          <div class="dl-bazi">
-            <span v-for="(p, i) in result.tenGods" :key="i" :class="{ 'is-day': p.label === '日' }">
-              {{ p.label }}<i class="dl-bazi-gz">{{ p.gan }}</i><em class="dl-bazi-god">{{ p.god }}</em>
-            </span>
+          <div class="dl-bazi-grid">
+            <div class="dl-pillar" v-for="(p, i) in result.tenGods" :key="i" :class="{ 'is-day': p.label === '日' }">
+              <span class="dl-pillar-label">{{ p.label }}柱</span>
+              <span class="dl-pillar-gz">{{ p.gan }}</span>
+              <span class="dl-pillar-god">{{ p.god }}</span>
+            </div>
           </div>
           <span class="dl-sub" v-if="result.hasHour">时柱 {{ result.timeGz }} · {{ result.shiChenLabel }}</span>
           <span class="dl-sub" v-else>未填出生时辰，仅年月日三柱（十神以日干为基准）</span>
@@ -186,13 +188,17 @@ const fmtDate = (d) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()
         <!-- 五行喜用 · 起名参考 -->
         <div class="dl-card wide" v-if="result.yongShen">
           <span class="dl-label">五行喜用 · 起名参考</span>
-          <div class="dl-relate">
-            <span class="dl-rel ok">喜用神 <b>{{ result.yongShen.xi.join(' · ') }}</b></span>
-            <span class="dl-rel bad">忌神（过旺） <b>{{ result.yongShen.ji.join(' · ') }}</b></span>
+          <div class="dl-yong-shen">
+            <span class="dl-yong-tag ok">喜用神 <b>{{ result.yongShen.xi.join(' · ') }}</b></span>
+            <span class="dl-yong-tag bad" v-if="result.yongShen.ji.length">忌神（过旺） <b>{{ result.yongShen.ji.join(' · ') }}</b></span>
           </div>
-          <div class="dl-naming" v-for="n in result.yongShen.naming" :key="n.element">
-            <span class="dl-naming-el">补{{ n.element }}</span>
-            <span class="dl-naming-chars">{{ n.chars.join('、') }}</span>
+          <div class="dl-naming-list">
+            <div class="dl-naming-item" v-for="n in result.yongShen.naming" :key="n.element">
+              <span class="dl-naming-el">补{{ n.element }}</span>
+              <div class="dl-naming-chars">
+                <span class="dl-naming-char" v-for="c in n.chars" :key="c">{{ c }}</span>
+              </div>
+            </div>
           </div>
           <span class="dl-sub">※ 喜用神为简化推算（按五行缺失/最弱取用），正式起名建议结合姓名学综合判断</span>
         </div>
