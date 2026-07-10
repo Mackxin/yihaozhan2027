@@ -107,6 +107,37 @@ function getBenming(lunarYear, nowYear) {
   return { year: y, yearsLeft: yearsLeft < 0 ? 0 : yearsLeft }
 }
 
+// ─── 黄历宜忌（建除十二神简化版）───
+// 农历月份 -> 月建地支（正月寅、二月卯...腊月丑）
+const MONTH_ZHI = ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑']
+const JIANCHU_NAMES = ['建', '除', '满', '平', '定', '执', '破', '危', '成', '收', '开', '闭']
+const JIANCHU_YIJI = {
+  建: { yi: '祭祀、祈福、出行、上任、入学', ji: '嫁娶、开仓、安葬、动土' },
+  除: { yi: '沐浴、清洁、求医、扫舍、除旧', ji: '嫁娶、安葬、开市、入宅' },
+  满: { yi: '开市、立券、交易、纳财、祈福', ji: '动土、栽种、安葬、嫁娶' },
+  平: { yi: '修饰垣墙、平治道涂、整顿内务', ji: '嫁娶、移徙、出行、开仓' },
+  定: { yi: '冠笄、嫁娶、会亲友、安床、裁衣', ji: '词讼、出行、开市、安葬' },
+  执: { yi: '祭祀、祈福、捕捉、打猎、修造', ji: '开市、嫁娶、移徙、入宅' },
+  破: { yi: '破屋、坏垣、求医、治病、拆旧', ji: '嫁娶、签约、开市、安葬' },
+  危: { yi: '安床、祭祀、祈福、入殓、成服', ji: '出行、嫁娶、开市、动土' },
+  成: { yi: '嫁娶、开市、签约、出行、入学', ji: '诉讼、安葬、动土、破土' },
+  收: { yi: '收获、纳财、祭祀、修仓、入学', ji: '安葬、出行、嫁娶、动土' },
+  开: { yi: '开业、嫁娶、出行、立券、祈福', ji: '安葬、动土、破土、开仓' },
+  闭: { yi: '塞穴、补垣、祭祀、安床、修饰', ji: '开市、嫁娶、出行、移徙' },
+}
+
+function getAlmanac(lunarMonth, gzDay) {
+  if (!lunarMonth || !gzDay || gzDay.length < 2) return null
+  const dayZhi = gzDay[1]
+  const monthZhi = MONTH_ZHI[(lunarMonth - 1 + 12) % 12]
+  const mIdx = ZHI.indexOf(monthZhi)
+  const dIdx = ZHI.indexOf(dayZhi)
+  if (mIdx < 0 || dIdx < 0) return null
+  const jcIdx = (dIdx - mIdx + 12) % 12
+  const name = JIANCHU_NAMES[jcIdx]
+  return { name, ...JIANCHU_YIJI[name] }
+}
+
 // ─── 生命数字（生命路径数）───
 function reduceKeepMaster(n) {
   while (n > 9) {
@@ -336,10 +367,11 @@ export function analyzeBirth({ calendarType, year, month, day, hour }) {
   const generation = getGeneration(solarY)
   const benming = getBenming(Number(lun.lYear || solarY), now.getFullYear())
 
-  // 十神 / 喜用神
+  // 十神 / 喜用神 / 黄历
   const dayGan = gzDay[0]
   const tenGods = getTenGods(dayGan, [gzYear, gzMonth, gzDay, timeGz])
   const yongShen = getYongShen(wuxing)
+  const almanac = getAlmanac(Number(lun.lMonth), gzDay)
 
   return {
     error: null,
@@ -381,6 +413,8 @@ export function analyzeBirth({ calendarType, year, month, day, hour }) {
     // 命理进阶
     tenGods,
     yongShen,
+    // 黄历宜忌
+    almanac,
     // 原始可展示
     solarY, solarM, solarD,
   }

@@ -5,8 +5,6 @@
   overflow-y: auto;
   padding: calc(env(safe-area-inset-top, 0px) + 64px) 18px calc(90px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
-  max-width: 760px;
-  margin: 0 auto;
 }
 
 /* 左上角返回按钮（与流记/资源页一致） */
@@ -51,7 +49,8 @@
   border-radius: 16px;
   padding: 18px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  margin-bottom: 20px;
+  margin: 0 auto 20px;
+  max-width: 720px;
 }
 .dl-field {
   margin-bottom: 14px;
@@ -121,8 +120,8 @@
 /* 结果网格 */
 .dl-results {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
 }
 .dl-card {
   background: var(--card-bg, #fff);
@@ -337,6 +336,39 @@
 }
 .dl-match b { color: #ec4899; }
 
+/* 黄历宜忌 */
+.dl-almanac .dl-yiji-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+.dl-yiji {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--bg-soft, #f1f5f9);
+}
+.dl-yiji b {
+  font-size: .9rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #16a34a;
+}
+.dl-yiji.ji b { background: #dc2626; }
+.dl-yiji span {
+  font-size: .9rem;
+  color: var(--text, #1e293b);
+  line-height: 1.5;
+}
+
 /* 空状态 */
 .dl-empty {
   text-align: center;
@@ -345,7 +377,25 @@
   font-size: .9rem;
 }
 
+/* 桌面大屏：更宽的间距与更大的卡片 */
+@media (min-width: 1200px) {
+  .dl-page { padding: calc(env(safe-area-inset-top, 0px) + 72px) 32px calc(100px + env(safe-area-inset-bottom, 0px)); }
+  .dl-results { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+  .dl-card { padding: 18px 20px; }
+  .dl-form { max-width: 900px; padding: 24px; }
+}
+
+/* 平板横屏 / 小桌面 */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .dl-page { padding-left: 24px; padding-right: 24px; }
+  .dl-results { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+}
+
+/* 移动端单列 */
 @media (max-width: 480px) {
+  .dl-page { padding-left: 14px; padding-right: 14px; }
   .dl-results { grid-template-columns: 1fr; }
   .dl-card.wide { grid-column: auto; }
+  .dl-form { padding: 16px; }
+  .dl-almanac .dl-yiji-row { grid-template-columns: 1fr; }
 }

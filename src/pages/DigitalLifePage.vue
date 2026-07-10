@@ -211,6 +211,22 @@ const fmtDate = (d) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()
           <div class="dl-wx-missing" v-else>五行俱全 ✓</div>
         </div>
 
+        <!-- 黄历宜忌 -->
+        <div class="dl-card wide dl-almanac" v-if="result.almanac">
+          <span class="dl-label">📅 当日黄历 · {{ result.almanac.name }}日</span>
+          <div class="dl-yiji-row">
+            <div class="dl-yiji yi">
+              <b>宜</b>
+              <span>{{ result.almanac.yi }}</span>
+            </div>
+            <div class="dl-yiji ji">
+              <b>忌</b>
+              <span>{{ result.almanac.ji }}</span>
+            </div>
+          </div>
+          <span class="dl-sub">基于农历建除十二神简化推算，仅供文化参考</span>
+        </div>
+
         <!-- 生肖档案 -->
         <div class="dl-card wide" v-if="result.animalProfile">
           <span class="dl-label">生肖档案 · {{ result.animal }}🐾</span>
