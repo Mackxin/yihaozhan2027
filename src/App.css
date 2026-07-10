@@ -34,6 +34,8 @@
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   flex-shrink: 0;
+  /* 底部固定 tab 栏占位，避免内容被遮挡（含刘海屏安全区） */
+  padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom, 0px));
 }
 
 .page-slide::-webkit-scrollbar {
@@ -111,6 +113,10 @@
     height: 60px;
     border-top: 1px solid var(--border);
     box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .page-slide {
+    padding-bottom: 60px;
   }
 
   .tool-overlay {

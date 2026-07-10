@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { marked } from 'marked'
+import { sanitizeHtml } from '../utils/sanitize'
 import {
   store,
   addNavCategory, updateNavCategoryTitle, deleteNavCategory,
@@ -11,6 +12,7 @@ import {
   reorderNavCategories, reorderNavLinks,
   clearEmptyCategories, clearAllIdeas,
   getNavSnapshot, getNewsSnapshot, restoreNavSnapshot, restoreNewsSnapshot,
+  getFullSnapshot, restoreFullSnapshot,
   addHeroLink, updateHeroLink, deleteHeroLink,
   addMacItem, updateMacItem, deleteMacItem, getMacSnapshot, restoreMacSnapshot,
   addMacSection, updateMacSection, deleteMacSection,
@@ -605,7 +607,7 @@ const handleTogglePublish = (article) => {
 }
 
 const renderArticlePreview = () => {
-  return editingArticle.content ? marked(editingArticle.content) : '<p style="color:#94a3b8">暂无内容</p>'
+  return editingArticle.content ? sanitizeHtml(marked(editingArticle.content)) : '<p style="color:#94a3b8">暂无内容</p>'
 }
 
 const isArticleInNav = computed(() => {
@@ -713,7 +715,7 @@ const handleToggleMemoryPublish = (mem) => {
 }
 
 const renderMemoryPreview = () => {
-  return editingMemory.content ? marked(editingMemory.content) : '<p style="color:#94a3b8">暂无内容</p>'
+  return editingMemory.content ? sanitizeHtml(marked(editingMemory.content)) : '<p style="color:#94a3b8">暂无内容</p>'
 }
 
 // Mood emoji options
@@ -832,6 +834,7 @@ const handleUndo = (item) => {
   else if (item.type === 'articles') restoreArticlesSnapshot(item.snapshot)
   else if (item.type === 'memories') restoreMemoriesSnapshot(item.snapshot)
   else if (item.type === 'ideas') restoreIdeasSnapshot(item.snapshot)
+  else if (item.type === 'all') restoreFullSnapshot(item.snapshot)
   else if (typeof item.type === 'string' && item.type.startsWith('tp-')) {
     const key = item.type.slice(3)
     restoreToolSnapshot(key, item.snapshot)
@@ -1137,8 +1140,7 @@ const handleImport = (e) => {
   const reader = new FileReader()
   reader.onload = (ev) => {
     try {
-      pushUndo('nav', getNavSnapshot(), '导入数据(导航)')
-      pushUndo('news', getNewsSnapshot(), '导入数据(讯息)')
+      pushUndo('all', getFullSnapshot(), '导入数据包')
       importAllData(ev.target.result); alert('数据导入成功！'); log('导入数据包')
     } catch { alert('导入失败') }
   }

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { marked } from 'marked'
 import UniSearch from '../components/UniSearch.vue'
 import { store, addNewsGroup, addNewsItem } from '../store'
+import { sanitizeHtml } from '../utils/sanitize'
 
 marked.setOptions({ breaks: true, gfm: true })
 
@@ -205,7 +206,7 @@ const displayed = computed(() => {
 
 const renderMd = (text) => {
   const cleaned = text.replace(/#[\u4e00-\u9fa5_a-zA-Z0-9]+/g, '').trim()
-  return marked(cleaned)
+  return sanitizeHtml(marked(cleaned))
 }
 
 const handleKeydown = (e) => {

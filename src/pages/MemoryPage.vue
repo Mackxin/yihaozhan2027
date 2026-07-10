@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { marked } from 'marked'
 import { store } from '../store'
+import { sanitizeHtml } from '../utils/sanitize'
 
 // 只设置一次 marked 选项
 marked.setOptions({ breaks: true, gfm: true })
@@ -198,7 +199,7 @@ watch(() => publishedMemories.value.length, () => {
 // ─── Markdown render ───
 function renderMarkdown(content) {
   if (!content) return ''
-  return marked(content)
+  return sanitizeHtml(marked(content))
 }
 
 // ─── Strip markdown for preview ───

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { marked } from 'marked'
 import { store } from '../store'
+import { sanitizeHtml } from '../utils/sanitize'
 
 marked.setOptions({ breaks: true, gfm: true })
 
@@ -19,7 +20,7 @@ const parsed = computed(() => {
   const content = props.article?.content
   if (!content) return { html: '<p style="color:#94a3b8;text-align:center;padding:2rem;">暂无内容</p>', toc: [] }
   const div = document.createElement('div')
-  div.innerHTML = marked(content)
+  div.innerHTML = sanitizeHtml(marked(content))
   const toc = []
   div.querySelectorAll('h1, h2, h3').forEach((el, i) => {
     const id = 'toc-' + i

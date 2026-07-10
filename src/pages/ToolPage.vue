@@ -21,8 +21,8 @@ const filtered = computed(() => {
   return sections.value
     .map(section => {
       const items = section.items.filter(item =>
-        item.name.toLowerCase().includes(kw) ||
-        item.desc.toLowerCase().includes(kw) ||
+        (item.name || '').toLowerCase().includes(kw) ||
+        (item.desc || '').toLowerCase().includes(kw) ||
         (item.tags || []).some(t => t.toLowerCase().includes(kw))
       )
       return items.length > 0 ? { ...section, items } : null
@@ -102,7 +102,7 @@ onUnmounted(() => {
               >
                 <div class="tool-card-body">
                   <h3 class="tool-card-name">{{ item.name }}</h3>
-                  <p class="tool-card-desc">{{ item.desc }}</p>
+                  <p class="tool-card-desc">{{ item.desc || '' }}</p>
                   <div v-if="item.tags?.length" class="tool-card-tags">
                     <span v-for="tag in item.tags" :key="tag" class="tool-card-tag">{{ tag }}</span>
                   </div>

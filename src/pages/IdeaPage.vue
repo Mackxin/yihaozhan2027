@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { store } from '../store'
+import { sanitizeHtml } from '../utils/sanitize'
 
 const emit = defineEmits(['close'])
 
@@ -48,7 +49,7 @@ const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace
 const formatContent = (text) => {
   let t = escapeHtml(text || '')
   t = t.replace(tagRe, m => `<span class="idea-tag" data-tag="${m.slice(1)}">${m}</span>`)
-  return t.replace(/\n/g, '<br>')
+  return sanitizeHtml(t.replace(/\n/g, '<br>'))
 }
 
 const allTags = computed(() => {

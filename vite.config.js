@@ -35,5 +35,17 @@ export default defineConfig({
   base: './',
   build: {
     outDir: 'docs',
+    rollupOptions: {
+      output: {
+        // 拆分 vendor，降低首屏主 chunk 体积，消除 vite >500KB 警告
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('marked')) return 'marked'
+            if (id.includes('dompurify')) return 'dompurify'
+            return 'vendor'
+          }
+        },
+      },
+    },
   },
 })

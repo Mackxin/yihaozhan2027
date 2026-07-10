@@ -851,6 +851,42 @@ export function restoreIdeasSnapshot(snapshot) {
   store.ideas = snapshot
 }
 
+// ─── 全量快照（导入数据包后一次性撤销，保证所有模块可回退） ───
+export function getFullSnapshot() {
+  return JSON.parse(JSON.stringify({
+    navCategories: store.navCategories,
+    timelineItems: store.timelineItems,
+    heroLinks: store.heroLinks,
+    macSections: store.macSections,
+    articles: store.articles,
+    memories: store.memories,
+    toolPages: store.toolPages,
+    toolPagesData: store.toolPagesData,
+    siteFavicon: store.siteFavicon,
+    deliveryRecords: store.deliveryRecords,
+    deliveryPlatforms: store.deliveryPlatforms,
+    deliveryGoal: store.deliveryGoal,
+    ideas: store.ideas,
+  }))
+}
+
+export function restoreFullSnapshot(snapshot) {
+  if (!snapshot) return
+  if (snapshot.navCategories) store.navCategories = snapshot.navCategories
+  if (snapshot.timelineItems) store.timelineItems = snapshot.timelineItems
+  if (snapshot.heroLinks) store.heroLinks = snapshot.heroLinks
+  if (snapshot.macSections) store.macSections = snapshot.macSections
+  if (snapshot.articles) store.articles = snapshot.articles
+  if (snapshot.memories) store.memories = snapshot.memories
+  if (snapshot.toolPages) store.toolPages = snapshot.toolPages
+  if (snapshot.toolPagesData) store.toolPagesData = snapshot.toolPagesData
+  if (snapshot.siteFavicon) store.siteFavicon = snapshot.siteFavicon
+  if (snapshot.deliveryRecords) store.deliveryRecords = snapshot.deliveryRecords
+  if (snapshot.deliveryPlatforms) store.deliveryPlatforms = snapshot.deliveryPlatforms
+  if (snapshot.deliveryGoal) store.deliveryGoal = snapshot.deliveryGoal
+  if (snapshot.ideas) store.ideas = snapshot.ideas
+}
+
 // ─── 注册内置工具页面 ───
 registerToolPage('mac', {
   label: 'Mac 软件',

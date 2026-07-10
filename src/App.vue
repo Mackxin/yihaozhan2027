@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, defineAsyncComponent } from 'vue'
 import { store, toggleAdmin, loginAdmin } from './store'
 import HomePage from './pages/HomePage.vue'
 import NavPage from './pages/NavPage.vue'
@@ -7,12 +7,14 @@ import NewsPage from './pages/NewsPage.vue'
 import NotesPage from './pages/NotesPage.vue'
 import MemoryPage from './pages/MemoryPage.vue'
 import AdminPanel from './pages/AdminPanel.vue'
-import ToolPage from './pages/ToolPage.vue'
-import ArticlePage from './pages/ArticlePage.vue'
-import DeliveryPage from './pages/DeliveryPage.vue'
-import IdeaPage from './pages/IdeaPage.vue'
-import DigitalLifePage from './pages/DigitalLifePage.vue'
 import LoginModal from './components/LoginModal.vue'
+
+// 浮层页面按需懒加载，减小首屏主包体积（首屏只含 6 个主 tab 页）
+const ToolPage = defineAsyncComponent(() => import('./pages/ToolPage.vue'))
+const ArticlePage = defineAsyncComponent(() => import('./pages/ArticlePage.vue'))
+const DeliveryPage = defineAsyncComponent(() => import('./pages/DeliveryPage.vue'))
+const IdeaPage = defineAsyncComponent(() => import('./pages/IdeaPage.vue'))
+const DigitalLifePage = defineAsyncComponent(() => import('./pages/DigitalLifePage.vue'))
 
 const allTabs = [
   { key: 'home', label: '首页' },
