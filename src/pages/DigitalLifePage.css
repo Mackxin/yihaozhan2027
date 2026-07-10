@@ -120,8 +120,9 @@
 /* 结果网格 */
 .dl-results {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 14px;
+  align-items: start;
 }
 .dl-card {
   background: var(--card-bg, #fff);
@@ -131,9 +132,11 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
+/* 大卡片占两列（与旁边小卡片并排，不再独占整行） */
 .dl-card.wide {
-  grid-column: 1 / -1;
+  grid-column: span 2;
 }
 .dl-card .dl-label {
   font-size: .74rem;
@@ -398,18 +401,18 @@
   font-size: .9rem;
 }
 
-/* 桌面大屏：更宽的间距与更大的卡片 */
+/* 桌面大屏：更宽的间距，宽卡片占两列与旁卡并排 */
 @media (min-width: 1200px) {
   .dl-page { padding: calc(env(safe-area-inset-top, 0px) + 72px) 32px calc(100px + env(safe-area-inset-bottom, 0px)); }
-  .dl-results { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+  .dl-results { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
   .dl-card { padding: 18px 20px; }
   .dl-form { max-width: 900px; padding: 24px; }
 }
 
-/* 平板横屏 / 小桌面 */
+/* 平板横屏 / 小桌面：一行排更多模块 */
 @media (min-width: 768px) and (max-width: 1199px) {
   .dl-page { padding-left: 24px; padding-right: 24px; }
-  .dl-results { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .dl-results { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
   .dl-kv-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
