@@ -175,7 +175,7 @@ async function loadRemoteData() {
     // file:// protocol or no data.json — localStorage data already loaded, keep it
     console.log('ℹ️ fetch 不可用，使用 localStorage 数据')
   }
-  // 迁移：确保「万物归一」中有外卖和流记入口
+  // 迁移：确保「万物归一」中有外卖、流记、数字人生入口
   const wanyi = store.navCategories.find(c => c.id === 1 || c.title === '万物归一')
   if (wanyi) {
     if (!wanyi.links.some(l => l.url === '#delivery')) {
@@ -183,6 +183,9 @@ async function loadRemoteData() {
     }
     if (!wanyi.links.some(l => l.url === '#idea')) {
       wanyi.links.splice(4, 0, { name: '流记', url: '#idea' })
+    }
+    if (!wanyi.links.some(l => l.url === '#digitallife')) {
+      wanyi.links.splice(5, 0, { name: '数字人生', url: '#digitallife' })
     }
     // 迁移：旧名"灵感"改为"流记"
     const oldIdea = wanyi.links.find(l => l.url === '#idea' && l.name === '灵感')
