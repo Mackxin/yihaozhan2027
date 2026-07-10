@@ -177,12 +177,51 @@
   flex: 1;
   min-width: 56px;
   text-align: center;
-  padding: 8px 0;
+  padding: 8px 4px;
   border-radius: 10px;
   background: var(--bg-soft, #f1f5f9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.2;
+}
+.dl-bazi span.is-day {
+  background: var(--primary-soft, #eef2ff);
+}
+.dl-bazi span::first-line { font-size: .72rem; color: var(--text-muted, #94a3b8); font-weight: 600; }
+.dl-bazi-gz {
   font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
+  font-style: normal;
+  color: var(--text, #1e293b);
+}
+.dl-bazi-god {
+  font-size: .72rem;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--primary, #6366f1);
+}
+.dl-naming {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.dl-naming-el {
+  flex: 0 0 auto;
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(34,197,94,.12);
+  color: #16a34a;
+}
+.dl-naming-chars {
+  font-size: .9rem;
+  color: var(--text, #1e293b);
+  letter-spacing: 1px;
 }
 
 /* 五行条 */
