@@ -87,7 +87,8 @@ const handleClose = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  /* 必须高于底部 tab 栏(z-index:9999)，否则 tab 栏会盖在登录层之上、且可点击穿透 */
+  z-index: 10001;
 }
 .login-modal {
   background: #fff;

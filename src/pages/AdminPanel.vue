@@ -869,7 +869,8 @@ const globalSearchResults = computed(() => {
   const news = []
   store.timelineItems.forEach(group => {
     group.items.forEach(item => {
-      if (item.title.toLowerCase().includes(kw) || (item.desc || []).some(d => d.toLowerCase().includes(kw))) {
+      const descs = Array.isArray(item.desc) ? item.desc : (item.desc ? [item.desc] : [])
+      if (item.title.toLowerCase().includes(kw) || descs.some(d => String(d).toLowerCase().includes(kw))) {
         news.push({ date: group.date, title: item.title })
       }
     })

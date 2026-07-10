@@ -20,10 +20,11 @@ const filtered = computed(() => {
   if (!kw) return store.timelineItems
   return store.timelineItems
     .map(group => {
-      const items = group.items.filter(item =>
-        item.title.toLowerCase().includes(kw) ||
-        (item.desc || []).some(d => d.toLowerCase().includes(kw))
-      )
+      const items = group.items.filter(item => {
+        const descs = Array.isArray(item.desc) ? item.desc : (item.desc ? [item.desc] : [])
+        return item.title.toLowerCase().includes(kw) ||
+          descs.some(d => String(d).toLowerCase().includes(kw))
+      })
       return items.length > 0 ? { ...group, items } : null
     })
     .filter(Boolean)
@@ -169,7 +170,7 @@ onUnmounted(() => {
                             </h3>
                           </div>
                           <div class="news-card-body">
-                            <p v-for="(d, j) in item.desc" :key="j">{{ d }}</p>
+                            <p v-for="(d, j) in (Array.isArray(item.desc) ? item.desc : (item.desc ? [item.desc] : []))" :key="j">{{ d }}</p>
                           </div>
                         </div>
                       </div>

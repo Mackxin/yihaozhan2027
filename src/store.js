@@ -97,9 +97,23 @@ const savedIdeas = localStorage.getItem(IDEAS_KEY)
 
 const cloneDefault = (v) => JSON.parse(JSON.stringify(v))
 
+// 兼容历史/导入数据中 desc 为字符串的情况，统一规整为数组，
+// 否则 (item.desc || []).some(...) 会因字符串没有 .some 而崩溃，
+// v-for="(d,j) in item.desc" 会把字符串拆成单个字符渲染。
+function normalizeTimeline(timeline) {
+  if (!Array.isArray(timeline)) return timeline
+  return timeline.map(g => ({
+    ...g,
+    items: Array.isArray(g.items) ? g.items.map(it => ({
+      ...it,
+      desc: Array.isArray(it.desc) ? it.desc : (it.desc != null ? [String(it.desc)] : [])
+    })) : g.items
+  }))
+}
+
 export const store = reactive({
   navCategories: safeParse(savedNav, () => cloneDefault(defaultNav)),
-  timelineItems: safeParse(savedNews, () => cloneDefault(defaultTimeline)),
+  timelineItems: normalizeTimeline(safeParse(savedNews, () => cloneDefault(defaultTimeline))),
   heroLinks: safeParse(savedHeroLinks, () => cloneDefault(defaultHeroLinks)),
   macSections: safeParse(savedMac, () => cloneDefault(defaultMac)),
   articles: safeParse(savedArticles, () => cloneDefault(defaultArticles)),
@@ -157,7 +171,7 @@ async function loadRemoteData() {
     if (res.ok) {
       const data = await res.json()
       if (data.navCategories) store.navCategories = data.navCategories
-      if (data.timelineItems) store.timelineItems = data.timelineItems
+      if (data.timelineItems) store.timelineItems = normalizeTimeline(data.timelineItems)
       if (data.heroLinks) store.heroLinks = data.heroLinks
       if (data.macSections) store.macSections = data.macSections
       if (data.articles) store.articles = data.articles
@@ -322,7 +336,7 @@ export function exportAllData() {
 export function importAllData(jsonStr) {
   const data = JSON.parse(jsonStr)
   if (data.navCategories) store.navCategories = data.navCategories
-  if (data.timelineItems) store.timelineItems = data.timelineItems
+  if (data.timelineItems) store.timelineItems = normalizeTimeline(data.timelineItems)
   if (data.heroLinks) store.heroLinks = data.heroLinks
   if (data.macSections) store.macSections = data.macSections
   if (data.articles) store.articles = data.articles
@@ -876,7 +890,7 @@ export function getFullSnapshot() {
 export function restoreFullSnapshot(snapshot) {
   if (!snapshot) return
   if (snapshot.navCategories) store.navCategories = snapshot.navCategories
-  if (snapshot.timelineItems) store.timelineItems = snapshot.timelineItems
+  if (snapshot.timelineItems) store.timelineItems = normalizeTimeline(snapshot.timelineItems)
   if (snapshot.heroLinks) store.heroLinks = snapshot.heroLinks
   if (snapshot.macSections) store.macSections = snapshot.macSections
   if (snapshot.articles) store.articles = snapshot.articles

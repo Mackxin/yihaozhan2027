@@ -2,6 +2,8 @@
 .tool-page {
   height: 100%;
   overflow-y: auto;
+  /* 浮层底部止于 tab 栏上方，这里留白避免页脚贴边 */
+  padding-bottom: calc(var(--tab-height) + 20px);
 }
 /* 左上角返回按钮（与流记/文章页一致） */
 .tool-back {

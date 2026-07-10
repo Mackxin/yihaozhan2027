@@ -19,6 +19,8 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  /* 浮层底部止于 tab 栏上方，留白避免最后一条内容贴边 */
+  padding-bottom: calc(var(--tab-height) + 20px);
 }
 
 [data-theme="dark"] .idea-page {
