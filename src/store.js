@@ -52,6 +52,19 @@ const defaultToolPages = [
 ]
 const defaultToolPagesData = {}
 const defaultFavicon = '/avatar.png'
+// 规整外卖平台数据：旧 localStorage 可能缺少 insurance 字段，按名称补默认费率；保留用户已改的费率。
+const normalizeDeliveryPlatforms = (arr) => {
+  if (!Array.isArray(arr) || !arr.length) return cloneDefault(defaultDeliveryPlatforms)
+  return arr.map(p => {
+    const fallback = defaultDeliveryPlatforms.find(dp => dp.name === p.name) || {}
+    return {
+      name: p.name || fallback.name || '未命名',
+      icon: p.icon || fallback.icon || '🛵',
+      color: p.color || fallback.color || '#6366f1',
+      insurance: p.insurance !== undefined ? Number(p.insurance) || 0 : (fallback.insurance || 0),
+    }
+  })
+}
 const defaultDeliveryPlatforms = [
   { name: '美团众包', icon: '🛵', color: '#ffc700', insurance: 2.5 },
   { name: '京东秒送', icon: '📦', color: '#e1251b', insurance: 3 },
@@ -122,7 +135,7 @@ export const store = reactive({
   toolPagesData: safeParse(savedToolPagesData, () => cloneDefault(defaultToolPagesData)),
   siteFavicon: savedFavicon || defaultFavicon,
   deliveryRecords: safeParse(savedDeliveryRecords, () => cloneDefault(defaultDeliveryRecords)),
-  deliveryPlatforms: safeParse(savedDeliveryPlatforms, () => cloneDefault(defaultDeliveryPlatforms)),
+  deliveryPlatforms: normalizeDeliveryPlatforms(safeParse(savedDeliveryPlatforms, () => cloneDefault(defaultDeliveryPlatforms))),
   deliveryGoal: safeParse(savedDeliveryGoal, () => cloneDefault(defaultDeliveryGoal)),
   ideas: (() => {
     const raw = safeParse(savedIdeas, () => cloneDefault(defaultIdeas))
@@ -180,7 +193,7 @@ async function loadRemoteData() {
       if (data.toolPagesData) store.toolPagesData = data.toolPagesData
       if (data.siteFavicon) store.siteFavicon = data.siteFavicon
       if (data.deliveryRecords) store.deliveryRecords = data.deliveryRecords
-      if (data.deliveryPlatforms) store.deliveryPlatforms = data.deliveryPlatforms
+      if (data.deliveryPlatforms) store.deliveryPlatforms = normalizeDeliveryPlatforms(data.deliveryPlatforms)
       if (data.deliveryGoal) store.deliveryGoal = data.deliveryGoal
       if (data.ideas) store.ideas = data.ideas
       console.log('✅ 已加载 ./data.json')
@@ -345,7 +358,7 @@ export function importAllData(jsonStr) {
   if (data.toolPagesData) store.toolPagesData = data.toolPagesData
   if (data.siteFavicon) store.siteFavicon = data.siteFavicon
   if (data.deliveryRecords) store.deliveryRecords = data.deliveryRecords
-  if (data.deliveryPlatforms) store.deliveryPlatforms = data.deliveryPlatforms
+  if (data.deliveryPlatforms) store.deliveryPlatforms = normalizeDeliveryPlatforms(data.deliveryPlatforms)
   if (data.deliveryGoal) store.deliveryGoal = data.deliveryGoal
   if (data.ideas) store.ideas = data.ideas
 }
@@ -908,7 +921,7 @@ export function restoreFullSnapshot(snapshot) {
   if (snapshot.toolPagesData) store.toolPagesData = snapshot.toolPagesData
   if (snapshot.siteFavicon) store.siteFavicon = snapshot.siteFavicon
   if (snapshot.deliveryRecords) store.deliveryRecords = snapshot.deliveryRecords
-  if (snapshot.deliveryPlatforms) store.deliveryPlatforms = snapshot.deliveryPlatforms
+  if (snapshot.deliveryPlatforms) store.deliveryPlatforms = normalizeDeliveryPlatforms(snapshot.deliveryPlatforms)
   if (snapshot.deliveryGoal) store.deliveryGoal = snapshot.deliveryGoal
   if (snapshot.ideas) store.ideas = snapshot.ideas
 }

@@ -79,6 +79,8 @@ const submitForm = () => {
 const editRecord = (r) => {
   editingId.value = r.id
   form.value = { ...r }
+  // 回填后按当前平台费率和单量重算一次保险（修复旧记录缺/错保险费的场景）
+  autoFillInsurance()
   // scroll form into view on mobile
   const el = document.querySelector('.d-left')
   if (el) el.scrollIntoView({ behavior: 'smooth' })
