@@ -52,22 +52,28 @@ const defaultToolPages = [
 ]
 const defaultToolPagesData = {}
 const defaultFavicon = '/avatar.png'
+// 历史平台费率兜底：旧 localStorage 里的平台（如蜂鸟众包）即使不在默认列表，也能补回费率
+const LEGACY_PLATFORM_INSURANCE = {
+  '蜂鸟众包': 2.5, '美团众包': 2.5, '京东秒送': 3, '淘宝闪送': 2.5, '货拉拉': 0,
+}
 // 规整外卖平台数据：旧 localStorage 可能缺少 insurance 字段，按名称补默认费率；保留用户已改的费率。
 const normalizeDeliveryPlatforms = (arr) => {
   if (!Array.isArray(arr) || !arr.length) return cloneDefault(defaultDeliveryPlatforms)
   return arr.map(p => {
     const fallback = defaultDeliveryPlatforms.find(dp => dp.name === p.name) || {}
+    const legacyFee = LEGACY_PLATFORM_INSURANCE[p.name]
     return {
       name: p.name || fallback.name || '未命名',
       icon: p.icon || fallback.icon || '🛵',
       color: p.color || fallback.color || '#6366f1',
-      insurance: p.insurance !== undefined ? Number(p.insurance) || 0 : (fallback.insurance || 0),
+      insurance: p.insurance !== undefined ? Number(p.insurance) || 0 : (fallback.insurance || legacyFee || 0),
     }
   })
 }
 const defaultDeliveryPlatforms = [
   { name: '美团众包', icon: '🛵', color: '#ffc700', insurance: 2.5 },
   { name: '京东秒送', icon: '📦', color: '#e1251b', insurance: 3 },
+  { name: '蜂鸟众包', icon: '🐝', color: '#ff9a00', insurance: 2.5 },
   { name: '淘宝闪送', icon: '🛍️', color: '#ff5000', insurance: 2.5 },
   { name: '货拉拉', icon: '🚚', color: '#ff7f00', insurance: 0 },
 ]
