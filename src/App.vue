@@ -260,6 +260,10 @@ const handleTouchEnd = (e) => {
       <div v-if="showIdeaPage" class="tool-overlay">
         <IdeaPage @close="closeIdeaPage" />
       </div>
+    </Transition>
+
+    <!-- Digital Life Page Overlay -->
+    <Transition name="tool-slide">
       <div v-if="showDigitalLifePage" class="tool-overlay">
         <DigitalLifePage @close="closeDigitalLifePage" />
       </div>
