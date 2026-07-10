@@ -27,24 +27,24 @@ const SHICHEN_LABEL = ['子时 (23:00-00:59)', '丑时 (01:00-02:59)', '寅时 (
 
 // ─── 星座 ───
 const ZODIAC = [
-  { name: '白羊座', element: '火', desc: '热情、勇敢、行动派，喜欢冲锋在前' },
-  { name: '金牛座', element: '土', desc: '稳重、务实、有耐心，追求安稳与美好' },
-  { name: '双子座', element: '风', desc: '机智、善变、好奇心强，擅长沟通' },
-  { name: '巨蟹座', element: '水', desc: '温柔、顾家、重感情，富有同理心' },
-  { name: '狮子座', element: '火', desc: '自信、大方、有领导力，天生发光体' },
-  { name: '处女座', element: '土', desc: '细致、严谨、追求完美，注重细节' },
-  { name: '天秤座', element: '风', desc: '和谐、优雅、重视平衡与关系' },
-  { name: '天蝎座', element: '水', desc: '深沉、专注、洞察力强，爱憎分明' },
-  { name: '射手座', element: '火', desc: '自由、乐观、爱冒险，向往远方' },
-  { name: '摩羯座', element: '土', desc: '负责、坚韧、有野心，踏踏实实向上' },
-  { name: '水瓶座', element: '风', desc: '独立、创新、有想法，特立独行' },
-  { name: '双鱼座', element: '水', desc: '浪漫、敏感、富有想象力与同情心' },
+  { name: '白羊座', element: '火', range: '3.21–4.19', ruler: '火星', luckyNum: '9', luckyColor: '红色', stone: '红宝石', keywords: ['热情', '勇敢', '行动派'], match: '狮子座 · 射手座', desc: '热情、勇敢、行动派，喜欢冲锋在前' },
+  { name: '金牛座', element: '土', range: '4.20–5.20', ruler: '金星', luckyNum: '6', luckyColor: '绿色', stone: '祖母绿', keywords: ['稳重', '务实', '固执'], match: '处女座 · 摩羯座', desc: '稳重、务实、有耐心，追求安稳与美好' },
+  { name: '双子座', element: '风', range: '5.21–6.21', ruler: '水星', luckyNum: '5', luckyColor: '黄色', stone: '珍珠', keywords: ['机智', '善变', '好奇'], match: '天秤座 · 水瓶座', desc: '机智、善变、好奇心强，擅长沟通' },
+  { name: '巨蟹座', element: '水', range: '6.22–7.22', ruler: '月亮', luckyNum: '2', luckyColor: '银白/蓝', stone: '月光石', keywords: ['温柔', '顾家', '敏感'], match: '天蝎座 · 双鱼座', desc: '温柔、顾家、重感情，富有同理心' },
+  { name: '狮子座', element: '火', range: '7.23–8.22', ruler: '太阳', luckyNum: '1', luckyColor: '金色', stone: '黄水晶', keywords: ['自信', '大方', '爱面子'], match: '白羊座 · 射手座', desc: '自信、大方、有领导力，天生发光体' },
+  { name: '处女座', element: '土', range: '8.23–9.22', ruler: '水星', luckyNum: '5', luckyColor: '灰蓝', stone: '蓝宝石', keywords: ['细致', '完美', '挑剔'], match: '金牛座 · 摩羯座', desc: '细致、严谨、追求完美，注重细节' },
+  { name: '天秤座', element: '风', range: '9.23–10.23', ruler: '金星', luckyNum: '6', luckyColor: '粉蓝', stone: '蛋白石', keywords: ['和谐', '优雅', '纠结'], match: '双子座 · 水瓶座', desc: '和谐、优雅、重视平衡与关系' },
+  { name: '天蝎座', element: '水', range: '10.24–11.22', ruler: '冥王星', luckyNum: '9', luckyColor: '深红/黑', stone: '碧玺', keywords: ['深沉', '专注', '多疑'], match: '巨蟹座 · 双鱼座', desc: '深沉、专注、洞察力强，爱憎分明' },
+  { name: '射手座', element: '火', range: '11.23–12.21', ruler: '木星', luckyNum: '3', luckyColor: '紫蓝', stone: '黄玉', keywords: ['自由', '乐观', '冒险'], match: '白羊座 · 狮子座', desc: '自由、乐观、爱冒险，向往远方' },
+  { name: '摩羯座', element: '土', range: '12.22–1.19', ruler: '土星', luckyNum: '8', luckyColor: '棕黑', stone: '石榴石', keywords: ['负责', '坚韧', '保守'], match: '金牛座 · 处女座', desc: '负责、坚韧、有野心，踏踏实实向上' },
+  { name: '水瓶座', element: '风', range: '1.20–2.18', ruler: '天王星', luckyNum: '4', luckyColor: '电光蓝', stone: '蓝晶', keywords: ['独立', '创新', '叛逆'], match: '双子座 · 天秤座', desc: '独立、创新、有想法，特立独行' },
+  { name: '双鱼座', element: '水', range: '2.19–3.20', ruler: '海王星', luckyNum: '7', luckyColor: '海蓝', stone: '海蓝宝', keywords: ['浪漫', '敏感', '梦幻'], match: '巨蟹座 · 天蝎座', desc: '浪漫、敏感、富有想象力与同情心' },
 ]
 
 function getZodiac(month, day) {
   const md = month * 100 + day
   const table = [
-    [101, 119, ZODIAC[9]], [120, 218, ZODIAC[10], ], [219, 320, ZODIAC[11]],
+    [101, 119, ZODIAC[9]], [120, 218, ZODIAC[10]], [219, 320, ZODIAC[11]],
     [321, 419, ZODIAC[0]], [420, 520, ZODIAC[1]], [521, 621, ZODIAC[2]],
     [622, 722, ZODIAC[3]], [723, 822, ZODIAC[4]], [823, 922, ZODIAC[5]],
     [923, 1023, ZODIAC[6]], [1024, 1122, ZODIAC[7]], [1123, 1221, ZODIAC[8]],
@@ -52,6 +52,59 @@ function getZodiac(month, day) {
   ]
   for (const [s, e, z] of table) if (md >= s && md <= e) return z
   return ZODIAC[9]
+}
+
+// ─── 生肖完整档案 ───
+const ANIMAL_PROFILE = {
+  鼠: { traits: '机敏灵巧、适应力强，善于积蓄与交际', luckyNum: '2、3', luckyColor: '蓝色、金色', direction: '东南', triad: '龙 · 猴', secret: '牛', clash: '马' },
+  牛: { traits: '勤恳踏实、任劳任怨，认准的事坚持到底', luckyNum: '1、4', luckyColor: '黄色、红色', direction: '正北', triad: '蛇 · 鸡', secret: '鼠', clash: '羊' },
+  虎: { traits: '勇猛自信、敢闯敢拼，自带气场与正义感', luckyNum: '1、3、4', luckyColor: '绿色、金色', direction: '正东', triad: '马 · 狗', secret: '猪', clash: '猴' },
+  兔: { traits: '温顺细腻、气质优雅，重视家庭与和平', luckyNum: '3、4、6', luckyColor: '粉色、绿色', direction: '正东', triad: '羊 · 猪', secret: '狗', clash: '鸡' },
+  龙: { traits: '气势不凡、胸怀大志，天生的领袖气质', luckyNum: '1、6、7', luckyColor: '金色、红色', direction: '正西', triad: '鼠 · 猴', secret: '鸡', clash: '狗' },
+  蛇: { traits: '沉稳智慧、直觉敏锐，外冷内热有谋略', luckyNum: '2、8、9', luckyColor: '红色、紫色', direction: '正南', triad: '牛 · 鸡', secret: '猴', clash: '猪' },
+  马: { traits: '热情奔放、自由不羁，行动力与感染力十足', luckyNum: '2、7、8', luckyColor: '红色、紫色', direction: '正南', triad: '虎 · 狗', secret: '羊', clash: '鼠' },
+  羊: { traits: '温和善良、富有艺术感，重情重义易心软', luckyNum: '3、4、9', luckyColor: '绿色、粉色', direction: '正南', triad: '兔 · 猪', secret: '马', clash: '牛' },
+  猴: { traits: '聪明机变、多才多艺，点子多且学习力强', luckyNum: '4、9', luckyColor: '金色、白色', direction: '正北', triad: '鼠 · 龙', secret: '蛇', clash: '虎' },
+  鸡: { traits: '精明务实、注重仪表，凡事力求完美而出色', luckyNum: '5、7、8', luckyColor: '金色、褐色', direction: '正西', triad: '牛 · 蛇', secret: '龙', clash: '兔' },
+  狗: { traits: '忠诚可靠、正义感强，是值得托付的伙伴', luckyNum: '3、4、9', luckyColor: '红色、棕色', direction: '正南', triad: '虎 · 马', secret: '兔', clash: '龙' },
+  猪: { traits: '憨厚随和、福气满满，知足常乐人缘好', luckyNum: '2、5、8', luckyColor: '黄色、灰色', direction: '正北', triad: '兔 · 羊', secret: '虎', clash: '蛇' },
+}
+
+// ─── 生日石 / 生日花（按公历月份 1-12）───
+const BIRTHSTONE = [
+  { stone: '石榴石', flower: '梅花', flowerLang: '纯洁与希望' },       // 1
+  { stone: '紫水晶', flower: '水仙', flowerLang: '谦逊与重生' },       // 2
+  { stone: '海蓝宝', flower: '郁金香', flowerLang: '博爱与美丽' },     // 3
+  { stone: '钻石', flower: '雏菊', flowerLang: '天真与纯洁' },         // 4
+  { stone: '祖母绿', flower: '铃兰', flowerLang: '幸福归来' },         // 5
+  { stone: '珍珠', flower: '玫瑰', flowerLang: '热烈的爱情' },         // 6
+  { stone: '红宝石', flower: '飞燕草', flowerLang: '热情与自由' },     // 7
+  { stone: '橄榄石', flower: '剑兰', flowerLang: '坚强与思念' },       // 8
+  { stone: '蓝宝石', flower: '桂花', flowerLang: '高贵与丰收' },       // 9
+  { stone: '碧玺', flower: '菊花', flowerLang: '真情与长久' },         // 10
+  { stone: '黄玉', flower: '向日葵', flowerLang: '友谊与阳光' },       // 11
+  { stone: '绿松石', flower: '水仙', flowerLang: '羁绊与思念' },       // 12
+]
+
+// ─── 代际 / 世代标签 ───
+function getGeneration(year) {
+  if (year < 1960) return { label: '长辈', gen: '建国一代', desc: '见证时代变迁的开创者' }
+  if (year < 1970) return { label: '60后', gen: 'X世代前', desc: '踏实肯干的实干一代' }
+  if (year < 1980) return { label: '70后', gen: 'X世代', desc: '承上启下的中坚力量' }
+  if (year < 1995) return { label: '80后', gen: '千禧一代', desc: '伴随改革开放成长的中流砥柱' }
+  if (year < 2000) return { label: '90后', gen: '千禧一代', desc: '个性鲜明、拥抱互联网的弄潮儿' }
+  if (year < 2010) return { label: '00后', gen: 'Z世代', desc: '数字原住民，自由真实的表达者' }
+  if (year < 2020) return { label: '10后', gen: 'Alpha世代', desc: '在智能时代出生的新新人类' }
+  return { label: '20后', gen: 'Alpha世代', desc: '面向未来的全新一代' }
+}
+
+// ─── 本命年倒计时 ───
+function getBenming(lunarYear, nowYear) {
+  // 本命年：农历年与出生农历年地支相同，即相差 12 的倍数
+  let y = nowYear
+  while ((y - lunarYear) % 12 !== 0) y++
+  const yearsLeft = y - nowYear
+  return { year: y, yearsLeft: yearsLeft < 0 ? 0 : yearsLeft }
 }
 
 // ─── 生命数字（生命路径数）───
@@ -216,6 +269,12 @@ export function analyzeBirth({ calendarType, year, month, day, hour }) {
   const weekOfYear = Math.ceil(doy / 7)
   const season = getSeason(solarM)
 
+  // 生肖 / 星座 / 生日石 / 代际 / 本命年 档案
+  const animalProfile = ANIMAL_PROFILE[animal] || null
+  const birthstone = BIRTHSTONE[(solarM - 1 + 12) % 12] || null
+  const generation = getGeneration(solarY)
+  const benming = getBenming(Number(lun.lYear || solarY), now.getFullYear())
+
   return {
     error: null,
     // 基础
@@ -248,6 +307,11 @@ export function analyzeBirth({ calendarType, year, month, day, hour }) {
     doy,
     weekOfYear,
     season,
+    // 档案补充
+    animalProfile,
+    birthstone,
+    generation,
+    benming,
     // 原始可展示
     solarY, solarM, solarD,
   }

@@ -81,7 +81,7 @@ const fmtDate = (d) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()
 
     <div class="dl-hero">
       <h1>🔢 数字人生</h1>
-      <p>输入你的出生信息，解锁生肖、星座、八字五行与关于你的一切数字</p>
+      <p>输入出生信息，解锁生肖、星座、八字五行、生命数字、生日石与关于你的一切人生密码</p>
     </div>
 
     <div class="dl-form">
@@ -196,6 +196,59 @@ const fmtDate = (d) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()
             命中缺失：<b v-for="m in result.wuxing.missing" :key="m">{{ m }} </b>
           </div>
           <div class="dl-wx-missing" v-else>五行俱全 ✓</div>
+        </div>
+
+        <!-- 生肖档案 -->
+        <div class="dl-card wide" v-if="result.animalProfile">
+          <span class="dl-label">生肖档案 · {{ result.animal }}🐾</span>
+          <p class="dl-traits">{{ result.animalProfile.traits }}</p>
+          <div class="dl-kv-grid">
+            <div class="dl-kv"><span>幸运数字</span><b>{{ result.animalProfile.luckyNum }}</b></div>
+            <div class="dl-kv"><span>幸运颜色</span><b>{{ result.animalProfile.luckyColor }}</b></div>
+            <div class="dl-kv"><span>幸运方位</span><b>{{ result.animalProfile.direction }}</b></div>
+          </div>
+          <div class="dl-relate">
+            <span class="dl-rel">三合 <b>{{ result.animalProfile.triad }}</b></span>
+            <span class="dl-rel ok">六合 <b>{{ result.animalProfile.secret }}</b></span>
+            <span class="dl-rel bad">相冲 <b>{{ result.animalProfile.clash }}</b></span>
+          </div>
+          <div class="dl-benming" v-if="result.benming">
+            🐲 下一个本命年：<b>{{ result.benming.year }} 年</b>（还有 {{ result.benming.yearsLeft }} 年）
+          </div>
+        </div>
+
+        <!-- 星座档案 -->
+        <div class="dl-card wide" v-if="result.zodiac">
+          <span class="dl-label">星座档案 · {{ result.zodiac.name }} {{ ZODIAC_EMOJI[result.zodiac.name] }}</span>
+          <p class="dl-traits">{{ result.zodiac.desc }}</p>
+          <div class="dl-kv-grid">
+            <div class="dl-kv"><span>日期</span><b>{{ result.zodiac.range }}</b></div>
+            <div class="dl-kv"><span>守护星</span><b>{{ result.zodiac.ruler }}</b></div>
+            <div class="dl-kv"><span>幸运数字</span><b>{{ result.zodiac.luckyNum }}</b></div>
+            <div class="dl-kv"><span>幸运颜色</span><b>{{ result.zodiac.luckyColor }}</b></div>
+            <div class="dl-kv"><span>幸运石</span><b>{{ result.zodiac.stone }}</b></div>
+            <div class="dl-kv"><span>元素</span><b>{{ result.zodiac.element }}象</b></div>
+          </div>
+          <div class="dl-chips">
+            <span class="dl-chip" v-for="k in result.zodiac.keywords" :key="k">{{ k }}</span>
+          </div>
+          <div class="dl-match">💞 最佳配对：<b>{{ result.zodiac.match }}</b></div>
+        </div>
+
+        <!-- 生日石 / 生日花 -->
+        <div class="dl-card" v-if="result.birthstone">
+          <span class="dl-label">生日石 · {{ result.solarM }} 月</span>
+          <span class="dl-value sm">{{ result.birthstone.stone }}</span>
+          <span class="dl-sub">生日花：{{ result.birthstone.flower }}</span>
+          <span class="dl-sub">花语：{{ result.birthstone.flowerLang }}</span>
+        </div>
+
+        <!-- 代际标签 -->
+        <div class="dl-card" v-if="result.generation">
+          <span class="dl-label">你的世代</span>
+          <span class="dl-value sm">{{ result.generation.label }}</span>
+          <span class="dl-sub">{{ result.generation.gen }}</span>
+          <span class="dl-sub">{{ result.generation.desc }}</span>
         </div>
 
         <!-- 已来到世界 -->
