@@ -79,56 +79,60 @@ const fmtDate = (d) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5" /><polyline points="12 19 5 12 12 5" /></svg>
     </button>
 
-    <div class="dl-hero">
-      <h1>🔢 数字人生</h1>
-      <p>输入出生信息，解锁生肖、星座、八字五行、生命数字、生日石与关于你的一切人生密码</p>
-    </div>
-
-    <div class="dl-form">
-      <div class="dl-field">
-        <label>历法</label>
-        <div class="dl-seg">
-          <button :class="{ active: calendarType === 'solar' }" @click="calendarType = 'solar'">公历（新历）</button>
-          <button :class="{ active: calendarType === 'lunar' }" @click="calendarType = 'lunar'">农历（旧历）</button>
+    <div class="dl-layout">
+      <aside class="dl-sidebar">
+        <div class="dl-hero">
+          <h1>🔢 数字人生</h1>
+          <p>输入出生信息，解锁生肖、星座、八字五行、生命数字、生日石与关于你的一切人生密码</p>
         </div>
-      </div>
 
-      <div class="dl-field" v-if="calendarType === 'solar'">
-        <label>出生日期</label>
-        <input type="date" class="dl-date-input" v-model="solarDate" />
-      </div>
+        <div class="dl-form">
+          <div class="dl-field">
+            <label>历法</label>
+            <div class="dl-seg">
+              <button :class="{ active: calendarType === 'solar' }" @click="calendarType = 'solar'">公历（新历）</button>
+              <button :class="{ active: calendarType === 'lunar' }" @click="calendarType = 'lunar'">农历（旧历）</button>
+            </div>
+          </div>
 
-      <div class="dl-field" v-else>
-        <label>农历出生日期</label>
-        <div class="dl-date-row">
-          <select class="dl-select" v-model="lunarY">
-            <option value="" disabled>年</option>
-            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-          </select>
-          <select class="dl-select" v-model="lunarM">
-            <option value="" disabled>月</option>
-            <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
-          </select>
-          <select class="dl-select" v-model="lunarD">
-            <option value="" disabled>日</option>
-            <option v-for="d in days" :key="d.value" :value="d.value">{{ d.label }}</option>
-          </select>
+          <div class="dl-field" v-if="calendarType === 'solar'">
+            <label>出生日期</label>
+            <input type="date" class="dl-date-input" v-model="solarDate" />
+          </div>
+
+          <div class="dl-field" v-else>
+            <label>农历出生日期</label>
+            <div class="dl-date-row">
+              <select class="dl-select" v-model="lunarY">
+                <option value="" disabled>年</option>
+                <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+              </select>
+              <select class="dl-select" v-model="lunarM">
+                <option value="" disabled>月</option>
+                <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
+              </select>
+              <select class="dl-select" v-model="lunarD">
+                <option value="" disabled>日</option>
+                <option v-for="d in days" :key="d.value" :value="d.value">{{ d.label }}</option>
+              </select>
+            </div>
+            <div class="dl-hint">农历数据由 solarlunar 提供，覆盖 1900–2100 年</div>
+          </div>
+
+          <div class="dl-field">
+            <label>出生时辰（可选，用于推算八字时柱）</label>
+            <select class="dl-select" v-model="hour">
+              <option v-for="o in shichenOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+            </select>
+          </div>
         </div>
-        <div class="dl-hint">农历数据由 solarlunar 提供，覆盖 1900–2100 年</div>
-      </div>
+      </aside>
 
-      <div class="dl-field">
-        <label>出生时辰（可选，用于推算八字时柱）</label>
-        <select class="dl-select" v-model="hour">
-          <option v-for="o in shichenOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-    </div>
+      <main class="dl-main">
+        <div v-if="result && result.error" class="dl-empty">{{ result.error }}</div>
 
-    <div v-if="result && result.error" class="dl-empty">{{ result.error }}</div>
-
-    <template v-else-if="result">
-      <div class="dl-results">
+        <template v-else-if="result">
+          <div class="dl-results">
         <!-- 生肖 -->
         <div class="dl-card feature">
           <span class="dl-label">生肖</span>
@@ -310,5 +314,7 @@ const fmtDate = (d) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()
     </template>
 
     <div v-else class="dl-empty">👆 选择出生日期，开启你的数字人生</div>
-  </div>
+  </main>
+</div>
+</div>
 </template>
