@@ -40,12 +40,40 @@ const fmtTime = (iso) => {
 }
 
 const sourceBadge = (source) => source || 'iPhone 17 Pro Max'
-const formatContent = (text) => (text || '').replace(/\n/g, '<br>')
+
+// ═══ 话题标签 ═══
+const tagRe = /#[\u4e00-\u9fa5_a-zA-Z0-9]+/g
+const parseTags = (text) => (text?.match(tagRe) || []).map(t => t.slice(1))
+const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const formatContent = (text) => {
+  let t = escapeHtml(text || '')
+  t = t.replace(tagRe, m => `<span class="idea-tag" data-tag="${m.slice(1)}">${m}</span>`)
+  return t.replace(/\n/g, '<br>')
+}
+
+const allTags = computed(() => {
+  const c = {}
+  ideas.value.forEach(i => parseTags(i.content).forEach(t => { c[t] = (c[t] || 0) + 1 }))
+  return c
+})
+const activeTag = ref(null)
+const filteredIdeas = computed(() =>
+  activeTag.value ? ideas.value.filter(i => parseTags(i.content).includes(activeTag.value)) : ideas.value
+)
+
+// 点击正文中的 #标签 进行筛选（事件委托，兼容 v-html）
+const onFeedClick = (e) => {
+  const el = e.target.closest?.('.idea-tag')
+  if (el && el.dataset.tag) {
+    activeTag.value = activeTag.value === el.dataset.tag ? null : el.dataset.tag
+    scrollToTop()
+  }
+}
 
 // ═══ Infinite scroll / limit ═══
 const displayLimit = ref(20)
-const displayedIdeas = computed(() => ideas.value.slice(0, displayLimit.value))
-const hasMore = computed(() => displayedIdeas.value.length < ideas.value.length)
+const displayedIdeas = computed(() => filteredIdeas.value.slice(0, displayLimit.value))
+const hasMore = computed(() => displayedIdeas.value.length < filteredIdeas.value.length)
 
 const loadMore = () => { displayLimit.value += 10 }
 
@@ -73,12 +101,28 @@ const closePreview = () => { previewImage.value = null }
       </div>
     </div>
 
+    <!-- 话题标签筛选条 -->
+    <div v-if="Object.keys(allTags).length" class="idea-tagbar">
+      <button :class="['idea-tag-chip', { active: !activeTag }]" @click="activeTag = null">全部</button>
+      <button
+        v-for="(count, tag) in allTags"
+        :key="tag"
+        :class="['idea-tag-chip', { active: activeTag === tag }]"
+        @click="activeTag = activeTag === tag ? null : tag"
+      >#{{ tag }} <small>{{ count }}</small></button>
+    </div>
+
     <!-- Feed -->
-    <div class="idea-feed">
+    <div class="idea-feed" @click="onFeedClick">
       <div v-if="!ideas.length" class="idea-empty">
         <div class="idea-empty-icon">🌊</div>
         <p>还没有流记</p>
         <p class="idea-empty-hint">在管理后台的流记管理中发布内容，将在这里展示</p>
+      </div>
+      <div v-else-if="!filteredIdeas.length" class="idea-empty">
+        <div class="idea-empty-icon">🔍</div>
+        <p>没有 #{{ activeTag }} 的流记</p>
+        <p class="idea-empty-hint"><button class="idea-btn idea-btn-ghost" @click="activeTag = null">清除筛选</button></p>
       </div>
 
       <div class="idea-masonry">

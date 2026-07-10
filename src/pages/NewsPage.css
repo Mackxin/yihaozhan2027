@@ -379,3 +379,59 @@
 [data-theme="dark"] .news-card-body { color: #cbd5e1; }
 [data-theme="dark"] .news-footer { color: #94a3b8; }
 [data-theme="dark"] .news-timeline-axis { background: linear-gradient(to bottom, rgba(255, 29, 85, 0), rgba(255, 29, 85, 0.6), rgba(255, 29, 85, 0)); }
+
+/* ═══ 年份筛选条 + 月份分组（时间线增强） ═══ */
+.news-year-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 4px auto 20px;
+  max-width: 720px;
+}
+.news-year-chip {
+  border: 1px solid var(--border, #e8e8e8);
+  background: var(--bg-card, #fff);
+  color: var(--text-secondary, #666);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.news-year-chip:hover { border-color: var(--primary, #ff1d55); color: var(--primary, #ff1d55); }
+.news-year-chip.active {
+  background: var(--primary, #ff1d55);
+  border-color: var(--primary, #ff1d55);
+  color: #fff;
+}
+
+.news-month-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  user-select: none;
+  position: relative;
+  z-index: 1;
+  transition: background .15s;
+}
+.news-month-header:hover { background: var(--bg-hover, #f1f5f9); }
+.news-month-toggle { color: var(--primary, #ff1d55); font-size: 12px; width: 14px; }
+.news-month-label { font-weight: 700; font-size: 14.5px; color: var(--text-primary, #1a1a1a); }
+.news-month-count {
+  font-size: 11.5px;
+  color: var(--text-light, #999);
+  background: var(--bg-secondary, #f8fafc);
+  border-radius: 999px;
+  padding: 1px 9px;
+}
+[data-theme="dark"] .news-year-chip { background: #1e293b; border-color: #334155; color: #cbd5e1; }
+[data-theme="dark"] .news-year-chip.active { background: #ff1d55; border-color: #ff1d55; color: #fff; }
+[data-theme="dark"] .news-month-header:hover { background: #334155; }
+[data-theme="dark"] .news-month-label { color: #f1f5f9; }
+[data-theme="dark"] .news-month-count { background: #0f172a; color: #94a3b8; }

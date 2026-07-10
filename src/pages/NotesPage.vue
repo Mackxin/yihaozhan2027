@@ -92,7 +92,7 @@ const handleSave = () => {
 }
 
 const handleDelete = (idx) => {
-  if (!confirm('确定要删除这条灵感记录吗？')) return
+  if (!confirm('确定要删除这条随记吗？')) return
   const newIdeas = [...ideas.value]
   newIdeas.splice(idx, 1)
   save(newIdeas)
@@ -116,7 +116,7 @@ const handleExport = () => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `灵感记录_${todayStr()}.json`
+  a.download = `随记_${todayStr()}.json`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -140,7 +140,7 @@ const handleImport = (e) => {
 
 const handleClearAll = () => {
   if (ideas.value.length === 0) { alert('没有数据可以清空'); return }
-  if (confirm('确定要删除所有灵感记录吗？') && confirm('再次确认？')) {
+  if (confirm('确定要删除所有随记吗？') && confirm('再次确认？')) {
     save([])
     filterTag.value = null
   }
@@ -524,7 +524,7 @@ const confirmPublish = () => {
           <!-- Empty state -->
           <div v-else class="notes-empty">
             <div class="notes-empty-icon">📝</div>
-            <h3>{{ ideas.length === 0 ? '还没有灵感记录' : '没有找到匹配的内容' }}</h3>
+            <h3>{{ ideas.length === 0 ? '还没有随记' : '没有找到匹配的内容' }}</h3>
             <p>{{ ideas.length === 0 ? '在左侧输入框开始记录你的第一条灵感吧！' : '试试调整搜索条件或清除筛选' }}</p>
           </div>
         </div>

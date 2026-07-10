@@ -55,3 +55,45 @@ html, body, #app {
   color: var(--text-primary);
   transition: background 0.3s ease, color 0.3s ease;
 }
+
+/* ─── 暗黑模式切换平滑过渡（结构元素） ─── */
+.page-slide,
+[class*="-card"],
+[class*="-header"],
+[class*="-panel"],
+[class*="-modal-content"],
+[class*="-sidebar"],
+[class*="-toolbar"],
+input, textarea, select, button {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, html, body, #app { transition: none !important; }
+}
+
+/* ─── 暗黑模式：代码块适配 ─── */
+[data-theme="dark"] :where(pre, code) {
+  background: #0b1220 !important;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+[data-theme="dark"] :where(pre) {
+  box-shadow: inset 0 0 0 1px #1e293b;
+}
+
+/* ─── 正文图片统一占位底纹（加载中/失败时不至于空白突兀） ─── */
+:where(.notes-card-content, .idea-content, .idea-images, .memory-card-content, .article-content) img {
+  background-color: var(--bg-hover, #f1f5f9);
+  background-image: linear-gradient(135deg, rgba(0,0,0,0.03) 25%, transparent 25%, transparent 50%, rgba(0,0,0,0.03) 50%, rgba(0,0,0,0.03) 75%, transparent 75%);
+  background-size: 16px 16px;
+  min-height: 32px;
+}
+
+/* ─── 暗黑模式：正文图片柔和降亮，hover 还原 ─── */
+[data-theme="dark"] :where(.notes-card-content, .idea-content, .memory-card-content, .article-content, .help-content) img {
+  filter: brightness(0.88) contrast(1.02);
+  transition: filter 0.25s ease;
+}
+[data-theme="dark"] :where(.notes-card-content, .idea-content, .memory-card-content, .article-content, .help-content) img:hover {
+  filter: none;
+}

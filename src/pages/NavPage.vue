@@ -84,11 +84,22 @@ const scrollToTop = () => {
   slide?.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-// Scroll detection for back-to-top
+// Scroll detection for back-to-top + 当前分类高亮
 const showBackTop = ref(false)
+const activeCatId = ref(null)
 const onScroll = () => {
   const slide = contentRef.value?.closest('.page-slide')
-  showBackTop.value = slide ? slide.scrollTop > 300 : false
+  if (!slide) return
+  showBackTop.value = slide.scrollTop > 300
+  // 找到当前视口顶部所处的分类（距顶部最近且已越过的 section）
+  const cats = filtered.value
+  let current = cats.length ? cats[0].id : null
+  const marker = slide.scrollTop + 120
+  for (const cat of cats) {
+    const el = document.getElementById(`nav-section-${cat.id}`)
+    if (el && el.offsetTop <= marker) current = cat.id
+  }
+  activeCatId.value = current
 }
 onMounted(() => {
   const slide = contentRef.value?.closest('.page-slide')
@@ -111,6 +122,7 @@ onUnmounted(() => {
             v-for="cat in topNavCats"
             :key="cat.id"
             class="desktop-nav-link"
+            :class="{ active: activeCatId === cat.id }"
             @click="scrollToSection(`nav-section-${cat.id}`)"
           >
             {{ cat.title }}
@@ -124,7 +136,7 @@ onUnmounted(() => {
     <div class="mobile-header">
       <div class="mobile-header-inner">
         <span class="mobile-logo">壹号导航</span>
-        <button class="mobile-menu-btn" @click="menuOpen = !menuOpen">
+        <button class="mobile-menu-btn" @click="menuOpen = !menuOpen" :aria-label="menuOpen ? '关闭菜单' : '打开菜单'" :aria-expanded="menuOpen">
           <svg v-if="!menuOpen" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12h18M3 6h18M3 18h18"/>
           </svg>
@@ -203,6 +215,7 @@ onUnmounted(() => {
             v-for="cat in bottomNavCats"
             :key="cat.id"
             class="desktop-footer-link"
+            :class="{ active: activeCatId === cat.id }"
             @click="scrollToSection(`nav-section-${cat.id}`)"
           >
             {{ cat.title }}
@@ -214,7 +227,7 @@ onUnmounted(() => {
 
     <!-- Back to top (teleported to body) -->
     <Teleport to="body">
-    <button v-if="active && showBackTop" class="back-to-top" @click="scrollToTop">
+    <button v-if="active && showBackTop" class="back-to-top" @click="scrollToTop" title="返回顶部" aria-label="返回顶部">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path d="M5 15l7-7 7 7"/>
       </svg>

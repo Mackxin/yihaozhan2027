@@ -44,6 +44,22 @@
 .desktop-nav-link:hover {
   color: #ff1d55;
 }
+.desktop-nav-link.active {
+  color: var(--primary, #ff1d55);
+  font-weight: 700;
+}
+.desktop-nav-link.active::after {
+  content: "";
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  margin-top: 2px;
+  background: var(--primary, #ff1d55);
+}
+.desktop-footer-link.active {
+  color: var(--primary, #ff1d55);
+  font-weight: 700;
+}
 
 /* ─── Mobile header ─── */
 .mobile-header {

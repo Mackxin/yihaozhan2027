@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 --output/
+dist/
 
 # IDE / agent workspace (private, never commit)
 .codebuddy/
