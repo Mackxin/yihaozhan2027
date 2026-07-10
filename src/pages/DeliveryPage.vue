@@ -48,16 +48,13 @@ const currentPlatInsurance = computed(() => {
 })
 
 // 选中平台或填写单量/收入时，按平台费率自动预填保险费
-// 规则：单量 >= 1（跑单了）才自动扣平台保险费；货拉拉费率为 0 不扣；手动填写优先
+// 规则：只要选中平台，且单量 >= 1（跑单了），保险费就自动设为当前平台费率；
+// 货拉拉费率为 0 时自动为 0；切平台/改单量时实时更新，不需要手动填写优先。
 const autoFillInsurance = () => {
   const p = platforms.value.find(pl => pl.name === form.value.platform)
   const fee = p ? Number(p.insurance) || 0 : 0
   const hasOrder = Number(form.value.orders) >= 1 || Number(form.value.income) > 0
-  if (!hasOrder) {
-    if (form.value.insurance === '' || Number(form.value.insurance) === 0) form.value.insurance = 0
-  } else if (form.value.insurance === '' || Number(form.value.insurance) === 0) {
-    form.value.insurance = fee
-  }
+  form.value.insurance = hasOrder ? fee : 0
 }
 watch(() => form.value.platform, autoFillInsurance)
 watch(() => [form.value.orders, form.value.income], autoFillInsurance)
