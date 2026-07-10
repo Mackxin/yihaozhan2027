@@ -711,6 +711,15 @@ export function deleteDeliveryPlatform(name) {
   if (idx !== -1) store.deliveryPlatforms.splice(idx, 1)
 }
 
+// 编辑平台费率/图标/颜色（改后新建记录即使用新费率，不影响历史记录）
+export function updateDeliveryPlatform(name, updates) {
+  const p = store.deliveryPlatforms.find(p => p.name === name)
+  if (!p) return
+  if (updates.icon !== undefined) p.icon = updates.icon
+  if (updates.color !== undefined) p.color = updates.color
+  if (updates.insurance !== undefined) p.insurance = Number(updates.insurance) || 0
+}
+
 // 目标管理
 export function updateDeliveryGoal(goal) {
   store.deliveryGoal = { ...store.deliveryGoal, ...goal }

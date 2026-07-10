@@ -579,6 +579,8 @@
   background: rgba(217, 119, 6, .12); padding: 1px 6px; border-radius: 10px;
 }
 .d-plat-fee-none { color: var(--d-muted); background: rgba(120, 120, 120, .12); font-weight: 500; }
+.d-plat-fee-input { width: 48px; font-size: .66rem; padding: 1px 4px; border: 1px solid var(--d-border); border-radius: 6px; background: var(--d-card); color: var(--d-text); }
+.d-plat-edit-btn { border: none; background: none; color: var(--d-blue); cursor: pointer; font-size: .72rem; padding: 0; }
 .d-ins-hint { font-size: .62rem; color: #d97706; font-weight: 600; margin-left: 4px; }
 .d-input-fee { flex: 0 0 86px; width: 86px; }
 .d-plat-add { display: flex; gap: 6px; align-items: center; }

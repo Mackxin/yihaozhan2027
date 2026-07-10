@@ -7,6 +7,7 @@ import {
   deleteDeliveryRecord,
   addDeliveryPlatform,
   deleteDeliveryPlatform,
+  updateDeliveryPlatform,
   updateDeliveryGoal,
 } from '../store'
 
@@ -46,11 +47,12 @@ const currentPlatInsurance = computed(() => {
   return p ? Number(p.insurance) || 0 : 0
 })
 
-// 选中平台或填写单量/收入时，按平台费率自动预填保险费（有单才扣，休息日归零；手动填写优先）
+// 选中平台或填写单量/收入时，按平台费率自动预填保险费
+// 规则：单量 >= 1（跑单了）才自动扣平台保险费；货拉拉费率为 0 不扣；手动填写优先
 const autoFillInsurance = () => {
   const p = platforms.value.find(pl => pl.name === form.value.platform)
-  const fee = p && Number(p.insurance) > 0 ? Number(p.insurance) : 0
-  const hasOrder = (Number(form.value.orders) || 0) > 0 || (Number(form.value.income) || 0) > 0
+  const fee = p ? Number(p.insurance) || 0 : 0
+  const hasOrder = Number(form.value.orders) >= 1 || Number(form.value.income) > 0
   if (!hasOrder) {
     if (form.value.insurance === '' || Number(form.value.insurance) === 0) form.value.insurance = 0
   } else if (form.value.insurance === '' || Number(form.value.insurance) === 0) {
@@ -301,6 +303,15 @@ const addPlat = () => {
 }
 const removePlat = (name) => {
   if (confirm(`确认删除平台「${name}」？`)) deleteDeliveryPlatform(name)
+}
+
+// 编辑平台费率（改后新建记录即用新费率，不影响历史记录）
+const editingPlat = ref(null)
+const editPlatFee = ref(0)
+const startEditPlat = (p) => { editingPlat.value = p.name; editPlatFee.value = p.insurance }
+const saveEditPlat = () => {
+  updateDeliveryPlatform(editingPlat.value, { insurance: editPlatFee.value })
+  editingPlat.value = null
 }
 
 // ═══ Export ═══
@@ -686,18 +697,18 @@ const onShareTypeChange = () => { shareDataUrl.value = '' }
           <div class="d-quick-form">
             <div class="d-form-row">
               <input type="date" v-model="form.date" class="d-input" />
-              <select v-model="form.platform" class="d-input">
+              <select v-model="form.platform" class="d-input" @change="autoFillInsurance">
                 <option v-for="p in platforms" :key="p.name" :value="p.name">{{ p.icon }} {{ p.name }}<template v-if="p.insurance"> ·¥{{ p.insurance }}</template></option>
               </select>
             </div>
             <div class="d-form-row d-form-row-3">
               <div class="d-form-g">
                 <label>单量</label>
-                <input type="number" v-model="form.orders" placeholder="0" class="d-input" min="0" />
+                <input type="number" v-model="form.orders" placeholder="0" class="d-input" min="0" @input="autoFillInsurance" />
               </div>
               <div class="d-form-g">
                 <label>收入 ¥</label>
-                <input type="number" v-model="form.income" placeholder="0" class="d-input" min="0" step="0.01" />
+                <input type="number" v-model="form.income" placeholder="0" class="d-input" min="0" step="0.01" @input="autoFillInsurance" />
               </div>
               <div class="d-form-g">
                 <label>保险 ¥ <span class="d-ins-hint" v-if="currentPlatInsurance">平台 ¥{{ currentPlatInsurance }}/天</span></label>
@@ -771,10 +782,19 @@ const onShareTypeChange = () => { shareDataUrl.value = '' }
           <div v-if="showPlatformMgr" class="d-plat-mgr-body">
             <div class="d-plat-tags">
               <span v-for="p in platforms" :key="p.name" class="d-plat-tag" :style="{ borderColor: p.color }">
-                {{ p.icon }} {{ p.name }}
-                <small class="d-plat-fee" v-if="p.insurance">¥{{ p.insurance }}/天</small>
-                <small class="d-plat-fee d-plat-fee-none" v-else>无保险</small>
-                <button @click="removePlat(p.name)">✕</button>
+                <template v-if="editingPlat === p.name">
+                  {{ p.icon }} {{ p.name }}
+                  <input v-model.number="editPlatFee" type="number" min="0" step="0.1" class="d-plat-fee-input" @keyup.enter="saveEditPlat" />
+                  <button class="d-plat-edit-btn" title="保存" @click="saveEditPlat">✓</button>
+                  <button title="取消" @click="editingPlat = null">✕</button>
+                </template>
+                <template v-else>
+                  {{ p.icon }} {{ p.name }}
+                  <small class="d-plat-fee" v-if="p.insurance">¥{{ p.insurance }}/天</small>
+                  <small class="d-plat-fee d-plat-fee-none" v-else>无保险</small>
+                  <button class="d-plat-edit-btn" title="改费率" @click="startEditPlat(p)">✎</button>
+                  <button title="删除" @click="removePlat(p.name)">✕</button>
+                </template>
               </span>
             </div>
             <div class="d-plat-add">
