@@ -17,7 +17,7 @@ const emit = defineEmits(['close'])
 const platforms = computed(() => store.deliveryPlatforms)
 const getPlatformStyle = (name) => {
   const p = store.deliveryPlatforms.find(p => p.name === name)
-  return p || { icon: '🛵', color: '#6366f1' }
+  return p || { icon: '🛵', color: '#3B5BFF' }
 }
 
 // ═══ Goal ═══
@@ -294,11 +294,11 @@ const groupedByYear = computed(() => {
 
 // ═══ Platform Manager ═══
 const showPlatformMgr = ref(false)
-const newPlatform = ref({ name: '', icon: '🛵', color: '#6366f1', insurance: 0 })
+const newPlatform = ref({ name: '', icon: '🛵', color: '#3B5BFF', insurance: 0 })
 const addPlat = () => {
   if (!newPlatform.value.name.trim()) return
   addDeliveryPlatform(newPlatform.value.name, newPlatform.value.icon, newPlatform.value.color, newPlatform.value.insurance)
-  newPlatform.value = { name: '', icon: '🛵', color: '#6366f1', insurance: 0 }
+  newPlatform.value = { name: '', icon: '🛵', color: '#3B5BFF', insurance: 0 }
 }
 const removePlat = (name) => {
   if (confirm(`确认删除平台「${name}」？`)) deleteDeliveryPlatform(name)
@@ -451,8 +451,8 @@ const generateShareImage = async () => {
   const text = isDark ? '#f1f5f9' : '#1e293b'
   const text2 = isDark ? '#94a3b8' : '#64748b'
   const muted = isDark ? '#64748b' : '#94a3b8'
-  const accent = '#ff7f00'
-  const accent2 = '#ff5500'
+  const accent = '#3B5BFF'
+  const accent2 = '#2A45E6'
   const border = isDark ? '#334155' : '#e2e8f0'
 
   // Background gradient
@@ -763,10 +763,10 @@ const onShareTypeChange = () => { shareDataUrl.value = '' }
         <div class="d-card">
           <div class="d-card-header"><h3>📊 数据总览</h3></div>
           <div class="d-stats-mini">
-            <div class="d-stat-row"><span class="d-stat-dot" style="background:#ff7f00"></span><span>总收入</span><b>{{ fmtMoney(overallStats.totalIncome) }}</b></div>
+            <div class="d-stat-row"><span class="d-stat-dot" style="background:#3B5BFF"></span><span>总收入</span><b>{{ fmtMoney(overallStats.totalIncome) }}</b></div>
             <div class="d-stat-row"><span class="d-stat-dot" style="background:#22c55e"></span><span>净收入</span><b>{{ fmtMoney(overallStats.netIncome) }}</b></div>
-            <div class="d-stat-row"><span class="d-stat-dot" style="background:#3b82f6"></span><span>总单量</span><b>{{ overallStats.totalOrders }} 单</b></div>
-            <div class="d-stat-row"><span class="d-stat-dot" style="background:#8b5cf6"></span><span>跑单天数</span><b>{{ overallStats.days }} 天</b></div>
+            <div class="d-stat-row"><span class="d-stat-dot" style="background:#3B5BFF"></span><span>总单量</span><b>{{ overallStats.totalOrders }} 单</b></div>
+            <div class="d-stat-row"><span class="d-stat-dot" style="background:#6B82FF"></span><span>跑单天数</span><b>{{ overallStats.days }} 天</b></div>
             <div class="d-stat-row"><span class="d-stat-dot" style="background:#f59e0b"></span><span>平均单价</span><b>{{ fmtMoney(overallStats.avgPrice) }}</b></div>
             <div class="d-stat-row"><span class="d-stat-dot" style="background:#ef4444"></span><span>时薪</span><b>{{ fmtMoney(overallStats.hourlyRate) }}/h</b></div>
           </div>
@@ -850,15 +850,15 @@ const onShareTypeChange = () => { shareDataUrl.value = '' }
                     <line v-for="i in 5" :key="'gl'+i" :x1="0" :y1="10 + (i-1)*27" :x2="700" :y2="10 + (i-1)*27" stroke="var(--d-grid)" stroke-dasharray="3,3" />
                     <!-- area -->
                     <path :d="areaPath2" fill="url(#grad2)" opacity="0.2" />
-                    <defs><linearGradient id="grad2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff7f00"/><stop offset="100%" stop-color="#ff7f00" stop-opacity="0"/></linearGradient></defs>
+                    <defs><linearGradient id="grad2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3B5BFF"/><stop offset="100%" stop-color="#3B5BFF" stop-opacity="0"/></linearGradient></defs>
                     <!-- line -->
-                    <path :d="linePath2" fill="none" stroke="#ff7f00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path :d="linePath2" fill="none" stroke="#3B5BFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
                     <!-- dots + labels -->
                     <g v-for="(d, i) in last7Days" :key="'dot'+i">
-                      <circle :cx="25 + i*(650/6)" :cy="118-(d.income/chartMax)*108" r="5" fill="#fff" stroke="#ff7f00" stroke-width="2.5" />
+                      <circle :cx="25 + i*(650/6)" :cy="118-(d.income/chartMax)*108" r="5" fill="#fff" stroke="#3B5BFF" stroke-width="2.5" />
                       <text :x="25 + i*(650/6)" y="138" text-anchor="middle" font-size="10" fill="var(--d-muted)">{{ d.label }}</text>
                       <text :x="25 + i*(650/6)" y="150" text-anchor="middle" font-size="9" fill="var(--d-muted)" opacity="0.7">{{ d.weekday }}</text>
-                      <text v-if="d.income > 0" :x="25 + i*(650/6)" :y="106-(d.income/chartMax)*108" text-anchor="middle" font-size="10" font-weight="700" fill="#ff7f00">¥{{ d.income.toFixed(0) }}</text>
+                      <text v-if="d.income > 0" :x="25 + i*(650/6)" :y="106-(d.income/chartMax)*108" text-anchor="middle" font-size="10" font-weight="700" fill="#3B5BFF">¥{{ d.income.toFixed(0) }}</text>
                     </g>
                   </svg>
                 </div>

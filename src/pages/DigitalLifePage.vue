@@ -24,7 +24,7 @@ const shichenOptions = [{ value: '', label: '不填（仅算年月日柱）' }, 
 
 const ANIMAL_EMOJI = { 鼠: '🐭', 牛: '🐮', 虎: '🐯', 兔: '🐰', 龙: '🐲', 蛇: '🐍', 马: '🐴', 羊: '🐑', 猴: '🐵', 鸡: '🐔', 狗: '🐶', 猪: '🐷' }
 const ZODIAC_EMOJI = { 白羊座: '♈', 金牛座: '♉', 双子座: '♊', 巨蟹座: '♋', 狮子座: '♌', 处女座: '♍', 天秤座: '♎', 天蝎座: '♏', 射手座: '♐', 摩羯座: '♑', 水瓶座: '♒', 双鱼座: '♓' }
-const WX_COLOR = { 金: '#f59e0b', 木: '#22c55e', 水: '#3b82f6', 火: '#ef4444', 土: '#c08a4a' }
+const WX_COLOR = { 金: '#f59e0b', 木: '#22c55e', 水: '#3B5BFF', 火: '#ef4444', 土: '#c08a4a' }
 
 const birthInput = computed(() => {
   if (calendarType.value === 'solar') {

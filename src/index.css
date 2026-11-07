@@ -1,3 +1,9 @@
+/* ═══════════════════════════════════════════════════════════
+   壹号栈 · 现代极简视觉系统（Design Tokens）
+   对应 Ardot 设计稿 744587898868636「现代极简改版（全量）」
+   底 #F7F8FA / 卡 #FFFFFF / 主字 #0E1116 / 强调 #3B5BFF
+   ═══════════════════════════════════════════════════════════ */
+
 * {
   margin: 0;
   padding: 0;
@@ -5,57 +11,109 @@
 }
 
 :root {
-  --primary: #ff1d55;
-  --primary-light: #ff4d7a;
-  --primary-dark: #d9164a;
-  --bg: #f5f5f5;
-  --bg-white: #ffffff;
-  --bg-card: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-hover: #f1f5f9;
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --text-light: #999999;
-  --text-muted: #94a3b8;
-  --border: #e8e8e8;
-  --border-light: #e2e8f0;
-  --shadow: rgba(0,0,0,0.04);
-  --shadow-md: rgba(0,0,0,0.08);
-  --tab-height: 56px;
-  --color-surface: #ffffff;
-  --color-input: #ffffff;
+  /* 品牌与状态 */
+  --primary: #3B5BFF;
+  --primary-light: #6B82FF;
+  --primary-dark: #2A45E6;
+  --primary-soft: #EEF2FF;
+  --primary-soft-2: #E4EAFF;
+  --success: #16A34A;
+  --danger: #DC2626;
+
+  /* 背景层次 */
+  --bg: #F7F8FA;
+  --bg-white: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-secondary: #F7F8FA;
+  --bg-hover: #F3F5F9;
+  --color-surface: #FFFFFF;
+  --color-input: #FFFFFF;
+
+  /* 文字层次 */
+  --text-primary: #0E1116;
+  --text-secondary: #6B7280;
+  --text-light: #9AA3AF;
+  --text-muted: #9AA3AF;
+
+  /* 线与影 */
+  --border: #ECEFF3;
+  --border-light: #E9EDF3;
+  --line: #ECEFF3;
+  --shadow: rgba(14, 17, 22, 0.04);
+  --shadow-md: rgba(14, 17, 22, 0.08);
+  --shadow-card: 0 1px 2px rgba(14, 17, 22, 0.03), 0 8px 24px rgba(14, 17, 22, 0.04);
+
+  /* 形状与节奏 */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --tab-height: 72px;
+  --topnav-height: 72px;
+  --rail-width: 232px;
+
+  /* 字体 */
+  --font-sans: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
 }
 
 [data-theme="dark"] {
-  --bg: #0f172a;
-  --bg-white: #1e293b;
-  --bg-card: #1e293b;
-  --bg-secondary: #0f172a;
-  --bg-hover: #334155;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-light: #94a3b8;
-  --text-muted: #64748b;
-  --border: #334155;
-  --border-light: #475569;
+  --bg: #0F1218;
+  --bg-white: #171B23;
+  --bg-card: #171B23;
+  --bg-secondary: #0F1218;
+  --bg-hover: #222833;
+  --text-primary: #F1F5F9;
+  --text-secondary: #A8B2C1;
+  --text-light: #7C8798;
+  --text-muted: #7C8798;
+  --border: #2A3140;
+  --border-light: #2A3140;
+  --line: #2A3140;
+  --primary-soft: #1B2450;
   --shadow: rgba(0,0,0,0.2);
   --shadow-md: rgba(0,0,0,0.3);
-  --color-surface: #1e293b;
-  --color-input: #0f172a;
+  --shadow-card: 0 8px 24px rgba(0,0,0,0.22);
+  --color-surface: #171B23;
+  --color-input: #0F1218;
 }
 
 html, body, #app {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--bg);
   color: var(--text-primary);
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
+button, input, textarea, select {
+  font-family: inherit;
+  letter-spacing: inherit;
+}
+
+button { cursor: pointer; }
+
+/* 统一滚动条：细、轻、不抢视觉 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(14, 17, 22, 0.12);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(14, 17, 22, 0.22); background-clip: padding-box; }
+
+::selection { background: rgba(59, 91, 255, 0.16); }
+
+/* ═══ 以下为并行开发线新增的全局补充规则（保留） ═══ */
 /* ─── 暗黑模式切换平滑过渡（结构元素） ─── */
 .page-slide,
 [class*="-card"],

@@ -55,7 +55,7 @@
 .tool-hero-icon { font-size: 2rem; }
 .tool-hero-subtitle {
   font-size: 1.05rem;
-  color: #ff1d55;
+  color: #3B5BFF;
   font-weight: 600;
   margin: 0 0 0.75rem;
 }
@@ -78,7 +78,7 @@
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 .tool-stat { display: flex; align-items: baseline; gap: 4px; }
-.tool-stat-num { font-size: 1.2rem; font-weight: 700; color: #ff1d55; }
+.tool-stat-num { font-size: 1.2rem; font-weight: 700; color: #3B5BFF; }
 .tool-stat-label { font-size: 0.78rem; color: #94a3b8; }
 .tool-stat-divider { width: 1px; height: 20px; background: #e2e8f0; }
 
@@ -125,8 +125,8 @@
   position: relative;
 }
 .tool-card:hover {
-  border-color: #ff1d55;
-  box-shadow: 0 4px 16px rgba(255,29,85,0.08);
+  border-color: #3B5BFF;
+  box-shadow: 0 4px 16px rgba(59, 91, 255,0.08);
   transform: translateY(-2px);
 }
 .tool-card-no-link {
@@ -163,8 +163,8 @@
 .tool-card-tag {
   font-size: 0.7rem;
   padding: 2px 8px;
-  background: rgba(255,29,85,0.06);
-  color: #ff1d55;
+  background: rgba(59, 91, 255,0.06);
+  color: #3B5BFF;
   border-radius: 6px;
   font-weight: 500;
 }
@@ -175,7 +175,7 @@
   color: #cbd5e1;
   transition: color 0.15s;
 }
-.tool-card:hover .tool-card-arrow { color: #ff1d55; }
+.tool-card:hover .tool-card-arrow { color: #3B5BFF; }
 
 /* ─── Empty ─── */
 .tool-empty {
@@ -190,13 +190,13 @@
   border-radius: 10px;
   border: 1.5px solid #e2e8f0;
   background: #fff;
-  color: #ff1d55;
+  color: #3B5BFF;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
 }
-.tool-empty-btn:hover { border-color: #ff1d55; background: rgba(255,29,85,0.04); }
+.tool-empty-btn:hover { border-color: #3B5BFF; background: rgba(59, 91, 255,0.04); }
 
 /* ─── Footer ─── */
 .tool-footer {
@@ -221,7 +221,7 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
-.tool-footer-link { color: #ff1d55; text-decoration: none; font-weight: 500; }
+.tool-footer-link { color: #3B5BFF; text-decoration: none; font-weight: 500; }
 .tool-footer-link:hover { text-decoration: underline; }
 
 /* ═══ Responsive ═══ */
@@ -241,10 +241,10 @@
 [data-theme="dark"] .tool-section-header { border-bottom-color: #1e293b; }
 [data-theme="dark"] .tool-section-title { color: #f1f5f9; }
 [data-theme="dark"] .tool-card { background: #1e293b; border-color: #334155; }
-[data-theme="dark"] .tool-card:hover { border-color: #ff1d55; box-shadow: 0 4px 16px rgba(255,29,85,0.12); }
+[data-theme="dark"] .tool-card:hover { border-color: #3B5BFF; box-shadow: 0 4px 16px rgba(59, 91, 255,0.12); }
 [data-theme="dark"] .tool-card-name { color: #f1f5f9; }
 [data-theme="dark"] .tool-card-desc { color: #94a3b8; }
-[data-theme="dark"] .tool-card-tag { background: rgba(255,29,85,0.12); }
+[data-theme="dark"] .tool-card-tag { background: rgba(59, 91, 255,0.12); }
 [data-theme="dark"] .tool-footer { border-top-color: #1e293b; }
 [data-theme="dark"] .tool-empty h3 { color: #cbd5e1; }
-[data-theme="dark"] .tool-empty-btn { background: #1e293b; border-color: #334155; color: #ff1d55; }
+[data-theme="dark"] .tool-empty-btn { background: #1e293b; border-color: #334155; color: #3B5BFF; }

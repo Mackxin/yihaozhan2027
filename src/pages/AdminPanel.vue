@@ -30,6 +30,12 @@ import {
 marked.setOptions({ breaks: true, gfm: true })
 
 const activeTab = ref('overview')
+// 顶栏面包屑：跟随左侧导航选中项
+const railTitleMap = {
+  overview: '数据总览', nav: '导航管理', news: '讯息管理', resourcePages: '资源页',
+  articles: '文章', memories: '回忆', ideas: '流记', settings: '站点设置', help: '使用帮助',
+}
+const railTitle = computed(() => railTitleMap[activeTab.value] || '工作台')
 const contentRef = ref(null)
 const helpContentRef = ref(null)
 const activeHelpSection = ref('h1')
@@ -321,7 +327,7 @@ const handleDeleteMacSection = (sectionId) => {
 // ─── Tool Page Management state ───
 const activeToolPageKey = ref('')
 const showAddToolPage = ref(false)
-const newToolPage = reactive({ key: '', label: '', icon: '📦', themeColor: '#6366f1', heroTitle: '', heroSubtitle: '', heroDesc: '' })
+const newToolPage = reactive({ key: '', label: '', icon: '📦', themeColor: '#3B5BFF', heroTitle: '', heroSubtitle: '', heroDesc: '' })
 const editingToolPage = reactive({ key: '', label: '', icon: '', themeColor: '', heroTitle: '', heroSubtitle: '', heroDesc: '' })
 const toolPageFormError = ref('')
 
@@ -345,7 +351,7 @@ const saveAddToolPage = () => {
       key: newToolPage.key.trim().toLowerCase(),
       label: newToolPage.label.trim() || newToolPage.key.trim(),
       icon: newToolPage.icon || '📦',
-      themeColor: newToolPage.themeColor || '#6366f1',
+      themeColor: newToolPage.themeColor || '#3B5BFF',
       heroTitle: newToolPage.heroTitle.trim() || newToolPage.label.trim(),
       heroSubtitle: newToolPage.heroSubtitle.trim(),
       heroDesc: newToolPage.heroDesc.trim(),
@@ -355,7 +361,7 @@ const saveAddToolPage = () => {
     autoAddToNav(tp)
     showAddToolPage.value = false
     newToolPage.key = ''; newToolPage.label = ''; newToolPage.icon = '📦'
-    newToolPage.themeColor = '#6366f1'; newToolPage.heroTitle = ''
+    newToolPage.themeColor = '#3B5BFF'; newToolPage.heroTitle = ''
     newToolPage.heroSubtitle = ''; newToolPage.heroDesc = ''
   } catch (e) {
     toolPageFormError.value = e.message
@@ -398,7 +404,7 @@ const startEditToolPage = (tp) => {
   editingToolPage.key = tp.key
   editingToolPage.label = tp.label
   editingToolPage.icon = tp.icon || '📦'
-  editingToolPage.themeColor = tp.themeColor || '#6366f1'
+  editingToolPage.themeColor = tp.themeColor || '#3B5BFF'
   editingToolPage.heroTitle = tp.heroTitle || ''
   editingToolPage.heroSubtitle = tp.heroSubtitle || ''
   editingToolPage.heroDesc = tp.heroDesc || ''
@@ -409,7 +415,7 @@ const saveEditToolPage = () => {
   updateToolPage(editingToolPage.key, {
     label: editingToolPage.label.trim(),
     icon: editingToolPage.icon || '📦',
-    themeColor: editingToolPage.themeColor || '#6366f1',
+    themeColor: editingToolPage.themeColor || '#3B5BFF',
     heroTitle: editingToolPage.heroTitle.trim() || editingToolPage.label.trim(),
     heroSubtitle: editingToolPage.heroSubtitle.trim(),
     heroDesc: editingToolPage.heroDesc.trim(),
@@ -1228,6 +1234,17 @@ const faviconPreview = computed(() => {
   return '/avatar.png'
 })
 const isDefaultFavicon = computed(() => !store.siteFavicon || store.siteFavicon === '/avatar.png')
+
+// ─── 站点设置页：外观主题 ───
+const settingsDark = ref(document.documentElement.getAttribute('data-theme') === 'dark')
+const toggleSettingsTheme = () => {
+  settingsDark.value = !settingsDark.value
+  const mode = settingsDark.value ? 'dark' : 'light'
+  if (settingsDark.value) document.documentElement.setAttribute('data-theme', 'dark')
+  else document.documentElement.removeAttribute('data-theme')
+  localStorage.setItem('yihao_theme', mode)
+  log(`外观已切换为${settingsDark.value ? '深色' : '浅色'}模式`)
+}
 const setFaviconFromEmoji = () => {
   const emoji = faviconEmoji.value.trim()
   if (!emoji) return alert('请输入一个 emoji')
@@ -1279,6 +1296,7 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
     <div class="admin-topbar">
       <div class="admin-topbar-left">
         <h1 class="admin-logo">壹号栈后台管理</h1>
+        <span class="yhz-crumb">/ {{ railTitle }}</span>
       </div>
       <div class="admin-topbar-center">
         <button :class="['admin-tab', { active: activeTab === 'overview' }]" @click="activeTab = 'overview'">
@@ -1371,8 +1389,136 @@ onUnmounted(() => { window.removeEventListener('beforeunload', handleBeforeUnloa
       </div>
     </div>
 
+    <!-- ═══ 左侧导航（现代极简版） ═══ -->
+    <aside class="yhz-rail">
+      <div class="yhz-rail-label">Workspace</div>
+      <button :class="['yhz-rail-item', { active: activeTab === 'overview' }]" @click="activeTab = 'overview'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        数据总览
+      </button>
+      <button :class="['yhz-rail-item', { active: activeTab === 'nav' }]" @click="activeTab = 'nav'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 13 13 8.5 15.5 11 11 15.5 8.5"/></svg>
+        导航管理
+        <span class="yhz-rail-badge">{{ store.navCategories.length }}</span>
+      </button>
+      <button :class="['yhz-rail-item', { active: activeTab === 'news' }]" @click="activeTab = 'news'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
+        讯息管理
+        <span class="yhz-rail-badge">{{ newsTotalItems }}</span>
+      </button>
+      <button :class="['yhz-rail-item', { active: activeTab === 'resourcePages' }]" @click="activeTab = 'resourcePages'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="20"/></svg>
+        资源页
+        <span class="yhz-rail-badge">{{ resourcePageTotal }}</span>
+      </button>
+      <button :class="['yhz-rail-item', { active: activeTab === 'articles' }]" @click="activeTab = 'articles'; articleView = 'list'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        文章
+        <span class="yhz-rail-badge">{{ articlesTotal }}</span>
+      </button>
+      <button :class="['yhz-rail-item', { active: activeTab === 'memories' }]" @click="activeTab = 'memories'; memoryView = 'list'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-6 6-3-3-4 4"/></svg>
+        回忆
+        <span class="yhz-rail-badge">{{ memoriesTotal }}</span>
+      </button>
+
+      <button :class="['yhz-rail-item', { active: activeTab === 'ideas' }]" @click="activeTab = 'ideas'; ideaView = 'list'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg>
+        流记
+        <span class="yhz-rail-badge">{{ ideasTotal }}</span>
+      </button>
+      <div class="yhz-rail-label" style="margin-top: 22px;">System</div>
+      <button :class="['yhz-rail-item', { active: activeTab === 'settings' }]" @click="activeTab = 'settings'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.36.4.66.74.86.3.18.64.28 1 .28H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        站点设置
+      </button>
+      <button :class="['yhz-rail-item', { active: activeTab === 'help' }]" @click="activeTab = 'help'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9a3 3 0 0 1 5.8 1c0 2-3 2.6-3 4"/><line x1="12" y1="17.5" x2="12.01" y2="17.5"/></svg>
+        使用帮助
+      </button>
+
+      <div class="yhz-rail-spacer"></div>
+      <div class="yhz-rail-foot">YIHAO STACK · ADMIN<br/>v1.3 / MODERN UI</div>
+    </aside>
+
     <!-- ═══ Main Content ═══ -->
     <div class="admin-main">
+
+      <!-- ── 站点设置（现代极简版新增） ── -->
+      <template v-if="activeTab === 'settings'">
+        <div class="yhz-settings" style="overflow-y: auto; width: 100%;">
+          <div class="yhz-settings-head">
+            <h2>站点设置</h2>
+            <p>管理站点标识、外观与数据。所有改动会即时保存在本机。</p>
+          </div>
+
+          <section class="yhz-settings-card">
+            <h3>站点标识</h3>
+            <p class="yhz-hint">用于浏览器标签页与分享卡片。</p>
+            <div class="yhz-field">
+              <span class="yhz-field-label">站点名称</span>
+              <div class="yhz-field-body"><span class="yhz-field-value">壹号栈 / YIHAO STACK</span></div>
+            </div>
+            <div class="yhz-field">
+              <span class="yhz-field-label">站点图标</span>
+              <div class="yhz-field-body">
+                <span class="yhz-favicon-preview">
+                  <img v-if="!isEmoji(faviconPreview) && faviconPreview !== '/avatar.png'" :src="faviconPreview" alt="favicon" />
+                  <span v-else>{{ isEmoji(faviconPreview) ? faviconPreview : '壹' }}</span>
+                </span>
+                <input v-model="faviconEmoji" placeholder="输入 emoji，如 🎆" class="admin-input admin-input-sm" style="flex:1; min-width: 150px;" />
+                <button class="admin-btn admin-btn-primary admin-btn-sm" @click="setFaviconFromEmoji" :disabled="!faviconEmoji.trim()">应用 Emoji</button>
+                <input v-model="faviconUrl" placeholder="或输入图片地址 https://..." class="admin-input admin-input-sm" style="flex:1; min-width: 180px;" />
+                <button class="admin-btn admin-btn-primary admin-btn-sm" @click="setFaviconFromUrl" :disabled="!faviconUrl.trim()">应用链接</button>
+                <input ref="faviconFileInput" type="file" accept="image/*" style="display:none" @change="handleFaviconFileUpload" />
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="faviconFileInput?.click()">上传本地图片</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="yhz-settings-card">
+            <h3>外观</h3>
+            <p class="yhz-hint">深色模式会同步到整个站点，含前台所有页面。</p>
+            <div class="yhz-field">
+              <span class="yhz-field-label">深色模式</span>
+              <div class="yhz-field-body">
+                <button :class="['yhz-switch', { on: settingsDark }]" @click="toggleSettingsTheme" :aria-pressed="settingsDark"></button>
+                <span class="yhz-field-value">{{ settingsDark ? '已开启' : '已关闭' }}</span>
+              </div>
+            </div>
+            <div class="yhz-field">
+              <span class="yhz-field-label">主题色</span>
+              <div class="yhz-field-body">
+                <span style="width:22px;height:22px;border-radius:6px;background:#3B5BFF;display:inline-block;"></span>
+                <span class="yhz-field-value">#3B5BFF · 电光蓝</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="yhz-settings-card">
+            <h3>数据管理</h3>
+            <p class="yhz-hint">导出为 JSON 备份，或导入此前备份恢复全站内容。</p>
+            <div class="yhz-field">
+              <span class="yhz-field-label">当前数据量</span>
+              <div class="yhz-field-body">
+                <span class="yhz-field-value">{{ store.navCategories.length }} 分类 · {{ navTotalLinks }} 链接</span>
+              </div>
+            </div>
+            <div class="yhz-field">
+              <span class="yhz-field-label">备份 / 恢复</span>
+              <div class="yhz-field-body">
+                <button class="admin-btn admin-btn-primary admin-btn-sm" @click="handleExport">导出数据</button>
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="fileInput?.click()">导入数据</button>
+                <button class="admin-btn admin-btn-ghost admin-btn-sm" @click="handleBuild" :disabled="building">{{ building ? '生成中...' : '生成网站' }}</button>
+              </div>
+            </div>
+          </section>
+
+          <div class="yhz-settings-note">
+            提示：站点为本地优先（Local First）存储，数据保存在当前浏览器。更换设备或清理浏览器数据前，请先「导出数据」做备份。
+          </div>
+        </div>
+      </template>
 
       <!-- ── OVERVIEW ── -->
       <template v-if="activeTab === 'overview'">

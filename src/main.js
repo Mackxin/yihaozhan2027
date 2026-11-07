@@ -2,6 +2,8 @@ import { createApp, watch } from 'vue'
 import App from './App.vue'
 import './index.css'
 import { store } from './store'
+// 现代极简版式层：必须最后引入，用于覆盖各页面自带样式
+import './modern.css'
 
 // Apply saved favicon on load
 const FAVICON_KEY = 'yihao_favicon'

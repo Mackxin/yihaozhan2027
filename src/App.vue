@@ -26,6 +26,8 @@ const allTabs = [
 ]
 
 const tabs = computed(() => store.isAdmin ? allTabs : allTabs.slice(0, 5))
+// 桌面顶栏只展示前台 5 项，后台通过右侧「工作台」入口进入
+const primaryTabs = computed(() => allTabs.slice(0, 5))
 const slideWidth = computed(() => 100 / tabs.value.length)
 const activeTab = ref(0)
 const isMobile = ref(window.innerWidth <= 768)
@@ -195,6 +197,16 @@ onUnmounted(() => {
 
 const handleResize = () => { isMobile.value = window.innerWidth <= 768 }
 
+// 顶栏 / 底栏共用的跳转：同时关掉所有覆盖页（含流记、数字人生）
+const goToTab = (i) => {
+  activeTab.value = i
+  closeToolPage()
+  closeArticlePage()
+  closeDeliveryPage()
+  closeIdeaPage()
+  closeDigitalLifePage()
+}
+
 const handleTouchStart = (e) => {
   touchRef.value = {
     startX: e.touches[0].clientX,
@@ -218,6 +230,42 @@ const handleTouchEnd = (e) => {
 
 <template>
   <div class="app-container">
+    <!-- ═══ 桌面顶栏（现代极简版） ═══ -->
+    <header class="yhz-topnav">
+      <div class="yhz-topnav-inner">
+        <div class="yhz-brand" @click="goToTab(0)">
+          <span class="yhz-brand-mark"><i></i><i></i><i></i><i></i></span>
+          <span class="yhz-brand-name">壹号栈</span>
+          <span class="yhz-brand-sub">YIHAO STACK</span>
+        </div>
+
+        <nav class="yhz-nav">
+          <button
+            v-for="(tab, i) in primaryTabs"
+            :key="tab.key"
+            :class="['yhz-nav-item', { active: activeTab === i }]"
+            @click="goToTab(i)"
+          >{{ tab.label }}</button>
+        </nav>
+
+        <div class="yhz-topnav-right">
+          <button class="yhz-icon-btn" @click="toggleDarkMode" :title="darkMode === 'dark' ? '切换浅色' : '切换深色'">
+            <svg v-if="darkMode === 'dark'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+            </svg>
+            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+          <button v-if="store.isAdmin" :class="['yhz-workspace-btn', { active: activeTab === tabs.length - 1 }]" @click="goToTab(tabs.length - 1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            工作台
+          </button>
+          <span class="yhz-avatar">壹</span>
+        </div>
+      </div>
+    </header>
+
     <!-- Content area with page slider -->
     <div
       class="content-area"
@@ -278,7 +326,7 @@ const handleTouchEnd = (e) => {
         v-for="(tab, i) in tabs"
         :key="tab.key"
         :class="['tab-item', { active: activeTab === i }]"
-        @click="activeTab = i; closeToolPage(); closeArticlePage(); closeDeliveryPage(); closeIdeaPage(); closeDigitalLifePage()"
+        @click="goToTab(i)"
         @pointerdown="startTabLongPress(tab.key)"
         @pointerup="cancelTabLongPress"
         @pointerleave="cancelTabLongPress"
@@ -320,7 +368,7 @@ const handleTouchEnd = (e) => {
         <svg v-else-if="tab.key === 'notes'" viewBox="0 0 24 24" width="22" height="22" fill="none"
           :stroke="activeTab === i ? 'var(--primary)' : 'var(--text-light)'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"
-            :fill="activeTab === i ? 'rgba(255,29,85,0.12)' : 'none'"/>
+            :fill="activeTab === i ? 'rgba(59, 91, 255,0.12)' : 'none'"/>
           <polyline points="14 2 14 8 20 8"/>
           <line x1="8" y1="13" x2="16" y2="13" stroke-width="1.5"/>
           <line x1="8" y1="17" x2="13" y2="17" stroke-width="1.5"/>
@@ -330,7 +378,7 @@ const handleTouchEnd = (e) => {
           :stroke="activeTab === i ? 'var(--primary)' : 'var(--text-light)'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
-            :fill="activeTab === i ? 'rgba(255,29,85,0.12)' : 'none'"/>
+            :fill="activeTab === i ? 'rgba(59, 91, 255,0.12)' : 'none'"/>
           <line x1="8" y1="7" x2="16" y2="7" stroke-width="1.5"/>
           <line x1="8" y1="11" x2="16" y2="11" stroke-width="1.5"/>
           <line x1="8" y1="15" x2="12" y2="15" stroke-width="1.5"/>

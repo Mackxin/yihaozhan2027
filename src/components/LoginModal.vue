@@ -138,7 +138,7 @@ const handleClose = () => {
   transition: border-color 0.15s;
 }
 .login-field input:focus {
-  border-color: #ff1d55;
+  border-color: #3B5BFF;
 }
 .login-error {
   color: #ef4444;
@@ -150,7 +150,7 @@ const handleClose = () => {
   padding: 12px;
   border: none;
   border-radius: 12px;
-  background: #ff1d55;
+  background: #3B5BFF;
   color: #fff;
   font-size: 1rem;
   font-weight: 600;
@@ -158,7 +158,7 @@ const handleClose = () => {
   transition: background 0.15s;
   margin-top: 0.5rem;
 }
-.login-submit:hover { background: #e0184d; }
+.login-submit:hover { background: #2A45E6; }
 .login-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* Dark Mode */
@@ -170,5 +170,5 @@ const handleClose = () => {
   border-color: #334155;
   color: #f1f5f9;
 }
-[data-theme="dark"] .login-field input:focus { border-color: #ff1d55; }
+[data-theme="dark"] .login-field input:focus { border-color: #3B5BFF; }
 </style>
